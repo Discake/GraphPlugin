@@ -1,9 +1,10 @@
 using GraphPlugin.Application.Abstractions.Persistence;
 using GraphPlugin.Application.Services;
-using GraphPlugin.Nanocad.Runtime;
 using GraphPlugin.NanoCad.Drawing;
 using GraphPlugin.NanoCad.Runtime;
 using HostMgd.ApplicationServices;
+
+namespace GraphPlugin.Nanocad.Runtime;
 
 public sealed class GraphDocumentContext
 {
