@@ -1,9 +1,11 @@
-﻿using GraphPlugin.NanoCad.Bootstrap;
+using GraphPlugin.NanoCad.Bootstrap;
 using HostMgd.ApplicationServices;
 using Teigha.Runtime;
 
 using NanoApplication =
     HostMgd.ApplicationServices.Application;
+
+namespace GraphPlugin.Nanocad;
 
 public sealed class PluginEntry : IExtensionApplication
 {
