@@ -1,29 +1,33 @@
-﻿using GraphPlugin.Application.Abstractions.Persistence;
+using GraphPlugin.Application.Abstractions.Persistence;
 using GraphPlugin.Domain.Models;
 using GraphPlugin.Nanocad.Runtime;
 using GraphPlugin.NanoCad.Drawing;
 using GraphPlugin.NanoCad.Persistence.Metadata;
 using HostMgd.ApplicationServices;
-
 using Teigha.DatabaseServices;
-
-using NanoApplication = HostMgd.ApplicationServices.Application;
 
 namespace GraphPlugin.NanoCad.Persistence;
 
 public sealed class NanoCadVertexRepository : IVertexRepository
 {
+    private readonly Document _document;
     private readonly VertexEntityFactory _factory;
     private readonly XRecordMetadataStore _metadata;
     private readonly VertexEntityMapper _mapper;
     private readonly GraphEntityIndex _index;
 
     public NanoCadVertexRepository(
-    VertexEntityFactory factory,
-    XRecordMetadataStore metadata,
-    VertexEntityMapper mapper,
-    GraphEntityIndex index)
+        Document document,
+        VertexEntityFactory factory,
+        XRecordMetadataStore metadata,
+        VertexEntityMapper mapper,
+        GraphEntityIndex index)
     {
+        _document =
+            document ??
+            throw new ArgumentNullException(
+                nameof(document));
+
         _factory = factory;
         _metadata = metadata;
         _mapper = mapper;
@@ -32,10 +36,8 @@ public sealed class NanoCadVertexRepository : IVertexRepository
 
     public void Add(GraphVertex vertex)
     {
-        var document =
-            NanoApplication.DocumentManager.MdiActiveDocument;
-
-        var database = document.Database;
+        var database =
+            _document.Database;
 
         using var transaction =
             database.TransactionManager.StartTransaction();
@@ -80,11 +82,8 @@ public sealed class NanoCadVertexRepository : IVertexRepository
             return null;
         }
 
-        var document =
-            NanoApplication.DocumentManager.MdiActiveDocument;
-
         var database =
-            document.Database;
+            _document.Database;
 
         using var transaction =
             database.TransactionManager.StartTransaction();
@@ -113,11 +112,8 @@ public sealed class NanoCadVertexRepository : IVertexRepository
 
     public IReadOnlyCollection<GraphVertex> GetAll()
     {
-        var document =
-            NanoApplication.DocumentManager.MdiActiveDocument;
-
         var database =
-            document.Database;
+            _document.Database;
 
         using var transaction =
             database.TransactionManager.StartTransaction();
@@ -168,12 +164,10 @@ public sealed class NanoCadVertexRepository : IVertexRepository
             return;
         }
 
-        var document = NanoApplication.DocumentManager.MdiActiveDocument;
-
         if (!objectId.IsErased)
         {
             using var transaction =
-                document.Database
+                _document.Database
                     .TransactionManager
                     .StartTransaction();
 

@@ -1,4 +1,4 @@
-﻿using GraphPlugin.Application.Services;
+using GraphPlugin.Application.Services;
 using GraphPlugin.Nanocad.Drawing;
 using GraphPlugin.NanoCad.Drawing;
 using GraphPlugin.NanoCad.Persistence;
@@ -30,7 +30,7 @@ public sealed class GraphDocumentContextManager
     }
 
     private GraphDocumentContext CreateContext(
-    Document document)
+        Document document)
     {
         var metadata =
             new XRecordMetadataStore();
@@ -54,6 +54,7 @@ public sealed class GraphDocumentContextManager
 
         var vertexRepository =
             new NanoCadVertexRepository(
+                document,
                 vertexFactory,
                 metadata,
                 vertexMapper,
@@ -63,7 +64,8 @@ public sealed class GraphDocumentContextManager
             new EdgeEntityFactory(edgeMapper);
 
         var settingsRepository =
-            new NanoCadGraphSettingsRepository();
+            new NanoCadGraphSettingsRepository(
+                document);
 
         var lineTypes = new LinetypeManager();
 
@@ -71,6 +73,7 @@ public sealed class GraphDocumentContextManager
 
         var edgeRepository =
             new NanoCadEdgeRepository(
+                document,
                 vertexRepository,
                 edgeFactory,
                 metadata,
@@ -99,7 +102,7 @@ public sealed class GraphDocumentContextManager
                 graphService,
                 metadata);
 
-        var vertexSelection = 
+        var vertexSelection =
             new VertexSelectionService(vertexMapper);
 
         var edgeSelection =

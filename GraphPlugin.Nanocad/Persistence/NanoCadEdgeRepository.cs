@@ -1,18 +1,17 @@
-﻿using GraphPlugin.Application.Abstractions.Persistence;
+using GraphPlugin.Application.Abstractions.Persistence;
 using GraphPlugin.Domain.Models;
 using GraphPlugin.Nanocad.Drawing;
 using GraphPlugin.Nanocad.Runtime;
 using GraphPlugin.NanoCad.Drawing;
 using GraphPlugin.NanoCad.Persistence.Metadata;
-using Teigha.BoundaryRepresentation;
+using HostMgd.ApplicationServices;
 using Teigha.DatabaseServices;
-using NanoApplication =
-    HostMgd.ApplicationServices.Application;
 
 namespace GraphPlugin.NanoCad.Persistence;
 
 public sealed class NanoCadEdgeRepository : IEdgeRepository
 {
+    private readonly Document _document;
     private readonly IVertexRepository _vertices;
     private readonly EdgeEntityFactory _factory;
     private readonly XRecordMetadataStore _metadata;
@@ -22,6 +21,7 @@ public sealed class NanoCadEdgeRepository : IEdgeRepository
     private readonly EdgeEntityMapper _entityMapper;
 
     public NanoCadEdgeRepository(
+        Document document,
         IVertexRepository vertices,
         EdgeEntityFactory factory,
         XRecordMetadataStore metadata,
@@ -30,6 +30,11 @@ public sealed class NanoCadEdgeRepository : IEdgeRepository
         EdgeStyleApplier applier,
         EdgeEntityMapper mapper)
     {
+        _document =
+            document ??
+            throw new ArgumentNullException(
+                nameof(document));
+
         _vertices = vertices;
         _factory = factory;
         _metadata = metadata;
@@ -42,8 +47,8 @@ public sealed class NanoCadEdgeRepository : IEdgeRepository
     public void Add(GraphEdge edge)
     {
         var vertexA =
-        _vertices.Get(edge.VertexAId)
-        ?? throw new InvalidOperationException();
+            _vertices.Get(edge.VertexAId)
+            ?? throw new InvalidOperationException();
 
         var vertexB =
             _vertices.Get(edge.VertexBId)
@@ -54,13 +59,8 @@ public sealed class NanoCadEdgeRepository : IEdgeRepository
                 .Load()
                 .EdgeStyle;
 
-        var document =
-            NanoApplication
-                .DocumentManager
-                .MdiActiveDocument;
-
         var database =
-            document.Database;
+            _document.Database;
 
         using var transaction =
             database.TransactionManager
@@ -102,6 +102,7 @@ public sealed class NanoCadEdgeRepository : IEdgeRepository
         var objectId = entity.ObjectId;
 
         transaction.Commit();
+
         _index.AddEdge(
             edge.Id,
             objectId,
@@ -118,13 +119,8 @@ public sealed class NanoCadEdgeRepository : IEdgeRepository
             return null;
         }
 
-        var document =
-            NanoApplication
-                .DocumentManager
-                .MdiActiveDocument;
-
         using var transaction =
-            document.Database
+            _document.Database
                 .TransactionManager
                 .StartTransaction();
 
@@ -208,7 +204,7 @@ public sealed class NanoCadEdgeRepository : IEdgeRepository
     }
 
     public IReadOnlyCollection<GraphEdge> GetByVertex(
-    Guid vertexId)
+        Guid vertexId)
     {
         var edgeIds =
             _index
@@ -264,11 +260,9 @@ public sealed class NanoCadEdgeRepository : IEdgeRepository
                 $"Vertex '{edge.VertexBId}' not found.");
 
         using var transaction =
-            NanoApplication
-            .DocumentManager
-            .MdiActiveDocument
-            .TransactionManager
-            .StartTransaction();
+            _document.Database
+                .TransactionManager
+                .StartTransaction();
 
         var polyline =
             transaction.GetObject(
@@ -296,12 +290,10 @@ public sealed class NanoCadEdgeRepository : IEdgeRepository
             return;
         }
 
-        var document = NanoApplication.DocumentManager.MdiActiveDocument;
-
         if (!objectId.IsErased)
         {
             using var transaction =
-                document.Database
+                _document.Database
                     .TransactionManager
                     .StartTransaction();
 

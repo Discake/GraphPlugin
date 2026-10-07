@@ -1,24 +1,29 @@
-﻿using GraphPlugin.Application.Abstractions.Persistence;
+using GraphPlugin.Application.Abstractions.Persistence;
 using GraphPlugin.Domain.Models;
 using GraphPlugin.NanoCad.Persistence.Metadata;
+using HostMgd.ApplicationServices;
 using Teigha.DatabaseServices;
-using NanoApplication =
-    HostMgd.ApplicationServices.Application;
 
 namespace GraphPlugin.NanoCad.Persistence;
 
 public sealed class NanoCadGraphSettingsRepository
     : IGraphSettingsRepository
 {
+    private readonly Document _document;
+
+    public NanoCadGraphSettingsRepository(
+        Document document)
+    {
+        _document =
+            document ??
+            throw new ArgumentNullException(
+                nameof(document));
+    }
+
     public GraphSettings Load()
     {
-        var document =
-            NanoApplication
-                .DocumentManager
-                .MdiActiveDocument;
-
         var database =
-            document.Database;
+            _document.Database;
 
         using var transaction =
             database.TransactionManager
@@ -76,13 +81,8 @@ public sealed class NanoCadGraphSettingsRepository
 
     public void Save(GraphSettings settings)
     {
-        var document =
-            NanoApplication
-                .DocumentManager
-                .MdiActiveDocument;
-
         var database =
-            document.Database;
+            _document.Database;
 
         using var transaction =
             database.TransactionManager
