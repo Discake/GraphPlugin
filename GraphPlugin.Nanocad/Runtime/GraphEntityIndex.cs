@@ -152,6 +152,9 @@ public sealed class GraphEntityIndex
 
         _vertexIds.Clear();
         _edgeIds.Clear();
+
+        _edgeVertices.Clear();
+        _edgesByVertex.Clear();
     }
 
     private void AddIncidentEdge(
