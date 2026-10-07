@@ -1,8 +1,7 @@
-﻿using GraphPlugin.Application.Abstractions.Persistence;
+using GraphPlugin.Application.Abstractions.Persistence;
 using GraphPlugin.Application.Services;
 using GraphPlugin.Nanocad.Runtime;
 using GraphPlugin.NanoCad.Drawing;
-using GraphPlugin.NanoCad.Persistence;
 using GraphPlugin.NanoCad.Runtime;
 using HostMgd.ApplicationServices;
 
@@ -55,8 +54,14 @@ public sealed class GraphDocumentContext
         GraphDatabaseWatcher watcher,
         GraphSettingsService settings,
         ShortestPathHighlighter pathHighlighter,
-        NanoCadBuildPickService pickService,
-        EdgeGeometrySynchronizer edgeGeometrySynchronizer)
+        NanoCadBuildPickService buildPick,
+        AddBendService addBend,
+        MoveBendService moveBend,
+        RemoveBendService removeBend,
+        EdgePickGeometry edgePickGeometry,
+        EdgeGeometrySynchronizer edgeGeometrySynchronizer,
+        IVertexAttachmentRepository attachments,
+        VertexAttachmentService attachmentService)
     {
         Document = document;
         Index = index;
@@ -68,40 +73,13 @@ public sealed class GraphDocumentContext
         Watcher = watcher;
         Settings = settings;
         PathHighlighter = pathHighlighter;
-        BuildPick = pickService;
+        BuildPick = buildPick;
+        AddBend = addBend;
+        MoveBend = moveBend;
+        RemoveBend = removeBend;
+        EdgePickGeometry = edgePickGeometry;
         EdgeGeometrySynchronizer = edgeGeometrySynchronizer;
-
-        AddBend =
-            new AddBendService(
-                Vertices,
-                Edges);
-
-        MoveBend =
-            new MoveBendService(
-                Vertices,
-                Edges);
-
-        RemoveBend =
-            new RemoveBendService(
-                Edges);
-
-        EdgePickGeometry =
-            new EdgePickGeometry(
-                document);
-
-        var attachmentStore =
-            new VertexAttachmentXRecordStore();
-
-        Attachments =
-            new NanoCadVertexAttachmentRepository(
-                document,
-                Index,
-                attachmentStore);
-
-        AttachmentService =
-            new VertexAttachmentService(
-                Vertices,
-                Attachments,
-                new AttachmentPathResolver());
+        Attachments = attachments;
+        AttachmentService = attachmentService;
     }
 }
