@@ -1,0 +1,193 @@
+﻿using GraphPlugin.Application.Abstractions.Persistence;
+using GraphPlugin.Domain.Models;
+using GraphPlugin.Nanocad.Runtime;
+using GraphPlugin.NanoCad.Drawing;
+using GraphPlugin.NanoCad.Persistence.Metadata;
+using HostMgd.ApplicationServices;
+
+using Teigha.DatabaseServices;
+
+using NanoApplication = HostMgd.ApplicationServices.Application;
+
+namespace GraphPlugin.NanoCad.Persistence;
+
+public sealed class NanoCadVertexRepository : IVertexRepository
+{
+    private readonly VertexEntityFactory _factory;
+    private readonly XRecordMetadataStore _metadata;
+    private readonly VertexEntityMapper _mapper;
+    private readonly GraphEntityIndex _index;
+
+    public NanoCadVertexRepository(
+    VertexEntityFactory factory,
+    XRecordMetadataStore metadata,
+    VertexEntityMapper mapper,
+    GraphEntityIndex index)
+    {
+        _factory = factory;
+        _metadata = metadata;
+        _mapper = mapper;
+        _index = index;
+    }
+
+    public void Add(GraphVertex vertex)
+    {
+        var document =
+            NanoApplication.DocumentManager.MdiActiveDocument;
+
+        var database = document.Database;
+
+        using var transaction =
+            database.TransactionManager.StartTransaction();
+
+        var blockTable =
+            (BlockTable)transaction.GetObject(
+                database.BlockTableId,
+                OpenMode.ForRead);
+
+        var modelSpace =
+            (BlockTableRecord)transaction.GetObject(
+                blockTable[BlockTableRecord.ModelSpace],
+                OpenMode.ForWrite);
+
+        var entity =
+            _factory.Create(vertex);
+
+        modelSpace.AppendEntity(entity);
+
+        transaction.AddNewlyCreatedDBObject(
+            entity,
+            true);
+
+        _metadata.WriteVertex(
+            entity,
+            vertex,
+            transaction);
+
+        var objectId = entity.ObjectId;
+
+        transaction.Commit();
+
+        _index.AddVertex(vertex.Id, objectId);
+    }
+
+    public GraphVertex? Get(Guid id)
+    {
+        if (!_index.TryGetVertexObjectId(
+                id,
+                out var objectId))
+        {
+            return null;
+        }
+
+        var document =
+            NanoApplication.DocumentManager.MdiActiveDocument;
+
+        var database =
+            document.Database;
+
+        using var transaction =
+            database.TransactionManager.StartTransaction();
+
+        var entity =
+            transaction.GetObject(
+                objectId,
+                OpenMode.ForRead)
+            as Entity;
+
+        if (entity is null ||
+            entity.IsErased)
+        {
+            return null;
+        }
+
+        var vertex =
+            _mapper.ToDomain(
+                entity,
+                transaction);
+
+        transaction.Commit();
+
+        return vertex;
+    }
+
+    public IReadOnlyCollection<GraphVertex> GetAll()
+    {
+        var document =
+            NanoApplication.DocumentManager.MdiActiveDocument;
+
+        var database =
+            document.Database;
+
+        using var transaction =
+            database.TransactionManager.StartTransaction();
+
+        var blockTable =
+            (BlockTable)transaction.GetObject(
+                database.BlockTableId,
+                OpenMode.ForRead);
+
+        var modelSpace =
+            (BlockTableRecord)transaction.GetObject(
+                blockTable[BlockTableRecord.ModelSpace],
+                OpenMode.ForRead);
+
+        var result =
+            new List<GraphVertex>();
+
+        foreach (ObjectId objectId in modelSpace)
+        {
+            var dbObject =
+                transaction.GetObject(
+                    objectId,
+                    OpenMode.ForRead);
+
+            if (dbObject is not Entity entity)
+                continue;
+
+            var vertex =
+                _mapper.ToDomain(
+                    entity,
+                    transaction);
+
+            if (vertex is not null)
+                result.Add(vertex);
+        }
+
+        transaction.Commit();
+
+        return result;
+    }
+
+    public void Delete(Guid id)
+    {
+        if (!_index.TryGetVertexObjectId(
+                id,
+                out var objectId))
+        {
+            return;
+        }
+
+        var document = NanoApplication.DocumentManager.MdiActiveDocument;
+
+        if (!objectId.IsErased)
+        {
+            using var transaction =
+                document.Database
+                    .TransactionManager
+                    .StartTransaction();
+
+            var entity =
+                transaction.GetObject(
+                    objectId,
+                    OpenMode.ForWrite)
+                as Entity;
+
+            entity?.Erase();
+
+            transaction.Commit();
+        }
+
+        _index.RemoveVertex(id);
+    }
+}
