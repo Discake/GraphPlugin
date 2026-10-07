@@ -1,4 +1,4 @@
-﻿using Teigha.DatabaseServices;
+using Teigha.DatabaseServices;
 
 namespace GraphPlugin.Nanocad.Runtime;
 
@@ -21,21 +21,105 @@ public sealed class GraphEntityIndex
 
     public void AddVertex(Guid id, ObjectId objectId)
     {
-        _vertices[id] = objectId;
-        _vertexIds[objectId] = id;
+        if (objectId.IsNull)
+        {
+            throw new ArgumentException(
+                "Vertex ObjectId cannot be null.",
+                nameof(objectId));
+        }
+
+        if (_vertices.TryGetValue(
+                id,
+                out var existingObjectId))
+        {
+            if (existingObjectId == objectId &&
+                _vertexIds.TryGetValue(
+                    objectId,
+                    out var existingVertexId) &&
+                existingVertexId == id)
+            {
+                return;
+            }
+
+            throw new InvalidOperationException(
+                $"Vertex '{id}' is already registered " +
+                $"with object '{existingObjectId}'.");
+        }
+
+        if (_vertexIds.TryGetValue(
+                objectId,
+                out var mappedVertexId))
+        {
+            throw new InvalidOperationException(
+                $"Object '{objectId}' is already registered " +
+                $"as vertex '{mappedVertexId}'.");
+        }
+
+        _vertices.Add(
+            id,
+            objectId);
+
+        _vertexIds.Add(
+            objectId,
+            id);
     }
 
     public void AddEdge(
-    Guid edgeId,
-    ObjectId objectId,
-    Guid vertexAId,
-    Guid vertexBId)
+        Guid edgeId,
+        ObjectId objectId,
+        Guid vertexAId,
+        Guid vertexBId)
     {
-        _edges[edgeId] = objectId;
-        _edgeIds[objectId] = edgeId;
+        if (objectId.IsNull)
+        {
+            throw new ArgumentException(
+                "Edge ObjectId cannot be null.",
+                nameof(objectId));
+        }
 
-        _edgeVertices[edgeId] =
-            (vertexAId, vertexBId);
+        if (_edges.TryGetValue(
+                edgeId,
+                out var existingObjectId))
+        {
+            if (existingObjectId == objectId &&
+                _edgeIds.TryGetValue(
+                    objectId,
+                    out var existingEdgeId) &&
+                existingEdgeId == edgeId &&
+                _edgeVertices.TryGetValue(
+                    edgeId,
+                    out var existingVertices) &&
+                existingVertices ==
+                    (vertexAId, vertexBId))
+            {
+                return;
+            }
+
+            throw new InvalidOperationException(
+                $"Edge '{edgeId}' is already registered " +
+                $"with object '{existingObjectId}'.");
+        }
+
+        if (_edgeIds.TryGetValue(
+                objectId,
+                out var mappedEdgeId))
+        {
+            throw new InvalidOperationException(
+                $"Object '{objectId}' is already registered " +
+                $"as edge '{mappedEdgeId}'.");
+        }
+
+        _edges.Add(
+            edgeId,
+            objectId);
+
+        _edgeIds.Add(
+            objectId,
+            edgeId);
+
+        _edgeVertices.Add(
+            edgeId,
+            (vertexAId, vertexBId));
 
         AddIncidentEdge(
             vertexAId,
@@ -95,7 +179,7 @@ public sealed class GraphEntityIndex
     }
 
     public void RemoveEdge(
-    Guid edgeId)
+        Guid edgeId)
     {
         if (_edgeVertices.TryGetValue(
                 edgeId,
@@ -155,24 +239,6 @@ public sealed class GraphEntityIndex
 
         _edgeVertices.Clear();
         _edgesByVertex.Clear();
-    }
-
-    private void AddIncidentEdge(
-        Guid vertexId,
-        Guid edgeId)
-    {
-        if (!_edgesByVertex.TryGetValue(
-                vertexId,
-                out var edges))
-        {
-            edges =
-                new HashSet<Guid>();
-
-            _edgesByVertex[vertexId] =
-                edges;
-        }
-
-        edges.Add(edgeId);
     }
 
     public void ReplaceVertexObject(
@@ -241,5 +307,23 @@ public sealed class GraphEntityIndex
     public IReadOnlyCollection<ObjectId> GetEdgeObjectIds()
     {
         return _edges.Values.ToArray();
+    }
+
+    private void AddIncidentEdge(
+        Guid vertexId,
+        Guid edgeId)
+    {
+        if (!_edgesByVertex.TryGetValue(
+                vertexId,
+                out var edges))
+        {
+            edges =
+                new HashSet<Guid>();
+
+            _edgesByVertex[vertexId] =
+                edges;
+        }
+
+        edges.Add(edgeId);
     }
 }
