@@ -1,4 +1,4 @@
-﻿using GraphPlugin.Application.Services;
+using GraphPlugin.Application.Services;
 using GraphPlugin.NanoCad.Persistence.Metadata;
 using HostMgd.ApplicationServices;
 
@@ -31,7 +31,7 @@ public sealed class GraphDatabaseWatcher
     private readonly HashSet<Guid>
         _dirtyEdges = new();
 
-    private readonly HashSet<ObjectId> 
+    private readonly HashSet<ObjectId>
         _restoredObjects = new();
 
     private readonly HashSet<ObjectId>
@@ -86,10 +86,11 @@ public sealed class GraphDatabaseWatcher
 
         _document.CommandFailed +=
             OnCommandFailed;
+
         _document.Database.ObjectErased +=
             OnObjectErased;
 
-        _document.Database.ObjectAppended += 
+        _document.Database.ObjectAppended +=
             OnObjectAppended;
 
         _started = true;
@@ -118,7 +119,7 @@ public sealed class GraphDatabaseWatcher
         _document.Database.ObjectAppended -=
             OnObjectAppended;
 
-        _dirtyVertices.Clear();
+        ClearPending();
 
         _started = false;
     }
@@ -180,14 +181,14 @@ public sealed class GraphDatabaseWatcher
         object sender,
         CommandEventArgs e)
     {
-        _dirtyVertices.Clear();
+        ClearPending();
     }
 
     private void OnCommandFailed(
         object sender,
         CommandEventArgs e)
     {
-        _dirtyVertices.Clear();
+        ClearPending();
     }
 
     private void OnObjectErased(
@@ -662,13 +663,9 @@ public sealed class GraphDatabaseWatcher
                         continue;
                     }
 
-                    throw new InvalidOperationException(
-                        $"Duplicate graph vertex id " +
-                        $"{vertexMetadata.Id}.");
-
                     //
                     // Два живых объекта с одинаковым VertexId
-                    // — это уже повреждение topology.
+                    // — это повреждение topology.
                     //
                     throw new InvalidOperationException(
                         $"Duplicate graph vertex id " +
