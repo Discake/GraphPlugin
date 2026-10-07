@@ -828,11 +828,11 @@ public sealed class GraphUndoIntegrationTestRunner
             transaction.GetObject(
                 objectId,
                 OpenMode.ForRead)
-            as Line;
+            as Polyline;
 
         Ensure(
             line is not null,
-            $"Edge {edgeId} is not a Line.");
+            $"Edge {edgeId} is not a Polyline.");
 
         Ensure(
             Math.Abs(

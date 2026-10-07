@@ -561,7 +561,7 @@ public sealed class GraphCommands
         if (line is null)
         {
             throw new InvalidOperationException(
-                "Selected GraphPlugin edge is not a Line.");
+                "Selected GraphPlugin edge is not a Polyline.");
         }
 
         // PickedPoint интерактивного Editor находится

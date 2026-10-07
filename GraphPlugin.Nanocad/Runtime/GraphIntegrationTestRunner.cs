@@ -1381,7 +1381,7 @@ public sealed class GraphIntegrationTestRunner
 
         Ensure(
             line is not null,
-            $"Edge {edgeId} is not represented by a Line.");
+            $"Edge {edgeId} is not represented by a Polyline.");
 
         var dx =
             line.EndPoint.X -
