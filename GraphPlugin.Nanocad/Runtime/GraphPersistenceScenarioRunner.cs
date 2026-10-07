@@ -498,11 +498,11 @@ public sealed class GraphPersistenceScenarioRunner
             transaction.GetObject(
                 objectId,
                 OpenMode.ForRead)
-            as Line;
+            as Polyline;
 
         Ensure(
             line is not null,
-            $"Edge {edgeId} is not a Line.");
+            $"Edge {edgeId} is not a Polyline.");
 
         var expectedColor =
             CadColorMapper.ToCadColor(
