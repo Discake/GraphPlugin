@@ -69,7 +69,10 @@ public sealed class GraphDocumentContextManager
 
         var lineTypes = new LinetypeManager();
 
-        var styleApplier = new EdgeStyleApplier(index, lineTypes);
+        var edgeStyleApplier =
+            new EdgeStyleApplier(
+                index,
+                lineTypes);
 
         var edgeRepository =
             new NanoCadEdgeRepository(
@@ -79,7 +82,7 @@ public sealed class GraphDocumentContextManager
                 metadata,
                 index,
                 settingsRepository,
-                styleApplier,
+                edgeStyleApplier,
                 edgeMapper);
 
         var graphService =
@@ -107,9 +110,6 @@ public sealed class GraphDocumentContextManager
 
         var edgeSelection =
             new EdgeSelectionService(edgeRepository, index);
-
-        var edgeStyleApplier =
-            new EdgeStyleApplier(index, lineTypes);
 
         var settingsService =
             new GraphSettingsService(
