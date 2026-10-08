@@ -1,4 +1,4 @@
-﻿using GraphPlugin.Domain.Geometry;
+using GraphPlugin.Domain.Geometry;
 using GraphPlugin.Domain.Models;
 
 namespace GraphPlugin.Domain.Algorithms;
@@ -6,18 +6,13 @@ namespace GraphPlugin.Domain.Algorithms;
 public sealed class EdgeLengthCalculator
 {
     public double Calculate(
-    GraphEdge edge,
-    GraphVertex first,
-    GraphVertex second)
+        GraphEdge edge,
+        GraphVertex first,
+        GraphVertex second)
     {
-        ArgumentNullException.ThrowIfNull(
-            edge);
-
-        ArgumentNullException.ThrowIfNull(
-            first);
-
-        ArgumentNullException.ThrowIfNull(
-            second);
+        ArgumentNullException.ThrowIfNull(edge);
+        ArgumentNullException.ThrowIfNull(first);
+        ArgumentNullException.ThrowIfNull(second);
 
         if (first.Id == edge.VertexAId &&
             second.Id == edge.VertexBId)
@@ -45,24 +40,5 @@ public sealed class EdgeLengthCalculator
 
         throw new ArgumentException(
             "Provided vertices are not endpoints of the edge.");
-    }
-
-    private static void ValidateEndpoints(
-        GraphEdge edge,
-        GraphVertex vertexA,
-        GraphVertex vertexB)
-    {
-        var matches =
-            (edge.VertexAId == vertexA.Id &&
-             edge.VertexBId == vertexB.Id)
-            ||
-            (edge.VertexAId == vertexB.Id &&
-             edge.VertexBId == vertexA.Id);
-
-        if (!matches)
-        {
-            throw new ArgumentException(
-                "Provided vertices are not endpoints of the edge.");
-        }
     }
 }

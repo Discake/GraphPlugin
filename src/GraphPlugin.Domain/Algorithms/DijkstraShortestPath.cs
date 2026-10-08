@@ -1,46 +1,51 @@
-﻿using GraphPlugin.Domain.Models;
+using GraphPlugin.Domain.Models;
 
 namespace GraphPlugin.Domain.Algorithms;
 
-public sealed class DijkstraShortestPathService
-    : IShortestPathService
+public sealed class DijkstraShortestPath
 {
     private readonly EdgeLengthCalculator _lengthCalculator;
 
-    public DijkstraShortestPathService(
+    public DijkstraShortestPath(
         EdgeLengthCalculator lengthCalculator)
     {
-        _lengthCalculator = lengthCalculator;
+        _lengthCalculator =
+            lengthCalculator ??
+            throw new ArgumentNullException(
+                nameof(lengthCalculator));
     }
 
     public ShortestPathResult Find(
-        Graph graph,
+        IReadOnlyCollection<GraphVertex> vertices,
+        IReadOnlyCollection<GraphEdge> edges,
         Guid startVertexId,
         Guid endVertexId)
     {
-        ArgumentNullException.ThrowIfNull(graph);
+        ArgumentNullException.ThrowIfNull(vertices);
+        ArgumentNullException.ThrowIfNull(edges);
 
-        var start =
-            graph.GetVertex(startVertexId);
+        var verticesById =
+            BuildVertexIndex(vertices);
 
-        if (start is null)
+        if (!verticesById.ContainsKey(startVertexId))
         {
             throw new ArgumentException(
                 $"Start vertex {startVertexId} does not exist.",
                 nameof(startVertexId));
         }
 
-        var end =
-            graph.GetVertex(endVertexId);
-
-        if (end is null)
+        if (!verticesById.ContainsKey(endVertexId))
         {
             throw new ArgumentException(
                 $"End vertex {endVertexId} does not exist.",
                 nameof(endVertexId));
         }
 
-        // Путь из вершины в неё саму.
+        var adjacency =
+            BuildAdjacency(
+                verticesById,
+                edges);
+
         if (startVertexId == endVertexId)
         {
             return ShortestPathResult.Create(
@@ -50,13 +55,9 @@ public sealed class DijkstraShortestPathService
         }
 
         var distances =
-            graph.Vertices.ToDictionary(
-                vertex => vertex.Id,
+            verticesById.Keys.ToDictionary(
+                vertexId => vertexId,
                 _ => double.PositiveInfinity);
-
-        var verticesDict = graph.Vertices.ToDictionary(
-            vertex => vertex.Id,
-            vertex => vertex);
 
         var previousVertex =
             new Dictionary<Guid, Guid>();
@@ -68,10 +69,7 @@ public sealed class DijkstraShortestPathService
             new PriorityQueue<Guid, double>();
 
         distances[startVertexId] = 0;
-
-        queue.Enqueue(
-            startVertexId,
-            0);
+        queue.Enqueue(startVertexId, 0);
 
         while (queue.Count > 0)
         {
@@ -79,25 +77,17 @@ public sealed class DijkstraShortestPathService
                 out var currentVertexId,
                 out var queuedDistance);
 
-            // В очереди могут остаться старые записи
-            // после улучшения расстояния.
             if (queuedDistance >
                 distances[currentVertexId])
             {
                 continue;
             }
 
-            if (currentVertexId ==
-                endVertexId)
-            {
+            if (currentVertexId == endVertexId)
                 break;
-            }
 
-            var incidentEdges =
-                graph.GetIncidentEdges(
-                    currentVertexId);
-
-            foreach (var edge in incidentEdges)
+            foreach (var edge in
+                     adjacency[currentVertexId])
             {
                 var neighbourId =
                     edge.GetOtherVertexId(
@@ -106,8 +96,8 @@ public sealed class DijkstraShortestPathService
                 var edgeLength =
                     _lengthCalculator.Calculate(
                         edge,
-                        verticesDict[edge.VertexAId],
-                        verticesDict[edge.VertexBId]);
+                        verticesById[edge.VertexAId],
+                        verticesById[edge.VertexBId]);
 
                 var candidateDistance =
                     distances[currentVertexId] +
@@ -148,6 +138,74 @@ public sealed class DijkstraShortestPathService
             previousEdge);
     }
 
+    private static Dictionary<Guid, GraphVertex>
+        BuildVertexIndex(
+            IReadOnlyCollection<GraphVertex> vertices)
+    {
+        var result =
+            new Dictionary<Guid, GraphVertex>(
+                vertices.Count);
+
+        foreach (var vertex in vertices)
+        {
+            ArgumentNullException.ThrowIfNull(vertex);
+
+            if (!result.TryAdd(
+                    vertex.Id,
+                    vertex))
+            {
+                throw new InvalidOperationException(
+                    $"Vertex {vertex.Id} already exists.");
+            }
+        }
+
+        return result;
+    }
+
+    private static Dictionary<Guid, List<GraphEdge>>
+        BuildAdjacency(
+            IReadOnlyDictionary<Guid, GraphVertex> vertices,
+            IReadOnlyCollection<GraphEdge> edges)
+    {
+        var adjacency =
+            vertices.Keys.ToDictionary(
+                vertexId => vertexId,
+                _ => new List<GraphEdge>());
+
+        var edgeIds =
+            new HashSet<Guid>();
+
+        foreach (var edge in edges)
+        {
+            ArgumentNullException.ThrowIfNull(edge);
+
+            if (!edgeIds.Add(edge.Id))
+            {
+                throw new InvalidOperationException(
+                    $"Edge {edge.Id} already exists.");
+            }
+
+            if (!vertices.ContainsKey(
+                    edge.VertexAId))
+            {
+                throw new InvalidOperationException(
+                    $"Vertex {edge.VertexAId} does not exist.");
+            }
+
+            if (!vertices.ContainsKey(
+                    edge.VertexBId))
+            {
+                throw new InvalidOperationException(
+                    $"Vertex {edge.VertexBId} does not exist.");
+            }
+
+            adjacency[edge.VertexAId].Add(edge);
+            adjacency[edge.VertexBId].Add(edge);
+        }
+
+        return adjacency;
+    }
+
     private static ShortestPathResult BuildResult(
         Guid startVertexId,
         Guid endVertexId,
@@ -183,9 +241,7 @@ public sealed class DijkstraShortestPathService
             }
 
             edgeIds.Add(edgeId);
-
             current = previous;
-
             vertexIds.Add(current);
         }
 

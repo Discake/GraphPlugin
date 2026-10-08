@@ -1,9 +1,8 @@
-using GraphPlugin.Application.Services;
+using GraphPlugin.Application.Editing.Splitting;
+using GraphPlugin.Application.Graph;
 using GraphPlugin.Domain.Geometry;
 using GraphPlugin.Domain.Models;
-
 using HostMgd.ApplicationServices;
-
 using Teigha.DatabaseServices;
 using Teigha.Geometry;
 

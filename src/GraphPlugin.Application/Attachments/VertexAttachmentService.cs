@@ -1,7 +1,7 @@
-﻿using GraphPlugin.Application.Abstractions.Persistence;
+using GraphPlugin.Application.Abstractions.Persistence;
 using GraphPlugin.Domain.Models;
 
-namespace GraphPlugin.Application.Services;
+namespace GraphPlugin.Application.Attachments;
 
 public sealed class VertexAttachmentService
 {
@@ -147,11 +147,6 @@ public sealed class VertexAttachmentService
         string first,
         string second)
     {
-        //
-        // nanoCAD у нас работает под Windows,
-        // поэтому файловые пути сравниваем
-        // без учёта регистра.
-        //
         return string.Equals(
             Normalize(first),
             Normalize(second),

@@ -1,7 +1,7 @@
-﻿using GraphPlugin.Application.Abstractions.Persistence;
+using GraphPlugin.Application.Abstractions.Persistence;
 using GraphPlugin.Domain.Models;
 
-namespace GraphPlugin.Application.Services;
+namespace GraphPlugin.Application.Editing.Bends;
 
 public sealed class RemoveBendService
 {

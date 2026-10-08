@@ -1,7 +1,7 @@
-﻿using GraphPlugin.Domain.Geometry;
+using GraphPlugin.Domain.Geometry;
 using GraphPlugin.Domain.Models;
 
-namespace GraphPlugin.Application.Services;
+namespace GraphPlugin.Application.Editing.Bends;
 
 public sealed record AddBendResult(
     GraphEdge Edge,
