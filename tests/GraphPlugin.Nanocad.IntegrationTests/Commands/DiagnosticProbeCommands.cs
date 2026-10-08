@@ -4,8 +4,6 @@ using Teigha.DatabaseServices;
 using Teigha.Geometry;
 using Teigha.Runtime;
 
-using NanoApplication = HostMgd.ApplicationServices.Application;
-
 namespace GraphPlugin.Nanocad.IntegrationTests.Commands;
 
 public sealed class DiagnosticProbeCommands
@@ -13,19 +11,14 @@ public sealed class DiagnosticProbeCommands
     [CommandMethod("GRAPH_OSNAP_PROBE")]
     public void GraphOsnapProbe()
     {
-        var document =
-            NanoApplication
-                .DocumentManager
-                .MdiActiveDocument;
+        var context =
+            PluginServices.CurrentContext;
 
-        if (document is null)
-            return;
+        var document =
+            context.Document;
 
         var editor =
             document.Editor;
-
-        var context =
-            PluginServices.CurrentContext;
 
         ObjectId[] keyObjectIds =
             Array.Empty<ObjectId>();
@@ -178,13 +171,11 @@ public sealed class DiagnosticProbeCommands
     [CommandMethod("GRAPH_PICK_PROBE")]
     public void GraphPickProbe()
     {
-        var document =
-            NanoApplication
-                .DocumentManager
-                .MdiActiveDocument;
+        var context =
+            PluginServices.CurrentContext;
 
-        if (document is null)
-            return;
+        var document =
+            context.Document;
 
         var editor =
             document.Editor;
@@ -228,9 +219,6 @@ public sealed class DiagnosticProbeCommands
             {
                 editor.WriteMessage(
                     $"\nObjectId: {result.ObjectId}");
-
-                var context =
-                    PluginServices.CurrentContext;
 
                 if (context.Index.TryGetVertexId(
                         result.ObjectId,
@@ -276,16 +264,11 @@ public sealed class DiagnosticProbeCommands
     [CommandMethod("GRAPH_BUILD_PICK_PROBE")]
     public void GraphBuildPickProbe()
     {
-        var document =
-            NanoApplication
-                .DocumentManager
-                .MdiActiveDocument;
-
-        if (document is null)
-            return;
-
         var context =
             PluginServices.CurrentContext;
+
+        var document =
+            context.Document;
 
         var result =
             context.BuildPick.GetNext();
