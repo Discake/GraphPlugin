@@ -1,13 +1,12 @@
 using GraphPlugin.Application.Abstractions.Persistence;
 using GraphPlugin.Domain.Models;
 using GraphPlugin.Nanocad.Drawing;
+using GraphPlugin.Nanocad.Persistence.Metadata;
 using GraphPlugin.Nanocad.Runtime;
-using GraphPlugin.NanoCad.Drawing;
-using GraphPlugin.NanoCad.Persistence.Metadata;
 using HostMgd.ApplicationServices;
 using Teigha.DatabaseServices;
 
-namespace GraphPlugin.NanoCad.Persistence;
+namespace GraphPlugin.Nanocad.Persistence;
 
 public sealed class NanoCadEdgeRepository : IEdgeRepository
 {
