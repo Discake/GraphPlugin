@@ -54,7 +54,7 @@ internal sealed class GraphPersistenceScenarioRunner
 
         var vertexService =
             new VertexService(
-                _context.Vertices);
+                _context.Vertices, _context.Edges);
 
         var edgeService =
             new EdgeService(

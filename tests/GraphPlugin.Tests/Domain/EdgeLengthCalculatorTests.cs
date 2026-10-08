@@ -10,8 +10,6 @@ public sealed class EdgeLengthCalculatorTests
     [Fact]
     public void Calculate_ReturnsGeometricDistance()
     {
-        var graph =
-            new Graph();
 
         var a =
             GraphVertex.Create(
@@ -21,15 +19,10 @@ public sealed class EdgeLengthCalculatorTests
             GraphVertex.Create(
                 new Point2(3, 4));
 
-        graph.AddVertex(a);
-        graph.AddVertex(b);
-
         var edge =
             GraphEdge.Create(
                 a.Id,
                 b.Id);
-
-        graph.AddEdge(edge);
 
         var calculator =
             new EdgeLengthCalculator();
@@ -49,9 +42,6 @@ public sealed class EdgeLengthCalculatorTests
     [Fact]
     public void Calculate_UsesCurrentVertexPositions()
     {
-        var graph =
-            new Graph();
-
         var a =
             GraphVertex.Create(
                 new Point2(0, 0));
@@ -60,15 +50,10 @@ public sealed class EdgeLengthCalculatorTests
             GraphVertex.Create(
                 new Point2(3, 4));
 
-        graph.AddVertex(a);
-        graph.AddVertex(b);
-
         var edge =
             GraphEdge.Create(
                 a.Id,
                 b.Id);
-
-        graph.AddEdge(edge);
 
         var calculator =
             new EdgeLengthCalculator();
@@ -94,9 +79,6 @@ public sealed class EdgeLengthCalculatorTests
     [Fact]
     public void Calculate_WithCurveSummsLength()
     {
-        var graph =
-            new Graph();
-
         var a =
             GraphVertex.Create(
                 new Point2(0, 0));
@@ -104,9 +86,6 @@ public sealed class EdgeLengthCalculatorTests
         var b =
             GraphVertex.Create(
                 new Point2(10, 0));
-
-        graph.AddVertex(a);
-        graph.AddVertex(b);
 
         var edge =
             GraphEdge.Create(
@@ -117,8 +96,6 @@ public sealed class EdgeLengthCalculatorTests
                     new Point2(0, 10),
                     new Point2(10, 10) 
                 }));
-
-        graph.AddEdge(edge);
 
         var calculator =
             new EdgeLengthCalculator();

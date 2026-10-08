@@ -1,3 +1,4 @@
+using GraphPlugin.Application.Abstractions;
 using GraphPlugin.Application.Abstractions.Persistence;
 using GraphPlugin.Domain.Models;
 

@@ -214,7 +214,7 @@ internal sealed class GraphIntegrationTestRunner
     {
         var vertexService =
             new VertexService(
-                _context.Vertices);
+                _context.Vertices, _context.Edges);
 
         GraphVertex? created = null;
 
@@ -276,7 +276,7 @@ internal sealed class GraphIntegrationTestRunner
     {
         var vertexService =
             new VertexService(
-                _context.Vertices);
+                _context.Vertices, _context.Edges);
 
         var edgeService =
             new EdgeService(
@@ -381,7 +381,7 @@ internal sealed class GraphIntegrationTestRunner
     {
         var vertexService =
             new VertexService(
-                _context.Vertices);
+                _context.Vertices, _context.Edges);
 
         var edgeService =
             new EdgeService(
@@ -465,7 +465,7 @@ internal sealed class GraphIntegrationTestRunner
     {
         var vertexService =
             new VertexService(
-                _context.Vertices);
+                _context.Vertices, _context.Edges);
 
         var edgeService =
             new EdgeService(
@@ -547,7 +547,7 @@ internal sealed class GraphIntegrationTestRunner
     {
         var vertexService =
             new VertexService(
-                _context.Vertices);
+                _context.Vertices, _context.Edges);
 
         var edgeService =
             new EdgeService(
@@ -653,7 +653,7 @@ internal sealed class GraphIntegrationTestRunner
     {
         var vertexService =
             new VertexService(
-                _context.Vertices);
+                _context.Vertices, _context.Edges);
 
         var edgeService =
             new EdgeService(
@@ -822,7 +822,7 @@ internal sealed class GraphIntegrationTestRunner
     {
         var vertexService =
             new VertexService(
-                _context.Vertices);
+                _context.Vertices, _context.Edges);
 
         var edgeService =
             new EdgeService(
@@ -992,7 +992,7 @@ internal sealed class GraphIntegrationTestRunner
     {
         var vertexService =
             new VertexService(
-                _context.Vertices);
+                _context.Vertices, _context.Edges);
 
         GraphVertex? vertex = null;
 
@@ -1049,7 +1049,7 @@ internal sealed class GraphIntegrationTestRunner
     {
         var vertexService =
             new VertexService(
-                _context.Vertices);
+                _context.Vertices, _context.Edges);
 
         GraphVertex? a = null;
         GraphVertex? b = null;
@@ -1470,7 +1470,7 @@ internal sealed class GraphIntegrationTestRunner
     {
         var vertexService =
             new VertexService(
-                _context.Vertices);
+                _context.Vertices, _context.Edges);
 
         var edgeService =
             new EdgeService(
@@ -1555,7 +1555,8 @@ internal sealed class GraphIntegrationTestRunner
     {
         var vertexService =
             new VertexService(
-                _context.Vertices);
+                _context.Vertices,
+                _context.Edges);
 
         var edgeService =
             new EdgeService(
@@ -1640,7 +1641,7 @@ internal sealed class GraphIntegrationTestRunner
     {
         var vertexService =
             new VertexService(
-                _context.Vertices);
+                _context.Vertices, _context.Edges);
 
         var edgeService =
             new EdgeService(
@@ -1751,7 +1752,7 @@ internal sealed class GraphIntegrationTestRunner
     {
         var vertexService =
             new VertexService(
-                _context.Vertices);
+                _context.Vertices, _context.Edges);
 
         var edgeService =
             new EdgeService(
@@ -1816,7 +1817,7 @@ internal sealed class GraphIntegrationTestRunner
 
     private void TestAutoBuildUnrelatedEdgeSplit()
     {
-        var vertexService = new VertexService(_context.Vertices);
+        var vertexService = new VertexService(_context.Vertices, _context.Edges);
         var edgeService = new EdgeService(_context.Vertices, _context.Edges);
         var buildService = new GraphBuildService(edgeService, _context.Edges);
         var splitService = new SplitEdgeService(_context.Vertices, _context.Edges);
@@ -1856,7 +1857,7 @@ internal sealed class GraphIntegrationTestRunner
 
     private void TestPolylineEdgeRoute()
     {
-        var vertexService = new VertexService(_context.Vertices);
+        var vertexService = new VertexService(_context.Vertices, _context.Edges);
         GraphVertex? a = null;
         GraphVertex? b = null;
         GraphEdge? edge = null;
@@ -1888,7 +1889,7 @@ internal sealed class GraphIntegrationTestRunner
 
     private void TestPolylineEdgeRouteRoundTrip()
     {
-        var vertexService = new VertexService(_context.Vertices);
+        var vertexService = new VertexService(_context.Vertices, _context.Edges);
         GraphVertex? a = null;
         GraphVertex? b = null;
         GraphEdge? edge = null;
@@ -1946,7 +1947,7 @@ internal sealed class GraphIntegrationTestRunner
 
     private void TestPolylineEdgeRouteUpdate()
     {
-        var vertexService = new VertexService(_context.Vertices);
+        var vertexService = new VertexService(_context.Vertices, _context.Edges);
         GraphVertex? a = null;
         GraphVertex? b = null;
         GraphEdge? edge = null;
@@ -2003,7 +2004,7 @@ internal sealed class GraphIntegrationTestRunner
 
     private void TestPolylineSynchronizationPreservesBends()
     {
-        var vertexService = new VertexService(_context.Vertices);
+        var vertexService = new VertexService(_context.Vertices, _context.Edges);
         GraphVertex? a = null;
         GraphVertex? b = null;
         GraphEdge? edge = null;
@@ -2038,7 +2039,7 @@ internal sealed class GraphIntegrationTestRunner
 
     private void TestShortestPathUsesPolylineLength()
     {
-        var vertexService = new VertexService(_context.Vertices);
+        var vertexService = new VertexService(_context.Vertices, _context.Edges);
         var edgeService = new EdgeService(_context.Vertices, _context.Edges);
         GraphVertex? a = null;
         GraphVertex? b = null;
@@ -2093,7 +2094,7 @@ internal sealed class GraphIntegrationTestRunner
 
     private void TestSplitBentPolylineEdge()
     {
-        var vertexService = new VertexService(_context.Vertices);
+        var vertexService = new VertexService(_context.Vertices, _context.Edges);
         var splitService = new SplitEdgeService(_context.Vertices, _context.Edges);
         GraphVertex? a = null;
         GraphVertex? b = null;
@@ -2156,7 +2157,7 @@ internal sealed class GraphIntegrationTestRunner
 
     private void TestAutoBuildSplitBentPolylineEdge()
     {
-        var vertexService = new VertexService(_context.Vertices);
+        var vertexService = new VertexService(_context.Vertices, _context.Edges);
         var edgeService = new EdgeService(_context.Vertices, _context.Edges);
         var buildService = new GraphBuildService(edgeService, _context.Edges);
         var splitService = new SplitEdgeService(_context.Vertices, _context.Edges);
@@ -2230,7 +2231,7 @@ internal sealed class GraphIntegrationTestRunner
 
     private void TestAddBendPersistsToDwgPolyline()
     {
-        var vertexService = new VertexService(_context.Vertices);
+        var vertexService = new VertexService(_context.Vertices, _context.Edges);
         var edgeService = new EdgeService(_context.Vertices, _context.Edges);
         var addBendService = new AddBendService(_context.Vertices, _context.Edges);
         GraphVertex? a = null;
@@ -2263,7 +2264,7 @@ internal sealed class GraphIntegrationTestRunner
 
     private void TestRemoveLastBendMakesEdgeStraight()
     {
-        var vertexService = new VertexService(_context.Vertices);
+        var vertexService = new VertexService(_context.Vertices, _context.Edges);
         var removeBendService = new RemoveBendService(_context.Edges);
         GraphVertex? a = null;
         GraphVertex? b = null;
@@ -2296,7 +2297,7 @@ internal sealed class GraphIntegrationTestRunner
 
     private void TestPolylineModificationPreservesMovedBend()
     {
-        var vertexService = new VertexService(_context.Vertices);
+        var vertexService = new VertexService(_context.Vertices, _context.Edges);
         GraphVertex? a = null;
         GraphVertex? b = null;
         GraphEdge? edge = null;
@@ -2328,7 +2329,7 @@ internal sealed class GraphIntegrationTestRunner
 
     private void TestPolylineEndpointModificationIsCorrected()
     {
-        var vertexService = new VertexService(_context.Vertices);
+        var vertexService = new VertexService(_context.Vertices, _context.Edges);
         GraphVertex? a = null;
         GraphVertex? b = null;
         GraphEdge? edge = null;
@@ -2361,7 +2362,7 @@ internal sealed class GraphIntegrationTestRunner
 
     private void TestVertexAttachmentXRecordRoundTrip()
     {
-        var vertexService = new VertexService(_context.Vertices);
+        var vertexService = new VertexService(_context.Vertices, _context.Edges);
         GraphVertex? vertex = null;
         try
         {
@@ -2393,7 +2394,7 @@ internal sealed class GraphIntegrationTestRunner
 
     private void TestVertexAttachmentAddAndDetach()
     {
-        var vertexService = new VertexService(_context.Vertices);
+        var vertexService = new VertexService(_context.Vertices, _context.Edges);
         GraphVertex? vertex = null;
         try
         {
@@ -2423,7 +2424,7 @@ internal sealed class GraphIntegrationTestRunner
 
     private void TestAttachmentDetachPreservesPhysicalFile()
     {
-        var vertexService = new VertexService(_context.Vertices);
+        var vertexService = new VertexService(_context.Vertices, _context.Edges);
         GraphVertex? vertex = null;
         string? tempDirectory = null;
         string? tempFile = null;

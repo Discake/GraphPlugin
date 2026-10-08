@@ -46,7 +46,7 @@ public sealed class GraphUndoIntegrationTestRunner
 
         var vertexService =
             new VertexService(
-                _context.Vertices);
+                _context.Vertices, _context.Edges);
 
         var edgeService =
             new EdgeService(
@@ -118,7 +118,7 @@ public sealed class GraphUndoIntegrationTestRunner
 
         var vertexService =
             new VertexService(
-                _context.Vertices);
+                _context.Vertices, _context.Edges);
 
         var edgeService =
             new EdgeService(
