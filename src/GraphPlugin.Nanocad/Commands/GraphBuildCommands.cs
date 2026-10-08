@@ -1,4 +1,5 @@
 using GraphPlugin.Nanocad.Bootstrap;
+using GraphPlugin.NanoCad.Runtime;
 using Teigha.Runtime;
 
 using NanoApplication = HostMgd.ApplicationServices.Application;
