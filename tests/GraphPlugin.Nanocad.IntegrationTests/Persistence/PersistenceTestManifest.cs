@@ -1,7 +1,7 @@
 ﻿using GraphPlugin.Domain.Geometry;
 using GraphPlugin.Domain.Models;
 
-namespace GraphPlugin.NanoCad.Persistence;
+namespace GraphPlugin.Nanocad.Persistence;
 
 public sealed record PersistenceTestManifest(
     int Version,
