@@ -102,6 +102,17 @@
     <ClCompile Include="Tests\NativeIntegrationTestRunner.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <Target Name="StageNativePlugin" AfterTargets="Build">
+    <PropertyGroup>
+      <PluginStageDir>$(MSBuildThisFileDirectory)..\..\artifacts\plugin\$(Configuration)\</PluginStageDir>
+    </PropertyGroup>
+
+    <MakeDir Directories="$(PluginStageDir)" />
+    <Copy
+      SourceFiles="$(TargetPath)"
+      DestinationFolder="$(PluginStageDir)"
+      SkipUnchangedFiles="true" />
+  </Target>
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>
 </Project>

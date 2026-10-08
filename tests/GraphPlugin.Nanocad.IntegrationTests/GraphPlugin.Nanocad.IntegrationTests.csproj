@@ -24,4 +24,16 @@
     </Reference>
   </ItemGroup>
 
+  <Target Name="StageIntegrationTestPlugin" AfterTargets="Build">
+    <PropertyGroup>
+      <PluginStageDir>$(MSBuildThisFileDirectory)..\..\artifacts\plugin\$(Configuration)\</PluginStageDir>
+    </PropertyGroup>
+
+    <MakeDir Directories="$(PluginStageDir)" />
+    <Copy
+      SourceFiles="$(TargetPath)"
+      DestinationFolder="$(PluginStageDir)"
+      SkipUnchangedFiles="true" />
+  </Target>
+
 </Project>

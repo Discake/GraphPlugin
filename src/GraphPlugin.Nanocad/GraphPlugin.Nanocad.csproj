@@ -23,4 +23,22 @@
     </Reference>
   </ItemGroup>
 
+  <Target Name="StageManagedPlugin" AfterTargets="Build">
+    <PropertyGroup>
+      <PluginStageDir>$(MSBuildThisFileDirectory)..\..\artifacts\plugin\$(Configuration)\</PluginStageDir>
+    </PropertyGroup>
+
+    <ItemGroup>
+      <PluginStageFiles Include="$(TargetDir)GraphPlugin.Domain.dll" />
+      <PluginStageFiles Include="$(TargetDir)GraphPlugin.Application.dll" />
+      <PluginStageFiles Include="$(TargetPath)" />
+    </ItemGroup>
+
+    <MakeDir Directories="$(PluginStageDir)" />
+    <Copy
+      SourceFiles="@(PluginStageFiles)"
+      DestinationFolder="$(PluginStageDir)"
+      SkipUnchangedFiles="true" />
+  </Target>
+
 </Project>
