@@ -3,7 +3,7 @@
 using Teigha.DatabaseServices;
 using Teigha.Geometry;
 
-namespace GraphPlugin.NanoCad.Drawing;
+namespace GraphPlugin.Nanocad.Drawing;
 
 public sealed class VertexEntityFactory
 {
