@@ -3,7 +3,7 @@
 using Teigha.DatabaseServices;
 using Teigha.Geometry;
 
-namespace GraphPlugin.NanoCad.Runtime;
+namespace GraphPlugin.Nanocad.Runtime;
 
 public enum BuildPickKind
 {
