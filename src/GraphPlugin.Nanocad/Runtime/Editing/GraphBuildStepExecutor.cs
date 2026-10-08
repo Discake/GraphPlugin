@@ -1,6 +1,7 @@
 using GraphPlugin.Application.Services;
 using GraphPlugin.Domain.Geometry;
 using GraphPlugin.Domain.Models;
+using GraphPlugin.NanoCad.Runtime;
 
 using HostMgd.ApplicationServices;
 
