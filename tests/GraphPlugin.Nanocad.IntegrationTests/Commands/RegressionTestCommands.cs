@@ -14,6 +14,9 @@ public sealed class RegressionTestCommands
     private const string ContinueCommand =
         "GRAPH_TEST_CONTINUE_INTERNAL";
 
+    private const string MutateCommand =
+        "GRAPH_TEST_MUTATE_INTERNAL";
+
     private static CurrentDocumentTestSession? _session;
     private static Document? _persistencePreparedDocument;
 
@@ -111,33 +114,26 @@ public sealed class RegressionTestCommands
         }
     }
 
-    [CommandMethod(ContinueCommand)]
+    // Verification/coordination commands must not create their own undo marker.
+    // Otherwise UNDO 1 would undo this harness command instead of the preceding
+    // destructive test command.
+    [CommandMethod(
+        ContinueCommand,
+        CommandFlags.NoUndoMarker)]
     public void ContinueCurrentDocumentTests()
     {
         var document = GetActiveDocument();
         if (document is null)
             return;
 
-        var session = _session;
-
-        if (session is null ||
-            !ReferenceEquals(
-                session.Document,
-                document))
-        {
-            document.Editor.WriteMessage(
-                "\n[FAIL] No active GraphPlugin regression session for this document.");
+        var session = RequireCurrentSession(document);
+        if (session is null)
             return;
-        }
 
         try
         {
             switch (session.Stage)
             {
-                case CurrentDocumentTestStage.EdgeErase:
-                    RunEdgeErase(document, session);
-                    break;
-
                 case CurrentDocumentTestStage.EdgeVerifyErased:
                     RunEdgeErasedVerification(document, session);
                     break;
@@ -146,20 +142,12 @@ public sealed class RegressionTestCommands
                     RunEdgeUndoVerification(document, session);
                     break;
 
-                case CurrentDocumentTestStage.VertexErase:
-                    RunVertexErase(document, session);
-                    break;
-
                 case CurrentDocumentTestStage.VertexVerifyErased:
                     RunVertexErasedVerification(document, session);
                     break;
 
                 case CurrentDocumentTestStage.VertexVerifyUndo:
                     RunVertexUndoVerification(document, session);
-                    break;
-
-                case CurrentDocumentTestStage.AttachmentErase:
-                    RunAttachmentErase(document, session);
                     break;
 
                 case CurrentDocumentTestStage.AttachmentVerifyErased:
@@ -188,7 +176,55 @@ public sealed class RegressionTestCommands
 
                 default:
                     throw new InvalidOperationException(
-                        $"Unsupported regression stage: {session.Stage}.");
+                        $"Stage {session.Stage} requires a mutating command.");
+            }
+        }
+        catch (System.Exception exception)
+        {
+            AddFailure(
+                session,
+                "Harness",
+                session.Stage.ToString(),
+                exception);
+
+            FinishCurrentDocumentSuite(
+                document,
+                session);
+        }
+    }
+
+    // Destructive operations intentionally run in a regular command so nanoCAD
+    // creates an undo marker for exactly the operation under test.
+    [CommandMethod(MutateCommand)]
+    public void MutateCurrentDocumentTests()
+    {
+        var document = GetActiveDocument();
+        if (document is null)
+            return;
+
+        var session = RequireCurrentSession(document);
+        if (session is null)
+            return;
+
+        try
+        {
+            switch (session.Stage)
+            {
+                case CurrentDocumentTestStage.EdgeErase:
+                    RunEdgeErase(document, session);
+                    break;
+
+                case CurrentDocumentTestStage.VertexErase:
+                    RunVertexErase(document, session);
+                    break;
+
+                case CurrentDocumentTestStage.AttachmentErase:
+                    RunAttachmentErase(document, session);
+                    break;
+
+                default:
+                    throw new InvalidOperationException(
+                        $"Stage {session.Stage} is not a mutating regression stage.");
             }
         }
         catch (System.Exception exception)
@@ -283,6 +319,25 @@ public sealed class RegressionTestCommands
             attachmentRunner);
     }
 
+    private static CurrentDocumentTestSession? RequireCurrentSession(
+        Document document)
+    {
+        var session = _session;
+
+        if (session is not null &&
+            ReferenceEquals(
+                session.Document,
+                document))
+        {
+            return session;
+        }
+
+        document.Editor.WriteMessage(
+            "\n[FAIL] No active GraphPlugin regression session for this document.");
+
+        return null;
+    }
+
     private static void PrepareEdgeScenario(
         Document document,
         CurrentDocumentTestSession session)
@@ -304,7 +359,7 @@ public sealed class RegressionTestCommands
             session.Stage =
                 CurrentDocumentTestStage.EdgeErase;
 
-            QueueContinue(document);
+            QueueMutation(document);
         }
         catch (System.Exception exception)
         {
@@ -373,21 +428,10 @@ public sealed class RegressionTestCommands
                 document,
                 PluginServices.CurrentContext);
 
-        try
-        {
-            AddResults(
-                session,
-                "Edge erased",
-                runner.VerifyEdgeErased());
-        }
-        catch (System.Exception exception)
-        {
-            AddFailure(
-                session,
-                "Edge erased",
-                "Verification",
-                exception);
-        }
+        TryAddResults(
+            session,
+            "Edge erased",
+            runner.VerifyEdgeErased);
 
         session.Stage =
             CurrentDocumentTestStage.EdgeVerifyUndo;
@@ -404,21 +448,10 @@ public sealed class RegressionTestCommands
                 document,
                 PluginServices.CurrentContext);
 
-        try
-        {
-            AddResults(
-                session,
-                "Edge UNDO",
-                runner.VerifyEdgeUndo());
-        }
-        catch (System.Exception exception)
-        {
-            AddFailure(
-                session,
-                "Edge UNDO",
-                "Verification",
-                exception);
-        }
+        TryAddResults(
+            session,
+            "Edge UNDO",
+            runner.VerifyEdgeUndo);
 
         SafeClearUndoScenario(
             document,
@@ -451,7 +484,7 @@ public sealed class RegressionTestCommands
             session.Stage =
                 CurrentDocumentTestStage.VertexErase;
 
-            QueueContinue(document);
+            QueueMutation(document);
         }
         catch (System.Exception exception)
         {
@@ -520,21 +553,10 @@ public sealed class RegressionTestCommands
                 document,
                 PluginServices.CurrentContext);
 
-        try
-        {
-            AddResults(
-                session,
-                "Vertex cascade erased",
-                runner.VerifyVertexErased());
-        }
-        catch (System.Exception exception)
-        {
-            AddFailure(
-                session,
-                "Vertex cascade erased",
-                "Verification",
-                exception);
-        }
+        TryAddResults(
+            session,
+            "Vertex cascade erased",
+            runner.VerifyVertexErased);
 
         session.Stage =
             CurrentDocumentTestStage.VertexVerifyUndo;
@@ -551,21 +573,10 @@ public sealed class RegressionTestCommands
                 document,
                 PluginServices.CurrentContext);
 
-        try
-        {
-            AddResults(
-                session,
-                "Vertex cascade UNDO",
-                runner.VerifyVertexUndo());
-        }
-        catch (System.Exception exception)
-        {
-            AddFailure(
-                session,
-                "Vertex cascade UNDO",
-                "Verification",
-                exception);
-        }
+        TryAddResults(
+            session,
+            "Vertex cascade UNDO",
+            runner.VerifyVertexUndo);
 
         SafeClearUndoScenario(
             document,
@@ -598,7 +609,7 @@ public sealed class RegressionTestCommands
             session.Stage =
                 CurrentDocumentTestStage.AttachmentErase;
 
-            QueueContinue(document);
+            QueueMutation(document);
         }
         catch (System.Exception exception)
         {
@@ -668,21 +679,10 @@ public sealed class RegressionTestCommands
                 document,
                 PluginServices.CurrentContext);
 
-        try
-        {
-            AddResults(
-                session,
-                "Attachment erased",
-                runner.VerifyErased());
-        }
-        catch (System.Exception exception)
-        {
-            AddFailure(
-                session,
-                "Attachment erased",
-                "Verification",
-                exception);
-        }
+        TryAddResults(
+            session,
+            "Attachment erased",
+            runner.VerifyErased);
 
         session.Stage =
             CurrentDocumentTestStage.AttachmentVerifyUndo;
@@ -699,21 +699,10 @@ public sealed class RegressionTestCommands
                 document,
                 PluginServices.CurrentContext);
 
-        try
-        {
-            AddResults(
-                session,
-                "Attachment UNDO",
-                runner.VerifyUndo());
-        }
-        catch (System.Exception exception)
-        {
-            AddFailure(
-                session,
-                "Attachment UNDO",
-                "Verification",
-                exception);
-        }
+        TryAddResults(
+            session,
+            "Attachment UNDO",
+            runner.VerifyUndo);
 
         SafeClearAttachmentUndo(
             document,
@@ -741,21 +730,6 @@ public sealed class RegressionTestCommands
                 document,
                 session);
             return;
-        }
-
-        try
-        {
-            CleanupNativeInteropArtifacts(
-                document,
-                PluginServices.CurrentContext);
-        }
-        catch (System.Exception exception)
-        {
-            AddFailure(
-                session,
-                "Native interop",
-                "Cleanup stale state",
-                exception);
         }
 
         session.Stage =
@@ -991,37 +965,15 @@ public sealed class RegressionTestCommands
                 document,
                 context);
 
-        try
-        {
-            AddResults(
-                results,
-                "DWG graph",
-                graphRunner.Verify());
-        }
-        catch (System.Exception exception)
-        {
-            results.Add(
-                new IntegrationTestResult(
-                    "[DWG graph] Verification",
-                    false,
-                    exception.Message));
-        }
+        TryAddResults(
+            results,
+            "DWG graph",
+            graphRunner.Verify);
 
-        try
-        {
-            AddResults(
-                results,
-                "DWG attachments",
-                attachmentRunner.Verify());
-        }
-        catch (System.Exception exception)
-        {
-            results.Add(
-                new IntegrationTestResult(
-                    "[DWG attachments] Verification",
-                    false,
-                    exception.Message));
-        }
+        TryAddResults(
+            results,
+            "DWG attachments",
+            attachmentRunner.Verify);
 
         IntegrationTestCommandOutput.WriteResults(
             document.Editor,
@@ -1128,7 +1080,7 @@ public sealed class RegressionTestCommands
         }
         catch
         {
-            // Continue with the attachment cleanup.
+            // Continue with attachment cleanup.
         }
 
         try
@@ -1140,7 +1092,7 @@ public sealed class RegressionTestCommands
         }
         catch
         {
-            // The caller already reports the inconsistent state.
+            // Caller reports the inconsistent state.
         }
     }
 
@@ -1390,6 +1342,14 @@ public sealed class RegressionTestCommands
             .DocumentManager
             .MdiActiveDocument;
 
+    private static void QueueMutation(
+        Document document)
+    {
+        Queue(
+            document,
+            MutateCommand);
+    }
+
     private static void QueueContinue(
         Document document)
     {
@@ -1415,6 +1375,50 @@ public sealed class RegressionTestCommands
             true,
             false,
             false);
+    }
+
+    private static void TryAddResults(
+        CurrentDocumentTestSession session,
+        string section,
+        Func<IReadOnlyList<IntegrationTestResult>> action)
+    {
+        try
+        {
+            AddResults(
+                session,
+                section,
+                action());
+        }
+        catch (System.Exception exception)
+        {
+            AddFailure(
+                session,
+                section,
+                "Verification",
+                exception);
+        }
+    }
+
+    private static void TryAddResults(
+        ICollection<IntegrationTestResult> target,
+        string section,
+        Func<IReadOnlyList<IntegrationTestResult>> action)
+    {
+        try
+        {
+            AddResults(
+                target,
+                section,
+                action());
+        }
+        catch (System.Exception exception)
+        {
+            target.Add(
+                new IntegrationTestResult(
+                    $"[{section}] Verification",
+                    false,
+                    exception.Message));
+        }
     }
 
     private static void AddPass(
