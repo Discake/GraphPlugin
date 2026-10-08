@@ -97,6 +97,11 @@ public sealed class XRecordMetadataStore
         int version =
             Convert.ToInt32(values[0].Value);
 
+        EnsureSupportedVersion(
+            GraphMetadataKeys.VertexRecord,
+            version,
+            GraphMetadataKeys.CurrentVertexVersion);
+
         if (!Guid.TryParse(
                 values[1].Value?.ToString(),
                 out Guid id))
@@ -209,6 +214,11 @@ public sealed class XRecordMetadataStore
         int version =
             Convert.ToInt32(values[0].Value);
 
+        EnsureSupportedVersion(
+            GraphMetadataKeys.EdgeRecord,
+            version,
+            GraphMetadataKeys.CurrentEdgeVersion);
+
         if (!Guid.TryParse(
                 values[1].Value?.ToString(),
                 out var id))
@@ -235,6 +245,20 @@ public sealed class XRecordMetadataStore
             id,
             vertexAId,
             vertexBId);
+    }
+
+    private static void EnsureSupportedVersion(
+        string recordName,
+        int actualVersion,
+        int supportedVersion)
+    {
+        if (actualVersion == supportedVersion)
+            return;
+
+        throw new InvalidOperationException(
+            $"Unsupported {recordName} version: " +
+            $"{actualVersion}. Supported version: " +
+            $"{supportedVersion}.");
     }
 
     private static void EnsureExtensionDictionary(
