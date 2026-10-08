@@ -1,4 +1,3 @@
-using GraphPlugin.Application.Services;
 using GraphPlugin.Domain.Geometry;
 using GraphPlugin.Domain.Models;
 using GraphPlugin.Nanocad.Bootstrap;
@@ -82,11 +81,6 @@ public sealed class EdgeEditingCommands
             return;
         }
 
-        var service =
-            new SplitEdgeService(
-                context.Vertices,
-                context.Edges);
-
         var vertexA =
             context.Vertices.Get(
                 selected.Edge.VertexAId)!;
@@ -119,7 +113,7 @@ public sealed class EdgeEditingCommands
         try
         {
             var result =
-                service.Split(
+                context.SplitEdge.Split(
                     selected.Edge.Id,
                     splitPosition,
                     shape.Value);

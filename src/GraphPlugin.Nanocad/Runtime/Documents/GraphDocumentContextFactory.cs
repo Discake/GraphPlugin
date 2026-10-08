@@ -1,4 +1,5 @@
 using GraphPlugin.Application.Services;
+using GraphPlugin.Domain.Algorithms;
 using GraphPlugin.Nanocad.Drawing;
 using GraphPlugin.NanoCad.Drawing;
 using GraphPlugin.NanoCad.Persistence;
@@ -56,10 +57,36 @@ public sealed class GraphDocumentContextFactory
                 edgeStyleApplier,
                 edgeMapper);
 
+        var vertexService =
+            new VertexService(
+                vertexRepository);
+
+        var edgeService =
+            new EdgeService(
+                vertexRepository,
+                edgeRepository);
+
         var graphService =
             new GraphService(
                 vertexRepository,
                 edgeRepository);
+
+        var graphBuildService =
+            new GraphBuildService(
+                edgeService,
+                edgeRepository);
+
+        var splitEdgeService =
+            new SplitEdgeService(
+                vertexRepository,
+                edgeRepository);
+
+        var shortestPathService =
+            new ShortestPathApplicationService(
+                vertexRepository,
+                edgeRepository,
+                new DijkstraShortestPathService(
+                    new EdgeLengthCalculator()));
 
         var synchronizer =
             new EdgeGeometrySynchronizer(
@@ -102,6 +129,13 @@ public sealed class GraphDocumentContextFactory
                 vertexRepository,
                 edgeRepository);
 
+        var buildStepExecutor =
+            new GraphBuildStepExecutor(
+                document,
+                vertexService,
+                splitEdgeService,
+                graphBuildService);
+
         var addBend =
             new AddBendService(
                 vertexRepository,
@@ -140,7 +174,13 @@ public sealed class GraphDocumentContextFactory
             index,
             vertexRepository,
             edgeRepository,
+            vertexService,
+            edgeService,
             graphService,
+            graphBuildService,
+            splitEdgeService,
+            shortestPathService,
+            buildStepExecutor,
             vertexSelection,
             edgeSelection,
             watcher,

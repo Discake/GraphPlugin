@@ -1,4 +1,4 @@
-﻿using GraphPlugin.Application.Services;
+using GraphPlugin.Application.Services;
 using GraphPlugin.Domain.Geometry;
 using GraphPlugin.Domain.Models;
 
@@ -7,7 +7,7 @@ using HostMgd.ApplicationServices;
 using Teigha.DatabaseServices;
 using Teigha.Geometry;
 
-namespace GraphPlugin.NanoCad.Runtime;
+namespace GraphPlugin.Nanocad.Runtime;
 
 public sealed class GraphBuildStepExecutor
 {
@@ -83,8 +83,6 @@ public sealed class GraphBuildStepExecutor
         var splitPosition =
             ProjectOntoEdge(
                 pick.ObjectId,
-
-                // КРИТИЧЕСКИ ВАЖНО:
                 pick.PickPoint);
 
         var result =

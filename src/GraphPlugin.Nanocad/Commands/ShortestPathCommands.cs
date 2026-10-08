@@ -93,16 +93,12 @@ public sealed class ShortestPathCommands
             return;
         }
 
-        var service =
-            PluginServices
-                .CreateShortestPathService();
-
         ShortestPathResult result;
 
         try
         {
             result =
-                service.Find(
+                context.ShortestPath.Find(
                     startVertex.Id,
                     endVertex.Id);
         }

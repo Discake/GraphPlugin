@@ -1,4 +1,3 @@
-using GraphPlugin.Application.Services;
 using GraphPlugin.Domain.Geometry;
 using GraphPlugin.Domain.Models;
 using GraphPlugin.Nanocad.Bootstrap;
@@ -49,11 +48,7 @@ public sealed class VertexCommands
         var point =
             pointResult.Value;
 
-        var service =
-            new VertexService(
-                context.Vertices);
-
-        service.CreateVertex(
+        context.VertexService.CreateVertex(
             new Point2(
                 point.X,
                 point.Y),

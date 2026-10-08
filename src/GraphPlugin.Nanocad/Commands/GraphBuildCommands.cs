@@ -1,6 +1,4 @@
-using GraphPlugin.Application.Services;
 using GraphPlugin.Nanocad.Bootstrap;
-using GraphPlugin.NanoCad.Runtime;
 using Teigha.Runtime;
 
 using NanoApplication = HostMgd.ApplicationServices.Application;
@@ -26,38 +24,12 @@ public sealed class GraphBuildCommands
         var context =
             PluginServices.CurrentContext;
 
-        var vertexService =
-            new VertexService(
-                context.Vertices);
-
-        var edgeService =
-            new EdgeService(
-                context.Vertices,
-                context.Edges);
-
-        var buildService =
-            new GraphBuildService(
-                edgeService,
-                context.Edges);
-
-        var splitService =
-            new SplitEdgeService(
-                context.Vertices,
-                context.Edges);
-
         editor.WriteMessage(
             "\nПостроение графа." +
             "\nКлик по пустой области — новая вершина." +
             "\nКлик по вершине — использовать существующую." +
             "\nКлик по ребру — разделить ребро." +
             "\nEnter или Esc — завершить.");
-
-        var executor =
-            new GraphBuildStepExecutor(
-                document,
-                vertexService,
-                splitService,
-                buildService);
 
         try
         {
@@ -71,7 +43,7 @@ public sealed class GraphBuildCommands
 
                 try
                 {
-                    executor.Execute(pick);
+                    context.BuildStepExecutor.Execute(pick);
                 }
                 catch (System.Exception exception)
                 {
@@ -83,7 +55,7 @@ public sealed class GraphBuildCommands
         }
         finally
         {
-            buildService.Finish();
+            context.GraphBuild.Finish();
         }
 
         editor.WriteMessage(

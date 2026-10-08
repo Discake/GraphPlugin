@@ -1,4 +1,3 @@
-using GraphPlugin.Application.Services;
 using GraphPlugin.Domain.Models;
 using GraphPlugin.Nanocad.Bootstrap;
 using HostMgd.EditorInput;
@@ -63,12 +62,7 @@ public sealed class EdgeCommands
             return;
         }
 
-        var service =
-            new EdgeService(
-                context.Vertices,
-                context.Edges);
-
-        service.CreateEdge(
+        context.EdgeService.CreateEdge(
             vertexA.Id,
             vertexB.Id);
 

@@ -16,13 +16,25 @@ public sealed class GraphDocumentContext
 
     public IEdgeRepository Edges { get; }
 
+    public VertexService VertexService { get; }
+
+    public EdgeService EdgeService { get; }
+
+    public GraphService Graph { get; }
+
+    public GraphBuildService GraphBuild { get; }
+
+    public SplitEdgeService SplitEdge { get; }
+
+    public ShortestPathApplicationService ShortestPath { get; }
+
+    public GraphBuildStepExecutor BuildStepExecutor { get; }
+
     public GraphDatabaseWatcher Watcher { get; }
 
     public VertexSelectionService VertexSelection { get; }
 
     public EdgeSelectionService EdgeSelection { get; }
-
-    public GraphService Graph { get; }
 
     public GraphSettingsService Settings { get; }
 
@@ -49,7 +61,13 @@ public sealed class GraphDocumentContext
         GraphEntityIndex index,
         IVertexRepository vertices,
         IEdgeRepository edges,
+        VertexService vertexService,
+        EdgeService edgeService,
         GraphService graph,
+        GraphBuildService graphBuild,
+        SplitEdgeService splitEdge,
+        ShortestPathApplicationService shortestPath,
+        GraphBuildStepExecutor buildStepExecutor,
         VertexSelectionService vertexSelection,
         EdgeSelectionService edgeSelection,
         GraphDatabaseWatcher watcher,
@@ -68,7 +86,13 @@ public sealed class GraphDocumentContext
         Index = index;
         Vertices = vertices;
         Edges = edges;
+        VertexService = vertexService;
+        EdgeService = edgeService;
         Graph = graph;
+        GraphBuild = graphBuild;
+        SplitEdge = splitEdge;
+        ShortestPath = shortestPath;
+        BuildStepExecutor = buildStepExecutor;
         VertexSelection = vertexSelection;
         EdgeSelection = edgeSelection;
         Watcher = watcher;
