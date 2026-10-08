@@ -1,7 +1,7 @@
-﻿using GraphPlugin.Application.Abstractions.Persistence;
+using GraphPlugin.Application.Abstractions.Persistence;
 using GraphPlugin.Domain.Models;
 
-namespace GraphPlugin.Application.Services;
+namespace GraphPlugin.Application.Graph;
 
 public sealed class GraphBuildService
 {
@@ -38,35 +38,20 @@ public sealed class GraphBuildService
         ArgumentNullException.ThrowIfNull(
             vertex);
 
-        // Первый элемент цепочки.
         if (CurrentVertex is null)
         {
             CurrentVertex = vertex;
-
             return null;
         }
 
-        // Пользователь снова выбрал ту же Vertex.
-        // Ничего не создаём.
         if (CurrentVertex.Id == vertex.Id)
-        {
             return null;
-        }
 
-        // Например, после SplitEdge:
-        //
-        // Current = A
-        //
-        // A ---- C ---- B
-        //
-        // Edge A-C уже был создан SplitEdgeService.
-        // Поэтому второй A-C создавать нельзя.
         if (AreConnected(
                 CurrentVertex.Id,
                 vertex.Id))
         {
             CurrentVertex = vertex;
-
             return null;
         }
 
