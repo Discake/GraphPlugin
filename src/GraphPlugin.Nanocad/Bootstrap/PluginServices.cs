@@ -1,25 +1,26 @@
-﻿using GraphPlugin.Application.Services;
+using GraphPlugin.Application.Services;
 using GraphPlugin.Domain.Algorithms;
 using GraphPlugin.Nanocad.Runtime;
 using HostMgd.ApplicationServices;
+
 using NanoApplication = HostMgd.ApplicationServices.Application;
 
-namespace GraphPlugin.NanoCad.Bootstrap;
+namespace GraphPlugin.Nanocad.Bootstrap;
 
 public static class PluginServices
 {
     private static readonly GraphDocumentContextManager Contexts = new();
 
-    public static GraphDocumentContext CurrentContext {
+    public static GraphDocumentContext CurrentContext
+    {
         get
         {
             var document =
-            NanoApplication
-                .DocumentManager
-                .MdiActiveDocument;
+                NanoApplication
+                    .DocumentManager
+                    .MdiActiveDocument;
 
-            return Contexts.GetOrCreate(
-                document);
+            return Contexts.GetOrCreate(document);
         }
     }
 
@@ -68,7 +69,8 @@ public static class PluginServices
                 context.Edges);
 
         return new GraphBuildService(
-            edgeService, context.Edges);
+            edgeService,
+            context.Edges);
     }
 
     public static ShortestPathApplicationService CreateShortestPathService()
