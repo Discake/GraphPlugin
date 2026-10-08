@@ -1,4 +1,4 @@
-﻿namespace GraphPlugin.NanoCad.Runtime;
+﻿namespace GraphPlugin.Nanocad.Runtime;
 
 public sealed record IntegrationTestResult(
     string Name,
