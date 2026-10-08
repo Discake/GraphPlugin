@@ -73,9 +73,11 @@
   <ItemGroup>
     <Reference Include="hostdbmgd">
       <HintPath>$(NanoCadInstallDir)\bin\hostdbmgd.dll</HintPath>
+      <Private>false</Private>
     </Reference>
     <Reference Include="hostmgd">
       <HintPath>$(NanoCadInstallDir)\bin\hostmgd.dll</HintPath>
+      <Private>false</Private>
     </Reference>
   </ItemGroup>
   <ItemGroup>
