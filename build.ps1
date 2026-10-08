@@ -26,7 +26,10 @@ $legacyNamespaceMatches =
         -Filter "*.cs" `
         -File `
         -Recurse |
-    Select-String -Pattern "GraphPlugin\.NanoCad"
+    Select-String `
+        -Pattern "GraphPlugin.NanoCad" `
+        -SimpleMatch `
+        -CaseSensitive
 
 if ($legacyNamespaceMatches) {
     Write-Host "Legacy GraphPlugin.NanoCad namespace references were found:"
