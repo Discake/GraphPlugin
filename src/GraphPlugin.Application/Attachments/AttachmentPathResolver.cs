@@ -1,4 +1,4 @@
-﻿namespace GraphPlugin.Application.Services;
+namespace GraphPlugin.Application.Attachments;
 
 public sealed class AttachmentPathResolver
 {
