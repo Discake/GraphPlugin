@@ -1,8 +1,7 @@
-﻿using GraphPlugin.Application.Abstractions;
 using GraphPlugin.Application.Abstractions.Persistence;
 using GraphPlugin.Domain.Models;
 
-namespace GraphPlugin.Application.Services;
+namespace GraphPlugin.Application.Styling;
 
 public sealed class GraphSettingsService
 {
