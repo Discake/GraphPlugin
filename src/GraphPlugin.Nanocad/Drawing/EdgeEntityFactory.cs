@@ -1,8 +1,7 @@
 ﻿using GraphPlugin.Domain.Models;
-using GraphPlugin.Nanocad.Drawing;
 using Teigha.DatabaseServices;
 
-namespace GraphPlugin.NanoCad.Drawing;
+namespace GraphPlugin.Nanocad.Drawing;
 
 public sealed class EdgeEntityFactory
 {
