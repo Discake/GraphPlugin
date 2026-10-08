@@ -32,12 +32,7 @@ if ($legacyNamespaceMatches) {
     Write-Host "Legacy GraphPlugin.NanoCad namespace references were found:"
 
     foreach ($match in $legacyNamespaceMatches) {
-        $relativePath =
-            [IO.Path]::GetRelativePath(
-                $PSScriptRoot,
-                $match.Path)
-
-        Write-Host "  $relativePath`:$($match.LineNumber): $($match.Line.Trim())"
+        Write-Host "  $($match.Path)`:$($match.LineNumber): $($match.Line.Trim())"
     }
 
     throw "Use the canonical GraphPlugin.Nanocad namespace before building."
