@@ -7,7 +7,7 @@ namespace GraphPlugin.Application.Graph;
 public sealed class VertexService
 {
     private readonly IVertexRepository _vertices;
-    private readonly IEdgeRepository _edges;
+    private readonly IEdgeRepository? _edges;
 
     public VertexService(
         IVertexRepository vertices,
@@ -22,6 +22,15 @@ public sealed class VertexService
             edges ??
             throw new ArgumentNullException(
                 nameof(edges));
+    }
+
+    internal VertexService(
+        IVertexRepository vertices)
+    {
+        _vertices =
+            vertices ??
+            throw new ArgumentNullException(
+                nameof(vertices));
     }
 
     public GraphVertex CreateVertex(
@@ -40,6 +49,12 @@ public sealed class VertexService
 
     public void DeleteVertex(Guid vertexId)
     {
+        if (_edges is null)
+        {
+            throw new InvalidOperationException(
+                "This VertexService instance does not support deletion.");
+        }
+
         var incidentEdges =
             _edges.GetByVertex(
                 vertexId);
