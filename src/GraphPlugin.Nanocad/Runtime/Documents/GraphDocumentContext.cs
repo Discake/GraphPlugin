@@ -24,6 +24,9 @@ public sealed class GraphDocumentContext
 
     public EdgeService EdgeService { get; }
 
+    internal VertexService Graph =>
+        VertexService;
+
     public GraphBuildService GraphBuild { get; }
 
     public SplitEdgeService SplitEdge { get; }
