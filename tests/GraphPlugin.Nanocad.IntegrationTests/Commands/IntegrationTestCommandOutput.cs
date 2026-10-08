@@ -1,4 +1,4 @@
-using GraphPlugin.NanoCad.Runtime;
+using GraphPlugin.Nanocad.Runtime;
 using HostMgd.EditorInput;
 
 namespace GraphPlugin.Nanocad.IntegrationTests.Commands;
