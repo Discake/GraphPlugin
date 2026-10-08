@@ -7,6 +7,7 @@
   <Project Path="GraphPlugin.Application/GraphPlugin.Application.csproj" />
   <Project Path="GraphPlugin.Domain/GraphPlugin.Domain.csproj" />
   <Project Path="GraphPlugin.Nanocad/GraphPlugin.Nanocad.csproj" />
+  <Project Path="GraphPlugin.Nanocad.IntegrationTests/GraphPlugin.Nanocad.IntegrationTests.csproj" />
   <Project Path="GraphPlugin.Native/GraphPlugin.Native.vcxproj" />
   <Project Path="GraphPlugin.Tests/GraphPlugin.Tests.csproj" />
 </Solution>
