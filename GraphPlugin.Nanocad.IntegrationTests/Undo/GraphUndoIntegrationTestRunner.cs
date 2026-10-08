@@ -2,6 +2,7 @@
 using GraphPlugin.Domain.Algorithms;
 using GraphPlugin.Domain.Geometry;
 using GraphPlugin.Domain.Models;
+using GraphPlugin.Nanocad.Runtime;
 using GraphPlugin.NanoCad.Persistence;
 
 using HostMgd.ApplicationServices;

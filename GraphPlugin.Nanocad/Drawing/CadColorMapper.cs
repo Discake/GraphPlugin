@@ -3,7 +3,7 @@ using Teigha.Colors;
 
 namespace GraphPlugin.NanoCad.Drawing;
 
-internal static class CadColorMapper
+public static class CadColorMapper
 {
     public static Color ToCadColor(GraphColor color)
     {

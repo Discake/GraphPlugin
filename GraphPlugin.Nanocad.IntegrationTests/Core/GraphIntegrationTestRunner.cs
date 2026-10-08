@@ -15,7 +15,7 @@ using Teigha.Runtime;
 
 namespace GraphPlugin.NanoCad.Runtime;
 
-public sealed class GraphIntegrationTestRunner
+internal sealed class GraphIntegrationTestRunner
 {
     private readonly Document _document;
     private readonly GraphDocumentContext _context;

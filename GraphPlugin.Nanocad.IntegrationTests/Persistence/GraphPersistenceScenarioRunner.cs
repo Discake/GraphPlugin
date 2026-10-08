@@ -2,6 +2,7 @@
 using GraphPlugin.Domain.Algorithms;
 using GraphPlugin.Domain.Geometry;
 using GraphPlugin.Domain.Models;
+using GraphPlugin.Nanocad.Runtime;
 using GraphPlugin.NanoCad.Drawing;
 using GraphPlugin.NanoCad.Persistence;
 
@@ -11,7 +12,7 @@ using Teigha.DatabaseServices;
 
 namespace GraphPlugin.NanoCad.Runtime;
 
-public sealed class GraphPersistenceScenarioRunner
+internal sealed class GraphPersistenceScenarioRunner
 {
     private const double Tolerance =
         0.000001;
