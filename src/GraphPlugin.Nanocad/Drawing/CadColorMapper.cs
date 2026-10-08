@@ -1,5 +1,6 @@
 using GraphPlugin.Domain.Models;
 using Teigha.Colors;
+using Color = Teigha.Colors.Color;
 
 namespace GraphPlugin.Nanocad.Drawing;
 
