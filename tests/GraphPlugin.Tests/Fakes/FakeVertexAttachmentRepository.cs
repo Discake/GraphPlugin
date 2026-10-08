@@ -1,4 +1,4 @@
-﻿using GraphPlugin.Application.Abstractions.Persistence;
+using GraphPlugin.Application.Abstractions.Persistence;
 using GraphPlugin.Domain.Models;
 
 public sealed class FakeVertexAttachmentRepository : IVertexAttachmentRepository

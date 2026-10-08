@@ -1,4 +1,4 @@
-﻿using GraphPlugin.Application.Abstractions.Persistence;
+using GraphPlugin.Application.Abstractions.Persistence;
 using GraphPlugin.Nanocad.Drawing;
 using Teigha.DatabaseServices;
 using Teigha.Geometry;

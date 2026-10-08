@@ -1,4 +1,4 @@
-﻿using GraphPlugin.Domain.Models;
+using GraphPlugin.Domain.Models;
 
 public sealed class VertexStyle
 {

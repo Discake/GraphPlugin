@@ -1,4 +1,4 @@
-﻿namespace GraphPlugin.Domain.Models;
+namespace GraphPlugin.Domain.Models;
 
 public enum VertexShape
 {

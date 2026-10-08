@@ -1,4 +1,4 @@
-﻿namespace GraphPlugin.Domain.Algorithms;
+namespace GraphPlugin.Domain.Algorithms;
 
 public sealed class ShortestPathResult
 {

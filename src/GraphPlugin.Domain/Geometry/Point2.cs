@@ -1,4 +1,4 @@
-﻿namespace GraphPlugin.Domain.Geometry;
+namespace GraphPlugin.Domain.Geometry;
 
 public readonly record struct Point2(double X, double Y)
 {

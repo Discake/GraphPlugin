@@ -1,4 +1,4 @@
-﻿using GraphPlugin.Domain.Models;
+using GraphPlugin.Domain.Models;
 using GraphPlugin.Nanocad.Persistence;
 using Teigha.DatabaseServices;
 using NanoApplication = HostMgd.ApplicationServices.Application;

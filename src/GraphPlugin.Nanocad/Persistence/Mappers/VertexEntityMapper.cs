@@ -1,4 +1,4 @@
-﻿using GraphPlugin.Domain.Geometry;
+using GraphPlugin.Domain.Geometry;
 using GraphPlugin.Domain.Models;
 using GraphPlugin.Nanocad.Persistence.Metadata;
 using Teigha.DatabaseServices;

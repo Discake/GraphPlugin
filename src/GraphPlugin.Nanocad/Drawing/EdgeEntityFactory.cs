@@ -1,4 +1,4 @@
-﻿using GraphPlugin.Domain.Models;
+using GraphPlugin.Domain.Models;
 using Teigha.DatabaseServices;
 
 namespace GraphPlugin.Nanocad.Drawing;

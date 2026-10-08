@@ -1,4 +1,4 @@
-﻿using GraphPlugin.Application.Services;
+using GraphPlugin.Application.Services;
 
 namespace GraphPlugin.Tests.Domain;
 

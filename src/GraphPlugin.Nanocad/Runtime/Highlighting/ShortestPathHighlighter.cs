@@ -1,4 +1,4 @@
-﻿using GraphPlugin.Domain.Algorithms;
+using GraphPlugin.Domain.Algorithms;
 using HostMgd.ApplicationServices;
 using Teigha.DatabaseServices;
 

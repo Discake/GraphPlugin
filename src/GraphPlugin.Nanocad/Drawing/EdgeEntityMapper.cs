@@ -1,4 +1,4 @@
-﻿using GraphPlugin.Domain.Geometry;
+using GraphPlugin.Domain.Geometry;
 using GraphPlugin.Domain.Models;
 using Teigha.DatabaseServices;
 using Teigha.Geometry;

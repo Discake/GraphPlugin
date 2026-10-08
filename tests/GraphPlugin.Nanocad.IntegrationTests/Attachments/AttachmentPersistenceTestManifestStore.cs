@@ -1,4 +1,4 @@
-﻿using Teigha.DatabaseServices;
+using Teigha.DatabaseServices;
 
 namespace GraphPlugin.Nanocad.Runtime;
 

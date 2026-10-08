@@ -1,4 +1,4 @@
-﻿namespace GraphPlugin.Nanocad.Runtime;
+namespace GraphPlugin.Nanocad.Runtime;
 
 public sealed class IntegrationTestException : System.Exception
 {

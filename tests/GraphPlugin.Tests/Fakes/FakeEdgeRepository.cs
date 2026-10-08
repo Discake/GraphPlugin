@@ -1,4 +1,4 @@
-﻿using GraphPlugin.Application.Abstractions.Persistence;
+using GraphPlugin.Application.Abstractions.Persistence;
 using GraphPlugin.Domain.Models;
 
 namespace GraphPlugin.Tests.Fakes;

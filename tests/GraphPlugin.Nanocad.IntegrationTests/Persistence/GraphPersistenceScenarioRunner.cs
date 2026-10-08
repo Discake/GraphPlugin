@@ -1,4 +1,4 @@
-﻿using GraphPlugin.Application.Services;
+using GraphPlugin.Application.Services;
 using GraphPlugin.Domain.Algorithms;
 using GraphPlugin.Domain.Geometry;
 using GraphPlugin.Domain.Models;

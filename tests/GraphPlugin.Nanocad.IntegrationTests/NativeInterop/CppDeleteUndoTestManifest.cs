@@ -1,4 +1,4 @@
-﻿namespace GraphPlugin.Nanocad.Persistence;
+namespace GraphPlugin.Nanocad.Persistence;
 
 public sealed record CppDeleteUndoTestManifest(
     Guid VertexAId,

@@ -1,4 +1,4 @@
-﻿using GraphPlugin.Nanocad.Persistence.Metadata;
+using GraphPlugin.Nanocad.Persistence.Metadata;
 using Teigha.DatabaseServices;
 
 namespace GraphPlugin.Nanocad.Runtime;

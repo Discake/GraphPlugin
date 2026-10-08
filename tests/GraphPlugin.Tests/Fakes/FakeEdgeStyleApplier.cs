@@ -1,4 +1,4 @@
-﻿using GraphPlugin.Application.Abstractions;
+using GraphPlugin.Application.Abstractions;
 using GraphPlugin.Domain.Models;
 
 namespace GraphPlugin.Tests.Fakes;
