@@ -1,4 +1,5 @@
 ﻿using GraphPlugin.Domain.Models;
+using GraphPlugin.NanoCad.Persistence.Metadata;
 using Teigha.DatabaseServices;
 
 namespace GraphPlugin.NanoCad.Persistence;
@@ -6,10 +7,10 @@ namespace GraphPlugin.NanoCad.Persistence;
 public sealed class VertexAttachmentXRecordStore
 {
     public const string RecordKey =
-        "GRAPH_VERTEX_ATTACHMENTS";
+        GraphMetadataKeys.VertexAttachmentsRecord;
 
     private const int CurrentVersion =
-        1;
+        GraphMetadataKeys.CurrentVertexAttachmentsVersion;
 
     public IReadOnlyCollection<VertexAttachment> Read(
         Entity entity,
