@@ -1,7 +1,7 @@
 ﻿using GraphPlugin.Domain.Models;
 using Teigha.Colors;
 
-namespace GraphPlugin.NanoCad.Drawing;
+namespace GraphPlugin.Nanocad.Drawing;
 
 internal static class CadColorMapper
 {
