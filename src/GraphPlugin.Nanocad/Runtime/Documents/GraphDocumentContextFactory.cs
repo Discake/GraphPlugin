@@ -1,4 +1,9 @@
-using GraphPlugin.Application.Services;
+using GraphPlugin.Application.Attachments;
+using GraphPlugin.Application.Editing.Bends;
+using GraphPlugin.Application.Editing.Splitting;
+using GraphPlugin.Application.Graph;
+using GraphPlugin.Application.Routing;
+using GraphPlugin.Application.Styling;
 using GraphPlugin.Domain.Algorithms;
 using GraphPlugin.Nanocad.Drawing;
 using GraphPlugin.Nanocad.Persistence;
@@ -57,15 +62,11 @@ public sealed class GraphDocumentContextFactory
 
         var vertexService =
             new VertexService(
-                vertexRepository);
-
-        var edgeService =
-            new EdgeService(
                 vertexRepository,
                 edgeRepository);
 
-        var graphService =
-            new GraphService(
+        var edgeService =
+            new EdgeService(
                 vertexRepository,
                 edgeRepository);
 
@@ -80,10 +81,10 @@ public sealed class GraphDocumentContextFactory
                 edgeRepository);
 
         var shortestPathService =
-            new ShortestPathApplicationService(
+            new ShortestPathService(
                 vertexRepository,
                 edgeRepository,
-                new DijkstraShortestPathService(
+                new DijkstraShortestPath(
                     new EdgeLengthCalculator()));
 
         var synchronizer =
@@ -98,7 +99,7 @@ public sealed class GraphDocumentContextFactory
                 document,
                 index,
                 synchronizer,
-                graphService,
+                edgeService,
                 metadata);
 
         var settingsService =
@@ -174,7 +175,6 @@ public sealed class GraphDocumentContextFactory
             edgeRepository,
             vertexService,
             edgeService,
-            graphService,
             graphBuildService,
             splitEdgeService,
             shortestPathService,
