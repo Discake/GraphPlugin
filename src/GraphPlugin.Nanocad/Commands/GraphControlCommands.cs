@@ -1,3 +1,5 @@
+using System.Diagnostics;
+using System.Windows.Forms;
 using GraphPlugin.Domain.Models;
 using GraphPlugin.Nanocad.Bootstrap;
 using GraphPlugin.Nanocad.UI.GraphControl;
@@ -7,6 +9,16 @@ namespace GraphPlugin.Nanocad.Commands;
 
 public sealed class GraphControlCommands
 {
+    private sealed class WindowHandle : IWin32Window
+    {
+        public IntPtr Handle { get; }
+
+        public WindowHandle(IntPtr handle)
+        {
+            Handle = handle;
+        }
+    }
+
     private static GraphControlForm? _form;
 
     [CommandMethod("GRAPHCONTROL")]
@@ -40,7 +52,19 @@ public sealed class GraphControlCommands
         };
 
         _form = form;
-        form.Show();
+
+        using var process = Process.GetCurrentProcess();
+        process.Refresh();
+
+        var nanoCadWindow = process.MainWindowHandle;
+
+        if (nanoCadWindow != IntPtr.Zero)
+            form.Show(new WindowHandle(nanoCadWindow));
+        else
+            form.Show();
+
+        form.Activate();
+        form.BringToFront();
     }
 
     private static void QueueAction(GraphControlAction action)
