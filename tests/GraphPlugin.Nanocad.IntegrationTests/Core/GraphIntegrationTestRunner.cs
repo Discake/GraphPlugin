@@ -4,16 +4,14 @@ using GraphPlugin.Domain.Geometry;
 using GraphPlugin.Domain.Models;
 using GraphPlugin.Nanocad.Drawing;
 using GraphPlugin.Nanocad.Persistence;
+using GraphPlugin.Nanocad.Persistence.Metadata;
 using GraphPlugin.Nanocad.Runtime;
-using GraphPlugin.NanoCad.Drawing;
-using GraphPlugin.NanoCad.Persistence;
-using GraphPlugin.NanoCad.Persistence.Metadata;
 using HostMgd.ApplicationServices;
 using Teigha.DatabaseServices;
 using Teigha.Geometry;
 using Teigha.Runtime;
 
-namespace GraphPlugin.NanoCad.Runtime;
+namespace GraphPlugin.Nanocad.Runtime;
 
 internal sealed class GraphIntegrationTestRunner
 {
@@ -865,8 +863,6 @@ internal sealed class GraphIntegrationTestRunner
                     out var edgeObjectId),
                 "Created edge is missing from index.");
 
-            // Новый invariant:
-            // GraphEdge всегда Polyline.
             using (var transaction =
                    _document.Database
                        .TransactionManager
@@ -889,9 +885,6 @@ internal sealed class GraphIntegrationTestRunner
                     305,
                     310);
 
-            // Здесь оставь тот код, которым
-            // твой старый тест реально двигает
-            // DWG-сущность Vertex A.
             MoveVertexEntity(
                 a.Id,
                 newPosition);
@@ -950,16 +943,10 @@ internal sealed class GraphIntegrationTestRunner
         finally
         {
             if (a is not null)
-            {
-                DeleteVertexIfExists(
-                    a.Id);
-            }
+                DeleteVertexIfExists(a.Id);
 
             if (b is not null)
-            {
-                DeleteVertexIfExists(
-                    b.Id);
-            }
+                DeleteVertexIfExists(b.Id);
         }
     }
 
@@ -1155,9 +1142,6 @@ internal sealed class GraphIntegrationTestRunner
         }
         finally
         {
-            // Важно удалить и новую вершину,
-            // потому что после split она уже является
-            // самостоятельным объектом графа.
             if (splitResult is not null)
             {
                 DeleteVertexIfExists(
@@ -1165,16 +1149,10 @@ internal sealed class GraphIntegrationTestRunner
             }
 
             if (a is not null)
-            {
-                DeleteVertexIfExists(
-                    a.Id);
-            }
+                DeleteVertexIfExists(a.Id);
 
             if (b is not null)
-            {
-                DeleteVertexIfExists(
-                    b.Id);
-            }
+                DeleteVertexIfExists(b.Id);
         }
     }
 
@@ -1713,19 +1691,14 @@ internal sealed class GraphIntegrationTestRunner
 
             var pick =
                 BuildPickResult.FromEdge(
-                    // Computed OSNAP point intentionally
-                    // equals endpoint A.
                     new Point3d(
                         900,
                         900,
                         0),
-
-                    // Real cursor position is near middle.
                     new Point3d(
                         920,
                         905,
                         0),
-
                     edgeObjectId,
                     edge);
 
@@ -1764,10 +1737,7 @@ internal sealed class GraphIntegrationTestRunner
         finally
         {
             if (splitVertex is not null)
-            {
-                DeleteVertexIfExists(
-                    splitVertex.Id);
-            }
+                DeleteVertexIfExists(splitVertex.Id);
 
             if (a is not null)
                 DeleteVertexIfExists(a.Id);
@@ -1811,113 +1781,46 @@ internal sealed class GraphIntegrationTestRunner
 
         try
         {
-            a =
-                vertexService.CreateVertex(
-                    new Point2(1000, 1000));
-
-            b =
-                vertexService.CreateVertex(
-                    new Point2(1040, 1000));
-
-            var original =
-                edgeService.CreateEdge(
-                    a.Id,
-                    b.Id);
-
-            // A уже CurrentVertex.
+            a = vertexService.CreateVertex(new Point2(1000, 1000));
+            b = vertexService.CreateVertex(new Point2(1040, 1000));
+            var original = edgeService.CreateEdge(a.Id, b.Id);
             buildService.AdvanceTo(a);
 
             Ensure(
-                _context.Index.TryGetEdgeObjectId(
-                    original.Id,
-                    out var objectId),
+                _context.Index.TryGetEdgeObjectId(original.Id, out var objectId),
                 "Original edge is missing from index.");
 
-            c =
-                executor.Execute(
-                    BuildPickResult.FromEdge(
-                        new Point3d(
-                            1020,
-                            1000,
-                            0),
+            c = executor.Execute(
+                BuildPickResult.FromEdge(
+                    new Point3d(1020, 1000, 0),
+                    new Point3d(1020, 1000, 0),
+                    objectId,
+                    original));
 
-                        new Point3d(
-                            1020,
-                            1000,
-                            0),
-
-                        objectId,
-                        original));
-
-            var allIncidentToC =
-                _context.Edges.GetByVertex(
-                    c.Id);
-
-            Ensure(
-                allIncidentToC.Count == 2,
-                $"Split vertex has " +
-                $"{allIncidentToC.Count} edges, expected 2.");
-
-            Ensure(
-                allIncidentToC.Any(
-                    x => x.IsIncidentTo(a.Id)),
-                "A-C edge is missing.");
-
-            Ensure(
-                allIncidentToC.Any(
-                    x => x.IsIncidentTo(b.Id)),
-                "C-B edge is missing.");
-
-            // Если GraphBuildService создал
-            // дублирующий A-C, здесь было бы 3.
+            var allIncidentToC = _context.Edges.GetByVertex(c.Id);
+            Ensure(allIncidentToC.Count == 2, $"Split vertex has {allIncidentToC.Count} edges, expected 2.");
+            Ensure(allIncidentToC.Any(x => x.IsIncidentTo(a.Id)), "A-C edge is missing.");
+            Ensure(allIncidentToC.Any(x => x.IsIncidentTo(b.Id)), "C-B edge is missing.");
             Ensure(
                 _context.Edges.GetAll().Count(
-                    edge =>
-                        edge.IsIncidentTo(a.Id) &&
-                        edge.IsIncidentTo(c.Id))
-                == 1,
+                    edge => edge.IsIncidentTo(a.Id) && edge.IsIncidentTo(c.Id)) == 1,
                 "Duplicate A-C edge was created.");
         }
         finally
         {
-            if (c is not null)
-                DeleteVertexIfExists(c.Id);
-
-            if (a is not null)
-                DeleteVertexIfExists(a.Id);
-
-            if (b is not null)
-                DeleteVertexIfExists(b.Id);
+            if (c is not null) DeleteVertexIfExists(c.Id);
+            if (a is not null) DeleteVertexIfExists(a.Id);
+            if (b is not null) DeleteVertexIfExists(b.Id);
         }
     }
 
     private void TestAutoBuildUnrelatedEdgeSplit()
     {
-        var vertexService =
-            new VertexService(
-                _context.Vertices);
-
-        var edgeService =
-            new EdgeService(
-                _context.Vertices,
-                _context.Edges);
-
-        var buildService =
-            new GraphBuildService(
-                edgeService,
-                _context.Edges);
-
-        var splitService =
-            new SplitEdgeService(
-                _context.Vertices,
-                _context.Edges);
-
-        var executor =
-            new GraphBuildStepExecutor(
-                _document,
-                vertexService,
-                splitService,
-                buildService);
+        var vertexService = new VertexService(_context.Vertices);
+        var edgeService = new EdgeService(_context.Vertices, _context.Edges);
+        var buildService = new GraphBuildService(edgeService, _context.Edges);
+        var splitService = new SplitEdgeService(_context.Vertices, _context.Edges);
+        var executor = new GraphBuildStepExecutor(_document, vertexService, splitService, buildService);
 
         GraphVertex? a = null;
         GraphVertex? b = null;
@@ -1926,2682 +1829,715 @@ internal sealed class GraphIntegrationTestRunner
 
         try
         {
-            a =
-                vertexService.CreateVertex(
-                    new Point2(1100, 1100));
-
-            b =
-                vertexService.CreateVertex(
-                    new Point2(1140, 1100));
-
-            d =
-                vertexService.CreateVertex(
-                    new Point2(1120, 1130));
-
-            var original =
-                edgeService.CreateEdge(
-                    a.Id,
-                    b.Id);
-
+            a = vertexService.CreateVertex(new Point2(1100, 1100));
+            b = vertexService.CreateVertex(new Point2(1140, 1100));
+            d = vertexService.CreateVertex(new Point2(1120, 1130));
+            var original = edgeService.CreateEdge(a.Id, b.Id);
             buildService.AdvanceTo(d);
 
-            Ensure(
-                _context.Index.TryGetEdgeObjectId(
-                    original.Id,
-                    out var objectId),
-                "Original edge is missing from index.");
+            Ensure(_context.Index.TryGetEdgeObjectId(original.Id, out var objectId), "Original edge is missing from index.");
+            c = executor.Execute(BuildPickResult.FromEdge(new Point3d(1120, 1100, 0), new Point3d(1120, 1100, 0), objectId, original));
 
-            c =
-                executor.Execute(
-                    BuildPickResult.FromEdge(
-                        new Point3d(
-                            1120,
-                            1100,
-                            0),
-
-                        new Point3d(
-                            1120,
-                            1100,
-                            0),
-
-                        objectId,
-                        original));
-
-            var cEdges =
-                _context.Edges.GetByVertex(
-                    c.Id);
-
-            Ensure(
-                cEdges.Count == 3,
-                $"Expected 3 edges incident to split vertex, " +
-                $"actual {cEdges.Count}.");
-
-            Ensure(
-                cEdges.Any(
-                    x => x.IsIncidentTo(a.Id)),
-                "A-C edge is missing.");
-
-            Ensure(
-                cEdges.Any(
-                    x => x.IsIncidentTo(b.Id)),
-                "C-B edge is missing.");
-
-            Ensure(
-                cEdges.Any(
-                    x => x.IsIncidentTo(d.Id)),
-                "D-C build edge is missing.");
-
-            Ensure(
-                buildService.CurrentVertex?.Id ==
-                c.Id,
-                "Split vertex did not become CurrentVertex.");
+            var cEdges = _context.Edges.GetByVertex(c.Id);
+            Ensure(cEdges.Count == 3, $"Expected 3 edges incident to split vertex, actual {cEdges.Count}.");
+            Ensure(cEdges.Any(x => x.IsIncidentTo(a.Id)), "A-C edge is missing.");
+            Ensure(cEdges.Any(x => x.IsIncidentTo(b.Id)), "C-B edge is missing.");
+            Ensure(cEdges.Any(x => x.IsIncidentTo(d.Id)), "D-C build edge is missing.");
+            Ensure(buildService.CurrentVertex?.Id == c.Id, "Split vertex did not become CurrentVertex.");
         }
         finally
         {
-            if (c is not null)
-                DeleteVertexIfExists(c.Id);
-
-            if (d is not null)
-                DeleteVertexIfExists(d.Id);
-
-            if (a is not null)
-                DeleteVertexIfExists(a.Id);
-
-            if (b is not null)
-                DeleteVertexIfExists(b.Id);
+            if (c is not null) DeleteVertexIfExists(c.Id);
+            if (d is not null) DeleteVertexIfExists(d.Id);
+            if (a is not null) DeleteVertexIfExists(a.Id);
+            if (b is not null) DeleteVertexIfExists(b.Id);
         }
     }
 
     private void TestPolylineEdgeRoute()
     {
-        var vertexService =
-            new VertexService(
-                _context.Vertices);
-
+        var vertexService = new VertexService(_context.Vertices);
         GraphVertex? a = null;
         GraphVertex? b = null;
         GraphEdge? edge = null;
-
         try
         {
-            a =
-                vertexService.CreateVertex(
-                    new Point2(
-                        1300,
-                        1300));
-
-            b =
-                vertexService.CreateVertex(
-                    new Point2(
-                        1340,
-                        1300));
-
-            edge =
-                GraphEdge.Create(
-                    a.Id,
-                    b.Id,
-                    new EdgeRoute(
-                        new[]
-                        {
-                        new Point2(
-                            1310,
-                            1320),
-
-                        new Point2(
-                            1330,
-                            1320)
-                        }));
-
-            _context.Edges.Add(
-                edge);
-
-            Ensure(
-                _context.Index.TryGetEdgeObjectId(
-                    edge.Id,
-                    out var objectId),
-                "Polyline edge is missing from index.");
-
-            using (var transaction =
-                   _document.Database
-                       .TransactionManager
-                       .StartTransaction())
+            a = vertexService.CreateVertex(new Point2(1300, 1300));
+            b = vertexService.CreateVertex(new Point2(1340, 1300));
+            edge = GraphEdge.Create(a.Id, b.Id, new EdgeRoute(new[] { new Point2(1310, 1320), new Point2(1330, 1320) }));
+            _context.Edges.Add(edge);
+            Ensure(_context.Index.TryGetEdgeObjectId(edge.Id, out var objectId), "Polyline edge is missing from index.");
+            using (var transaction = _document.Database.TransactionManager.StartTransaction())
             {
-                var polyline =
-                    transaction.GetObject(
-                        objectId,
-                        OpenMode.ForRead)
-                    as Polyline;
-
-                Ensure(
-                    polyline is not null,
-                    "Edge entity is not a Polyline.");
-
-                Ensure(
-                    polyline.NumberOfVertices == 4,
-                    $"Expected 4 polyline points, " +
-                    $"actual {polyline.NumberOfVertices}.");
+                var polyline = transaction.GetObject(objectId, OpenMode.ForRead) as Polyline;
+                Ensure(polyline is not null, "Edge entity is not a Polyline.");
+                Ensure(polyline.NumberOfVertices == 4, $"Expected 4 polyline points, actual {polyline.NumberOfVertices}.");
             }
-
-            var restored =
-                _context.Edges.Get(
-                    edge.Id);
-
-            Ensure(
-                restored is not null,
-                "Polyline edge could not be read back.");
-
-            Ensure(
-                restored.Route.Count == 2,
-                $"Expected 2 bends, " +
-                $"actual {restored.Route.Count}.");
-
-            Ensure(
-                restored.Route.IntermediatePoints[0] ==
-                new Point2(
-                    1310,
-                    1320),
-                "First bend was not restored.");
-
-            Ensure(
-                restored.Route.IntermediatePoints[1] ==
-                new Point2(
-                    1330,
-                    1320),
-                "Second bend was not restored.");
+            var restored = _context.Edges.Get(edge.Id);
+            Ensure(restored is not null, "Polyline edge could not be read back.");
+            Ensure(restored.Route.Count == 2, $"Expected 2 bends, actual {restored.Route.Count}.");
+            Ensure(restored.Route.IntermediatePoints[0] == new Point2(1310, 1320), "First bend was not restored.");
+            Ensure(restored.Route.IntermediatePoints[1] == new Point2(1330, 1320), "Second bend was not restored.");
         }
         finally
         {
-            if (a is not null)
-            {
-                DeleteVertexIfExists(
-                    a.Id);
-            }
-
-            if (b is not null)
-            {
-                DeleteVertexIfExists(
-                    b.Id);
-            }
+            if (a is not null) DeleteVertexIfExists(a.Id);
+            if (b is not null) DeleteVertexIfExists(b.Id);
         }
     }
 
     private void TestPolylineEdgeRouteRoundTrip()
     {
-        var vertexService =
-            new VertexService(
-                _context.Vertices);
-
+        var vertexService = new VertexService(_context.Vertices);
         GraphVertex? a = null;
         GraphVertex? b = null;
         GraphEdge? edge = null;
-
         try
         {
-            a =
-                vertexService.CreateVertex(
-                    new Point2(
-                        1300,
-                        1300));
-
-            b =
-                vertexService.CreateVertex(
-                    new Point2(
-                        1360,
-                        1300));
-
-            var p1 =
-                new Point2(
-                    1320,
-                    1330);
-
-            var p2 =
-                new Point2(
-                    1340,
-                    1330);
-
-            edge =
-                GraphEdge.Create(
-                    a.Id,
-                    b.Id,
-                    new EdgeRoute(
-                        new[]
-                        {
-                        p1,
-                        p2
-                        }));
-
-            _context.Edges.Add(
-                edge);
-
-            Ensure(
-                _context.Index.TryGetEdgeObjectId(
-                    edge.Id,
-                    out var objectId),
-                "Polyline edge is missing from index.");
-
-            using (var transaction =
-                   _document.Database
-                       .TransactionManager
-                       .StartTransaction())
+            a = vertexService.CreateVertex(new Point2(1300, 1300));
+            b = vertexService.CreateVertex(new Point2(1360, 1300));
+            var p1 = new Point2(1320, 1330);
+            var p2 = new Point2(1340, 1330);
+            edge = GraphEdge.Create(a.Id, b.Id, new EdgeRoute(new[] { p1, p2 }));
+            _context.Edges.Add(edge);
+            Ensure(_context.Index.TryGetEdgeObjectId(edge.Id, out var objectId), "Polyline edge is missing from index.");
+            using (var transaction = _document.Database.TransactionManager.StartTransaction())
             {
-                var polyline =
-                    transaction.GetObject(
-                        objectId,
-                        OpenMode.ForRead)
-                    as Polyline;
-
-                Ensure(
-                    polyline is not null,
-                    "Graph edge entity is not a Polyline.");
-
-                Ensure(
-                    !polyline.Closed,
-                    "Graph edge polyline must be open.");
-
-                Ensure(
-                    polyline.NumberOfVertices == 4,
-                    $"Expected 4 polyline vertices, " +
-                    $"actual {polyline.NumberOfVertices}.");
-
-                AssertPolylinePoint(
-                    polyline,
-                    0,
-                    a.Position,
-                    "Unexpected Vertex A point.");
-
-                AssertPolylinePoint(
-                    polyline,
-                    1,
-                    p1,
-                    "Unexpected first bend.");
-
-                AssertPolylinePoint(
-                    polyline,
-                    2,
-                    p2,
-                    "Unexpected second bend.");
-
-                AssertPolylinePoint(
-                    polyline,
-                    3,
-                    b.Position,
-                    "Unexpected Vertex B point.");
+                var polyline = transaction.GetObject(objectId, OpenMode.ForRead) as Polyline;
+                Ensure(polyline is not null, "Graph edge entity is not a Polyline.");
+                Ensure(!polyline.Closed, "Graph edge polyline must be open.");
+                Ensure(polyline.NumberOfVertices == 4, $"Expected 4 polyline vertices, actual {polyline.NumberOfVertices}.");
+                AssertPolylinePoint(polyline, 0, a.Position, "Unexpected Vertex A point.");
+                AssertPolylinePoint(polyline, 1, p1, "Unexpected first bend.");
+                AssertPolylinePoint(polyline, 2, p2, "Unexpected second bend.");
+                AssertPolylinePoint(polyline, 3, b.Position, "Unexpected Vertex B point.");
             }
-
-            var restored =
-                _context.Edges.Get(
-                    edge.Id);
-
-            Ensure(
-                restored is not null,
-                "Repository could not restore polyline edge.");
-
-            Ensure(
-                restored.Id == edge.Id,
-                "Restored edge has different Id.");
-
-            Ensure(
-                restored.VertexAId == a.Id,
-                "Restored VertexAId is incorrect.");
-
-            Ensure(
-                restored.VertexBId == b.Id,
-                "Restored VertexBId is incorrect.");
-
-            Ensure(
-                restored.Route.Count == 2,
-                $"Expected 2 intermediate points, " +
-                $"actual {restored.Route.Count}.");
-
-            EnsurePoint(
-                restored.Route.IntermediatePoints[0],
-                p1,
-                "First restored bend is incorrect.");
-
-            EnsurePoint(
-                restored.Route.IntermediatePoints[1],
-                p2,
-                "Second restored bend is incorrect.");
+            var restored = _context.Edges.Get(edge.Id);
+            Ensure(restored is not null, "Repository could not restore polyline edge.");
+            Ensure(restored.Id == edge.Id, "Restored edge has different Id.");
+            Ensure(restored.VertexAId == a.Id, "Restored VertexAId is incorrect.");
+            Ensure(restored.VertexBId == b.Id, "Restored VertexBId is incorrect.");
+            Ensure(restored.Route.Count == 2, $"Expected 2 intermediate points, actual {restored.Route.Count}.");
+            EnsurePoint(restored.Route.IntermediatePoints[0], p1, "First restored bend is incorrect.");
+            EnsurePoint(restored.Route.IntermediatePoints[1], p2, "Second restored bend is incorrect.");
         }
         finally
         {
-            if (edge is not null)
-            {
-                _context.Edges.Delete(
-                    edge.Id);
-            }
-
-            if (a is not null)
-                DeleteVertexIfExists(a.Id);
-
-            if (b is not null)
-                DeleteVertexIfExists(b.Id);
+            if (edge is not null) _context.Edges.Delete(edge.Id);
+            if (a is not null) DeleteVertexIfExists(a.Id);
+            if (b is not null) DeleteVertexIfExists(b.Id);
         }
     }
 
-    private static void AssertPolylinePoint(
-    Polyline polyline,
-    int index,
-    Point2 expected,
-    string message)
+    private static void AssertPolylinePoint(Polyline polyline, int index, Point2 expected, string message)
     {
-        var actual =
-            polyline.GetPoint2dAt(
-                index);
-
-        const double tolerance =
-            1e-6;
-
-        Ensure(
-            Math.Abs(actual.X - expected.X) <
-                tolerance &&
-            Math.Abs(actual.Y - expected.Y) <
-                tolerance,
-            $"{message} " +
-            $"Actual: ({actual.X}, {actual.Y}), " +
-            $"Expected: ({expected.X}, {expected.Y}).");
+        var actual = polyline.GetPoint2dAt(index);
+        const double tolerance = 1e-6;
+        Ensure(Math.Abs(actual.X - expected.X) < tolerance && Math.Abs(actual.Y - expected.Y) < tolerance,
+            $"{message} Actual: ({actual.X}, {actual.Y}), Expected: ({expected.X}, {expected.Y}).");
     }
 
-    private static void EnsurePoint(
-        Point2 actual,
-        Point2 expected,
-        string message)
+    private static void EnsurePoint(Point2 actual, Point2 expected, string message)
     {
-        const double tolerance =
-            1e-6;
-
-        Ensure(
-            actual.DistanceTo(expected) <
-                tolerance,
-            $"{message} " +
-            $"Actual: ({actual.X}, {actual.Y}), " +
-            $"Expected: ({expected.X}, {expected.Y}).");
+        const double tolerance = 1e-6;
+        Ensure(actual.DistanceTo(expected) < tolerance,
+            $"{message} Actual: ({actual.X}, {actual.Y}), Expected: ({expected.X}, {expected.Y}).");
     }
 
     private void TestPolylineEdgeRouteUpdate()
     {
-        var vertexService =
-            new VertexService(
-                _context.Vertices);
-
+        var vertexService = new VertexService(_context.Vertices);
         GraphVertex? a = null;
         GraphVertex? b = null;
         GraphEdge? edge = null;
-
         try
         {
-            a =
-                vertexService.CreateVertex(
-                    new Point2(
-                        1400,
-                        1400));
-
-            b =
-                vertexService.CreateVertex(
-                    new Point2(
-                        1460,
-                        1400));
-
-            edge =
-                GraphEdge.Create(
-                    a.Id,
-                    b.Id);
-
-            _context.Edges.Add(
-                edge);
-
-            Ensure(
-                _context.Index.TryGetEdgeObjectId(
-                    edge.Id,
-                    out var originalObjectId),
-                "Original edge is missing from index.");
-
-            var p1 =
-                new Point2(
-                    1420,
-                    1440);
-
-            var p2 =
-                new Point2(
-                    1440,
-                    1440);
-
-            edge.ChangeRoute(
-                new EdgeRoute(
-                    new[]
-                    {
-                    p1,
-                    p2
-                    }));
-
-            _context.Edges.Update(
-                edge);
-
-            Ensure(
-                _context.Index.TryGetEdgeObjectId(
-                    edge.Id,
-                    out var updatedObjectId),
-                "Updated edge disappeared from index.");
-
-            Ensure(
-                updatedObjectId ==
-                originalObjectId,
-                "Updating route replaced the DWG entity. " +
-                "ObjectId must remain unchanged.");
-
-            using (var transaction =
-                   _document.Database
-                       .TransactionManager
-                       .StartTransaction())
+            a = vertexService.CreateVertex(new Point2(1400, 1400));
+            b = vertexService.CreateVertex(new Point2(1460, 1400));
+            edge = GraphEdge.Create(a.Id, b.Id);
+            _context.Edges.Add(edge);
+            Ensure(_context.Index.TryGetEdgeObjectId(edge.Id, out var originalObjectId), "Original edge is missing from index.");
+            var p1 = new Point2(1420, 1440);
+            var p2 = new Point2(1440, 1440);
+            edge.ChangeRoute(new EdgeRoute(new[] { p1, p2 }));
+            _context.Edges.Update(edge);
+            Ensure(_context.Index.TryGetEdgeObjectId(edge.Id, out var updatedObjectId), "Updated edge disappeared from index.");
+            Ensure(updatedObjectId == originalObjectId, "Updating route replaced the DWG entity. ObjectId must remain unchanged.");
+            using (var transaction = _document.Database.TransactionManager.StartTransaction())
             {
-                var polyline =
-                    transaction.GetObject(
-                        updatedObjectId,
-                        OpenMode.ForRead)
-                    as Polyline;
-
-                Ensure(
-                    polyline is not null,
-                    "Updated edge is not a Polyline.");
-
-                Ensure(
-                    polyline.NumberOfVertices == 4,
-                    $"Expected 4 vertices after route update, " +
-                    $"actual {polyline.NumberOfVertices}.");
-
-                AssertPolylinePoint(
-                    polyline,
-                    0,
-                    a.Position,
-                    "Vertex A changed during route update.");
-
-                AssertPolylinePoint(
-                    polyline,
-                    1,
-                    p1,
-                    "First bend was not written.");
-
-                AssertPolylinePoint(
-                    polyline,
-                    2,
-                    p2,
-                    "Second bend was not written.");
-
-                AssertPolylinePoint(
-                    polyline,
-                    3,
-                    b.Position,
-                    "Vertex B changed during route update.");
+                var polyline = transaction.GetObject(updatedObjectId, OpenMode.ForRead) as Polyline;
+                Ensure(polyline is not null, "Updated edge is not a Polyline.");
+                Ensure(polyline.NumberOfVertices == 4, $"Expected 4 vertices after route update, actual {polyline.NumberOfVertices}.");
+                AssertPolylinePoint(polyline, 0, a.Position, "Vertex A changed during route update.");
+                AssertPolylinePoint(polyline, 1, p1, "First bend was not written.");
+                AssertPolylinePoint(polyline, 2, p2, "Second bend was not written.");
+                AssertPolylinePoint(polyline, 3, b.Position, "Vertex B changed during route update.");
             }
-
-            var restored =
-                _context.Edges.Get(
-                    edge.Id);
-
-            Ensure(
-                restored is not null,
-                "Updated edge cannot be restored.");
-
-            Ensure(
-                restored.Id == edge.Id,
-                "Updated edge lost its Id.");
-
-            Ensure(
-                restored.Route.Count == 2,
-                "Updated route was not restored.");
-
-            EnsurePoint(
-                restored.Route.IntermediatePoints[0],
-                p1,
-                "First updated bend was not restored.");
-
-            EnsurePoint(
-                restored.Route.IntermediatePoints[1],
-                p2,
-                "Second updated bend was not restored.");
-
+            var restored = _context.Edges.Get(edge.Id);
+            Ensure(restored is not null, "Updated edge cannot be restored.");
+            Ensure(restored.Id == edge.Id, "Updated edge lost its Id.");
+            Ensure(restored.Route.Count == 2, "Updated route was not restored.");
+            EnsurePoint(restored.Route.IntermediatePoints[0], p1, "First updated bend was not restored.");
+            EnsurePoint(restored.Route.IntermediatePoints[1], p2, "Second updated bend was not restored.");
             var sameObjectId = updatedObjectId;
-
-            edge.ChangeRoute(
-                EdgeRoute.Straight);
-
-            _context.Edges.Update(
-                edge);
-
-            Ensure(
-                _context.Index.TryGetEdgeObjectId(
-                    edge.Id,
-                    out var straightObjectId),
-                "Straightened edge disappeared from index.");
-
-            Ensure(
-                straightObjectId ==
-                sameObjectId,
-                "Straightening edge replaced its DWG entity.");
-
-            using (var transaction =
-                   _document.Database
-                       .TransactionManager
-                       .StartTransaction())
+            edge.ChangeRoute(EdgeRoute.Straight);
+            _context.Edges.Update(edge);
+            Ensure(_context.Index.TryGetEdgeObjectId(edge.Id, out var straightObjectId), "Straightened edge disappeared from index.");
+            Ensure(straightObjectId == sameObjectId, "Straightening edge replaced its DWG entity.");
+            using (var transaction = _document.Database.TransactionManager.StartTransaction())
             {
-                var polyline =
-                    transaction.GetObject(
-                        straightObjectId,
-                        OpenMode.ForRead)
-                    as Polyline;
-
-                Ensure(
-                    polyline is not null,
-                    "Straightened edge is not a Polyline.");
-
-                Ensure(
-                    polyline.NumberOfVertices == 2,
-                    $"Expected 2 vertices after straightening, " +
-                    $"actual {polyline.NumberOfVertices}.");
-
-                AssertPolylinePoint(
-                    polyline,
-                    0,
-                    a.Position,
-                    "Vertex A is incorrect after straightening.");
-
-                AssertPolylinePoint(
-                    polyline,
-                    1,
-                    b.Position,
-                    "Vertex B is incorrect after straightening.");
+                var polyline = transaction.GetObject(straightObjectId, OpenMode.ForRead) as Polyline;
+                Ensure(polyline is not null, "Straightened edge is not a Polyline.");
+                Ensure(polyline.NumberOfVertices == 2, $"Expected 2 vertices after straightening, actual {polyline.NumberOfVertices}.");
+                AssertPolylinePoint(polyline, 0, a.Position, "Vertex A is incorrect after straightening.");
+                AssertPolylinePoint(polyline, 1, b.Position, "Vertex B is incorrect after straightening.");
             }
         }
         finally
         {
-            if (edge is not null)
-            {
-                _context.Edges.Delete(
-                    edge.Id);
-            }
-
-            if (a is not null)
-                DeleteVertexIfExists(a.Id);
-
-            if (b is not null)
-                DeleteVertexIfExists(b.Id);
+            if (edge is not null) _context.Edges.Delete(edge.Id);
+            if (a is not null) DeleteVertexIfExists(a.Id);
+            if (b is not null) DeleteVertexIfExists(b.Id);
         }
     }
 
     private void TestPolylineSynchronizationPreservesBends()
     {
-        var vertexService =
-            new VertexService(
-                _context.Vertices);
-
+        var vertexService = new VertexService(_context.Vertices);
         GraphVertex? a = null;
         GraphVertex? b = null;
         GraphEdge? edge = null;
-
         try
         {
-            a =
-                vertexService.CreateVertex(
-                    new Point2(
-                        1500,
-                        1500));
-
-            b =
-                vertexService.CreateVertex(
-                    new Point2(
-                        1580,
-                        1500));
-
-            var p1 =
-                new Point2(
-                    1520,
-                    1540);
-
-            var p2 =
-                new Point2(
-                    1560,
-                    1540);
-
-            edge =
-                GraphEdge.Create(
-                    a.Id,
-                    b.Id,
-                    new EdgeRoute(
-                        new[]
-                        {
-                        p1,
-                        p2
-                        }));
-
-            _context.Edges.Add(
-                edge);
-
-            Ensure(
-                _context.Index.TryGetEdgeObjectId(
-                    edge.Id,
-                    out var edgeObjectId),
-                "Bent edge is missing from index.");
-
-            var newPosition =
-                new Point2(
-                    1490,
-                    1470);
-
-            MoveVertexEntity(
-                a.Id,
-                newPosition);
-
-            _synchronizer
-                .UpdateIncidentEdges(
-                    a.Id);
-
-            using var transaction =
-                _document.Database
-                    .TransactionManager
-                    .StartTransaction();
-
-            var polyline =
-                transaction.GetObject(
-                    edgeObjectId,
-                    OpenMode.ForRead)
-                as Polyline;
-
-            Ensure(
-                polyline is not null,
-                "Bent edge is not a Polyline.");
-
-            Ensure(
-                polyline.NumberOfVertices == 4,
-                $"Expected 4 vertices after synchronization, " +
-                $"actual {polyline.NumberOfVertices}.");
-
-            AssertPolylinePoint(
-                polyline,
-                0,
-                newPosition,
-                "Moved endpoint was not synchronized.");
-
-            AssertPolylinePoint(
-                polyline,
-                1,
-                p1,
-                "Synchronization moved the first bend.");
-
-            AssertPolylinePoint(
-                polyline,
-                2,
-                p2,
-                "Synchronization moved the second bend.");
-
-            AssertPolylinePoint(
-                polyline,
-                3,
-                b.Position,
-                "Synchronization unexpectedly moved Vertex B.");
+            a = vertexService.CreateVertex(new Point2(1500, 1500));
+            b = vertexService.CreateVertex(new Point2(1580, 1500));
+            var p1 = new Point2(1520, 1540);
+            var p2 = new Point2(1560, 1540);
+            edge = GraphEdge.Create(a.Id, b.Id, new EdgeRoute(new[] { p1, p2 }));
+            _context.Edges.Add(edge);
+            Ensure(_context.Index.TryGetEdgeObjectId(edge.Id, out var edgeObjectId), "Bent edge is missing from index.");
+            var newPosition = new Point2(1490, 1470);
+            MoveVertexEntity(a.Id, newPosition);
+            _synchronizer.UpdateIncidentEdges(a.Id);
+            using var transaction = _document.Database.TransactionManager.StartTransaction();
+            var polyline = transaction.GetObject(edgeObjectId, OpenMode.ForRead) as Polyline;
+            Ensure(polyline is not null, "Bent edge is not a Polyline.");
+            Ensure(polyline.NumberOfVertices == 4, $"Expected 4 vertices after synchronization, actual {polyline.NumberOfVertices}.");
+            AssertPolylinePoint(polyline, 0, newPosition, "Moved endpoint was not synchronized.");
+            AssertPolylinePoint(polyline, 1, p1, "Synchronization moved the first bend.");
+            AssertPolylinePoint(polyline, 2, p2, "Synchronization moved the second bend.");
+            AssertPolylinePoint(polyline, 3, b.Position, "Synchronization unexpectedly moved Vertex B.");
         }
         finally
         {
-            if (edge is not null)
-            {
-                _context.Edges.Delete(
-                    edge.Id);
-            }
-
-            if (a is not null)
-                DeleteVertexIfExists(a.Id);
-
-            if (b is not null)
-                DeleteVertexIfExists(b.Id);
+            if (edge is not null) _context.Edges.Delete(edge.Id);
+            if (a is not null) DeleteVertexIfExists(a.Id);
+            if (b is not null) DeleteVertexIfExists(b.Id);
         }
     }
 
     private void TestShortestPathUsesPolylineLength()
     {
-        var vertexService =
-            new VertexService(
-                _context.Vertices);
-
-        var edgeService =
-            new EdgeService(
-                _context.Vertices,
-                _context.Edges);
-
+        var vertexService = new VertexService(_context.Vertices);
+        var edgeService = new EdgeService(_context.Vertices, _context.Edges);
         GraphVertex? a = null;
         GraphVertex? b = null;
         GraphVertex? c = null;
-
         GraphEdge? longEdge = null;
         GraphEdge? ac = null;
         GraphEdge? cb = null;
-
         try
         {
-            a =
-                vertexService.CreateVertex(
-                    new Point2(
-                        1600,
-                        1600));
-
-            b =
-                vertexService.CreateVertex(
-                    new Point2(
-                        1700,
-                        1600));
-
-            c =
-                vertexService.CreateVertex(
-                    new Point2(
-                        1650,
-                        1620));
-
-            longEdge =
-                GraphEdge.Create(
-                    a.Id,
-                    b.Id,
-                    new EdgeRoute(
-                        new[]
-                        {
-                        new Point2(
-                            1600,
-                            1700),
-
-                        new Point2(
-                            1700,
-                            1700)
-                        }));
-
-            _context.Edges.Add(
-                longEdge);
-
-            ac =
-                edgeService.CreateEdge(
-                    a.Id,
-                    c.Id);
-
-            cb =
-                edgeService.CreateEdge(
-                    c.Id,
-                    b.Id);
-
-            var shortestPathService =
-                new ShortestPathApplicationService(
-                    _context.Vertices,
-                    _context.Edges,
-                    new DijkstraShortestPathService(
-                        new EdgeLengthCalculator())
-                    );
-
-            var result =
-                shortestPathService.Find(
-                    a.Id,
-                    b.Id);
-
-            Ensure(
-                result is not null,
-                "Shortest path was not found.");
-
-            Ensure(
-                result.VertexIds.Count == 3,
-                $"Expected A-C-B path with 3 vertices, " +
-                $"actual count {result.VertexIds.Count}.");
-
-            Ensure(
-                result.VertexIds[0] == a.Id,
-                "Shortest path does not start at A.");
-
-            Ensure(
-                result.VertexIds[1] == c.Id,
-                "Shortest path did not choose C.");
-
-            Ensure(
-                result.VertexIds[2] == b.Id,
-                "Shortest path does not end at B.");
-
-            Ensure(
-                !result.EdgeIds.Contains(
-                    longEdge.Id),
-                "Shortest path incorrectly used the " +
-                "geometrically long polyline edge.");
-
-            Ensure(
-                result.EdgeIds.Contains(
-                    ac.Id) &&
-                result.EdgeIds.Contains(
-                    cb.Id),
-                "Shortest path does not contain A-C and C-B edges.");
+            a = vertexService.CreateVertex(new Point2(1600, 1600));
+            b = vertexService.CreateVertex(new Point2(1700, 1600));
+            c = vertexService.CreateVertex(new Point2(1650, 1620));
+            longEdge = GraphEdge.Create(a.Id, b.Id, new EdgeRoute(new[] { new Point2(1600, 1700), new Point2(1700, 1700) }));
+            _context.Edges.Add(longEdge);
+            ac = edgeService.CreateEdge(a.Id, c.Id);
+            cb = edgeService.CreateEdge(c.Id, b.Id);
+            var shortestPathService = new ShortestPathApplicationService(
+                _context.Vertices, _context.Edges,
+                new DijkstraShortestPathService(new EdgeLengthCalculator()));
+            var result = shortestPathService.Find(a.Id, b.Id);
+            Ensure(result is not null, "Shortest path was not found.");
+            Ensure(result.VertexIds.Count == 3, $"Expected A-C-B path with 3 vertices, actual count {result.VertexIds.Count}.");
+            Ensure(result.VertexIds[0] == a.Id, "Shortest path does not start at A.");
+            Ensure(result.VertexIds[1] == c.Id, "Shortest path did not choose C.");
+            Ensure(result.VertexIds[2] == b.Id, "Shortest path does not end at B.");
+            Ensure(!result.EdgeIds.Contains(longEdge.Id), "Shortest path incorrectly used the geometrically long polyline edge.");
+            Ensure(result.EdgeIds.Contains(ac.Id) && result.EdgeIds.Contains(cb.Id), "Shortest path does not contain A-C and C-B edges.");
         }
         finally
         {
-            if (longEdge is not null)
-                _context.Edges.Delete(longEdge.Id);
-
-            if (ac is not null)
-                _context.Edges.Delete(ac.Id);
-
-            if (cb is not null)
-                _context.Edges.Delete(cb.Id);
-
-            if (a is not null)
-                DeleteVertexIfExists(a.Id);
-
-            if (b is not null)
-                DeleteVertexIfExists(b.Id);
-
-            if (c is not null)
-                DeleteVertexIfExists(c.Id);
+            if (longEdge is not null) _context.Edges.Delete(longEdge.Id);
+            if (ac is not null) _context.Edges.Delete(ac.Id);
+            if (cb is not null) _context.Edges.Delete(cb.Id);
+            if (a is not null) DeleteVertexIfExists(a.Id);
+            if (b is not null) DeleteVertexIfExists(b.Id);
+            if (c is not null) DeleteVertexIfExists(c.Id);
         }
     }
 
-    private void AssertEdgePolyline(
-        Guid edgeId,
-        params Point2[] expectedPoints)
+    private void AssertEdgePolyline(Guid edgeId, params Point2[] expectedPoints)
     {
-        Ensure(
-            _context.Index.TryGetEdgeObjectId(
-                edgeId,
-                out var objectId),
-            $"Edge '{edgeId}' is missing from index.");
-
-        using var transaction =
-            _document.Database
-                .TransactionManager
-                .StartTransaction();
-
-        var polyline =
-            transaction.GetObject(
-                objectId,
-                OpenMode.ForRead)
-            as Polyline;
-
-        Ensure(
-            polyline is not null,
-            $"Edge '{edgeId}' is not represented by Polyline.");
-
-        Ensure(
-            !polyline.Closed,
-            $"Edge '{edgeId}' polyline is closed.");
-
-        Ensure(
-            polyline.NumberOfVertices ==
-            expectedPoints.Length,
-            $"Edge '{edgeId}' has " +
-            $"{polyline.NumberOfVertices} polyline vertices, " +
-            $"expected {expectedPoints.Length}.");
-
-        for (var i = 0;
-             i < expectedPoints.Length;
-             i++)
-        {
-            AssertPolylinePoint(
-                polyline,
-                i,
-                expectedPoints[i],
-                $"Unexpected point {i} of edge '{edgeId}'.");
-        }
+        Ensure(_context.Index.TryGetEdgeObjectId(edgeId, out var objectId), $"Edge '{edgeId}' is missing from index.");
+        using var transaction = _document.Database.TransactionManager.StartTransaction();
+        var polyline = transaction.GetObject(objectId, OpenMode.ForRead) as Polyline;
+        Ensure(polyline is not null, $"Edge '{edgeId}' is not represented by Polyline.");
+        Ensure(!polyline.Closed, $"Edge '{edgeId}' polyline is closed.");
+        Ensure(polyline.NumberOfVertices == expectedPoints.Length,
+            $"Edge '{edgeId}' has {polyline.NumberOfVertices} polyline vertices, expected {expectedPoints.Length}.");
+        for (var i = 0; i < expectedPoints.Length; i++)
+            AssertPolylinePoint(polyline, i, expectedPoints[i], $"Unexpected point {i} of edge '{edgeId}'.");
     }
 
     private void TestSplitBentPolylineEdge()
     {
-        var vertexService =
-            new VertexService(
-                _context.Vertices);
-
-        var splitService =
-            new SplitEdgeService(
-                _context.Vertices,
-                _context.Edges);
-
+        var vertexService = new VertexService(_context.Vertices);
+        var splitService = new SplitEdgeService(_context.Vertices, _context.Edges);
         GraphVertex? a = null;
         GraphVertex? b = null;
-
         GraphEdge? original = null;
         SplitEdgeResult? split = null;
-
         try
         {
-            a =
-                vertexService.CreateVertex(
-                    new Point2(
-                        1800,
-                        1800));
-
-            b =
-                vertexService.CreateVertex(
-                    new Point2(
-                        1880,
-                        1800));
-
-            var p1 =
-                new Point2(
-                    1800,
-                    1840);
-
-            var p2 =
-                new Point2(
-                    1840,
-                    1840);
-
-            var p3 =
-                new Point2(
-                    1880,
-                    1840);
-
-            var splitPoint =
-                new Point2(
-                    1860,
-                    1840);
-
-            original =
-                GraphEdge.Create(
-                    a.Id,
-                    b.Id,
-                    new EdgeRoute(
-                        new[]
-                        {
-                        p1,
-                        p2,
-                        p3
-                        }));
-
-            _context.Edges.Add(
-                original);
-
-            Ensure(
-                _context.Index.TryGetEdgeObjectId(
-                    original.Id,
-                    out var originalObjectId),
-                "Original bent edge is missing from index.");
-
-            AssertEdgePolyline(
-                original.Id,
-                a.Position,
-                p1,
-                p2,
-                p3,
-                b.Position);
-
-            var originalLength =
-                EdgeRouteGeometry.CalculateLength(
-                    a.Position,
-                    b.Position,
-                    original.Route);
-
-            split =
-                splitService.Split(
-                    original.Id,
-                    splitPoint);
-
-            //
-            // Старого GraphEdge больше нет.
-            //
-            Ensure(
-                _context.Edges.Get(
-                    original.Id) is null,
-                "Original bent edge still exists after split.");
-
-            Ensure(
-                !_context.Index.TryGetEdgeObjectId(
-                    original.Id,
-                    out _),
-                "Original bent edge still exists in index.");
-
-            Ensure(
-                originalObjectId.IsErased,
-                "Original DWG Polyline was not erased.");
-
-            //
-            // Новая Vertex.
-            //
-            EnsurePoint(
-                split.NewVertex.Position,
-                splitPoint,
-                "Split vertex has incorrect position.");
-
-            Ensure(
-                _context.Vertices.Get(
-                    split.NewVertex.Id) is not null,
-                "Split vertex was not persisted.");
-
-            //
-            // Проверяем topology.
-            //
-            Ensure(
-                split.EdgeA.VertexAId ==
-                a.Id,
-                "Edge A-C has incorrect VertexAId.");
-
-            Ensure(
-                split.EdgeA.VertexBId ==
-                split.NewVertex.Id,
-                "Edge A-C has incorrect VertexBId.");
-
-            Ensure(
-                split.EdgeB.VertexAId ==
-                split.NewVertex.Id,
-                "Edge C-B has incorrect VertexAId.");
-
-            Ensure(
-                split.EdgeB.VertexBId ==
-                b.Id,
-                "Edge C-B has incorrect VertexBId.");
-
-            //
-            // Проверяем Domain routes.
-            //
-            Ensure(
-                split.EdgeA.Route.Count == 2,
-                $"Expected 2 bends in A-C, " +
-                $"actual {split.EdgeA.Route.Count}.");
-
-            EnsurePoint(
-                split.EdgeA.Route
-                    .IntermediatePoints[0],
-                p1,
-                "A-C lost P1.");
-
-            EnsurePoint(
-                split.EdgeA.Route
-                    .IntermediatePoints[1],
-                p2,
-                "A-C lost P2.");
-
-            Ensure(
-                split.EdgeB.Route.Count == 1,
-                $"Expected 1 bend in C-B, " +
-                $"actual {split.EdgeB.Route.Count}.");
-
-            EnsurePoint(
-                split.EdgeB.Route
-                    .IntermediatePoints[0],
-                p3,
-                "C-B lost P3.");
-
-            //
-            // А теперь главное:
-            // проверяем реальные DWG Polyline.
-            //
-            AssertEdgePolyline(
-                split.EdgeA.Id,
-                a.Position,
-                p1,
-                p2,
-                splitPoint);
-
-            AssertEdgePolyline(
-                split.EdgeB.Id,
-                splitPoint,
-                p3,
-                b.Position);
-
-            //
-            // Repository должен восстановить
-            // те же routes из Polyline.
-            //
-            var restoredA =
-                _context.Edges.Get(
-                    split.EdgeA.Id);
-
-            var restoredB =
-                _context.Edges.Get(
-                    split.EdgeB.Id);
-
-            Ensure(
-                restoredA is not null,
-                "Repository cannot restore A-C edge.");
-
-            Ensure(
-                restoredB is not null,
-                "Repository cannot restore C-B edge.");
-
-            Ensure(
-                restoredA.Id ==
-                split.EdgeA.Id,
-                "Restored A-C edge Id changed.");
-
-            Ensure(
-                restoredB.Id ==
-                split.EdgeB.Id,
-                "Restored C-B edge Id changed.");
-
-            Ensure(
-                restoredA.Route.Count == 2,
-                "Restored A-C route is incorrect.");
-
-            Ensure(
-                restoredB.Route.Count == 1,
-                "Restored C-B route is incorrect.");
-
-            //
-            // Index relationships.
-            //
-            var incidentToC =
-                _context.Edges
-                    .GetByVertex(
-                        split.NewVertex.Id)
-                    .ToArray();
-
-            Ensure(
-                incidentToC.Length == 2,
-                $"Split vertex has " +
-                $"{incidentToC.Length} incident edges, expected 2.");
-
-            Ensure(
-                incidentToC.Any(
-                    x => x.Id ==
-                         split.EdgeA.Id),
-                "A-C is not incident to split vertex.");
-
-            Ensure(
-                incidentToC.Any(
-                    x => x.Id ==
-                         split.EdgeB.Id),
-                "C-B is not incident to split vertex.");
-
-            //
-            // И длина всей геометрии
-            // не должна измениться.
-            //
-            var leftLength =
-                EdgeRouteGeometry.CalculateLength(
-                    a.Position,
-                    split.NewVertex.Position,
-                    split.EdgeA.Route);
-
-            var rightLength =
-                EdgeRouteGeometry.CalculateLength(
-                    split.NewVertex.Position,
-                    b.Position,
-                    split.EdgeB.Route);
-
-            Ensure(
-                Math.Abs(
-                    originalLength -
-                    (leftLength + rightLength)) <
-                1e-6,
-                "Polyline split changed total edge length.");
+            a = vertexService.CreateVertex(new Point2(1800, 1800));
+            b = vertexService.CreateVertex(new Point2(1880, 1800));
+            var p1 = new Point2(1800, 1840);
+            var p2 = new Point2(1840, 1840);
+            var p3 = new Point2(1880, 1840);
+            var splitPoint = new Point2(1860, 1840);
+            original = GraphEdge.Create(a.Id, b.Id, new EdgeRoute(new[] { p1, p2, p3 }));
+            _context.Edges.Add(original);
+            Ensure(_context.Index.TryGetEdgeObjectId(original.Id, out var originalObjectId), "Original bent edge is missing from index.");
+            AssertEdgePolyline(original.Id, a.Position, p1, p2, p3, b.Position);
+            var originalLength = EdgeRouteGeometry.CalculateLength(a.Position, b.Position, original.Route);
+            split = splitService.Split(original.Id, splitPoint);
+            Ensure(_context.Edges.Get(original.Id) is null, "Original bent edge still exists after split.");
+            Ensure(!_context.Index.TryGetEdgeObjectId(original.Id, out _), "Original bent edge still exists in index.");
+            Ensure(originalObjectId.IsErased, "Original DWG Polyline was not erased.");
+            EnsurePoint(split.NewVertex.Position, splitPoint, "Split vertex has incorrect position.");
+            Ensure(_context.Vertices.Get(split.NewVertex.Id) is not null, "Split vertex was not persisted.");
+            Ensure(split.EdgeA.VertexAId == a.Id, "Edge A-C has incorrect VertexAId.");
+            Ensure(split.EdgeA.VertexBId == split.NewVertex.Id, "Edge A-C has incorrect VertexBId.");
+            Ensure(split.EdgeB.VertexAId == split.NewVertex.Id, "Edge C-B has incorrect VertexAId.");
+            Ensure(split.EdgeB.VertexBId == b.Id, "Edge C-B has incorrect VertexBId.");
+            Ensure(split.EdgeA.Route.Count == 2, $"Expected 2 bends in A-C, actual {split.EdgeA.Route.Count}.");
+            EnsurePoint(split.EdgeA.Route.IntermediatePoints[0], p1, "A-C lost P1.");
+            EnsurePoint(split.EdgeA.Route.IntermediatePoints[1], p2, "A-C lost P2.");
+            Ensure(split.EdgeB.Route.Count == 1, $"Expected 1 bend in C-B, actual {split.EdgeB.Route.Count}.");
+            EnsurePoint(split.EdgeB.Route.IntermediatePoints[0], p3, "C-B lost P3.");
+            AssertEdgePolyline(split.EdgeA.Id, a.Position, p1, p2, splitPoint);
+            AssertEdgePolyline(split.EdgeB.Id, splitPoint, p3, b.Position);
+            var restoredA = _context.Edges.Get(split.EdgeA.Id);
+            var restoredB = _context.Edges.Get(split.EdgeB.Id);
+            Ensure(restoredA is not null, "Repository cannot restore A-C edge.");
+            Ensure(restoredB is not null, "Repository cannot restore C-B edge.");
+            Ensure(restoredA.Id == split.EdgeA.Id, "Restored A-C edge Id changed.");
+            Ensure(restoredB.Id == split.EdgeB.Id, "Restored C-B edge Id changed.");
+            Ensure(restoredA.Route.Count == 2, "Restored A-C route is incorrect.");
+            Ensure(restoredB.Route.Count == 1, "Restored C-B route is incorrect.");
+            var incidentToC = _context.Edges.GetByVertex(split.NewVertex.Id).ToArray();
+            Ensure(incidentToC.Length == 2, $"Split vertex has {incidentToC.Length} incident edges, expected 2.");
+            Ensure(incidentToC.Any(x => x.Id == split.EdgeA.Id), "A-C is not incident to split vertex.");
+            Ensure(incidentToC.Any(x => x.Id == split.EdgeB.Id), "C-B is not incident to split vertex.");
+            var leftLength = EdgeRouteGeometry.CalculateLength(a.Position, split.NewVertex.Position, split.EdgeA.Route);
+            var rightLength = EdgeRouteGeometry.CalculateLength(split.NewVertex.Position, b.Position, split.EdgeB.Route);
+            Ensure(Math.Abs(originalLength - (leftLength + rightLength)) < 1e-6, "Polyline split changed total edge length.");
         }
         finally
         {
-            //
-            // DeleteVertexIfExists(C) должен
-            // каскадно удалить A-C и C-B.
-            //
-            if (split is not null)
-            {
-                DeleteVertexIfExists(
-                    split.NewVertex.Id);
-            }
-
-            //
-            // Если тест упал раньше split,
-            // исходное ребро ещё может существовать.
-            //
-            if (original is not null &&
-                _context.Edges.Get(
-                    original.Id) is not null)
-            {
-                _context.Edges.Delete(
-                    original.Id);
-            }
-
-            if (a is not null)
-                DeleteVertexIfExists(a.Id);
-
-            if (b is not null)
-                DeleteVertexIfExists(b.Id);
+            if (split is not null) DeleteVertexIfExists(split.NewVertex.Id);
+            if (original is not null && _context.Edges.Get(original.Id) is not null) _context.Edges.Delete(original.Id);
+            if (a is not null) DeleteVertexIfExists(a.Id);
+            if (b is not null) DeleteVertexIfExists(b.Id);
         }
     }
 
     private void TestAutoBuildSplitBentPolylineEdge()
     {
-        var vertexService =
-            new VertexService(
-                _context.Vertices);
-
-        var edgeService =
-            new EdgeService(
-                _context.Vertices,
-                _context.Edges);
-
-        var buildService =
-            new GraphBuildService(
-                edgeService,
-                _context.Edges);
-
-        var splitService =
-            new SplitEdgeService(
-                _context.Vertices,
-                _context.Edges);
-
-        var executor =
-            new GraphBuildStepExecutor(
-                _document,
-                vertexService,
-                splitService,
-                buildService);
-
+        var vertexService = new VertexService(_context.Vertices);
+        var edgeService = new EdgeService(_context.Vertices, _context.Edges);
+        var buildService = new GraphBuildService(edgeService, _context.Edges);
+        var splitService = new SplitEdgeService(_context.Vertices, _context.Edges);
+        var executor = new GraphBuildStepExecutor(_document, vertexService, splitService, buildService);
         GraphVertex? a = null;
         GraphVertex? b = null;
         GraphVertex? d = null;
         GraphVertex? c = null;
-
         GraphEdge? original = null;
-
         try
         {
-            a =
-                vertexService.CreateVertex(
-                    new Point2(
-                        1900,
-                        1900));
-
-            b =
-                vertexService.CreateVertex(
-                    new Point2(
-                        2000,
-                        1900));
-
-            d =
-                vertexService.CreateVertex(
-                    new Point2(
-                        1950,
-                        1980));
-
-            var p1 =
-                new Point2(
-                    1920,
-                    1940);
-
-            var p2 =
-                new Point2(
-                    1980,
-                    1940);
-
-            var splitPoint =
-                new Point2(
-                    1950,
-                    1940);
-
-            original =
-                GraphEdge.Create(
-                    a.Id,
-                    b.Id,
-                    new EdgeRoute(
-                        new[]
-                        {
-                        p1,
-                        p2
-                        }));
-
-            _context.Edges.Add(
+            a = vertexService.CreateVertex(new Point2(1900, 1900));
+            b = vertexService.CreateVertex(new Point2(2000, 1900));
+            d = vertexService.CreateVertex(new Point2(1950, 1980));
+            var p1 = new Point2(1920, 1940);
+            var p2 = new Point2(1980, 1940);
+            var splitPoint = new Point2(1950, 1940);
+            original = GraphEdge.Create(a.Id, b.Id, new EdgeRoute(new[] { p1, p2 }));
+            _context.Edges.Add(original);
+            Ensure(_context.Index.TryGetEdgeObjectId(original.Id, out var originalObjectId), "Bent auto-build edge is missing from index.");
+            buildService.AdvanceTo(d);
+            var pick = BuildPickResult.FromEdge(
+                new Point3d(a.Position.X, a.Position.Y, 0),
+                new Point3d(splitPoint.X, splitPoint.Y, 0),
+                originalObjectId,
                 original);
-
-            Ensure(
-                _context.Index.TryGetEdgeObjectId(
-                    original.Id,
-                    out var originalObjectId),
-                "Bent auto-build edge is missing from index.");
-
-            //
-            // GRAPHBUILD уже находится в D.
-            //
-            buildService.AdvanceTo(
-                d);
-
-            //
-            // Point намеренно неправильный:
-            // имитируем Endpoint OSNAP в A.
-            //
-            // PickPoint — фактический клик
-            // по горизонтальному сегменту P1-P2.
-            //
-            var pick =
-                BuildPickResult.FromEdge(
-                    new Point3d(
-                        a.Position.X,
-                        a.Position.Y,
-                        0),
-
-                    new Point3d(
-                        splitPoint.X,
-                        splitPoint.Y,
-                        0),
-
-                    originalObjectId,
-                    original);
-
-            c =
-                executor.Execute(
-                    pick);
-
-            //
-            // Если executor использовал pick.Point
-            // вместо pick.PickPoint,
-            // сюда мы либо не дошли бы вообще,
-            // либо C оказался бы в неправильном месте.
-            //
-            EnsurePoint(
-                c.Position,
-                splitPoint,
-                "Auto-build split used Point instead of PickPoint.");
-
-            Ensure(
-                buildService.CurrentVertex?.Id ==
-                c.Id,
-                "Split vertex did not become CurrentVertex.");
-
-            Ensure(
-                _context.Edges.Get(
-                    original.Id) is null,
-                "Original bent edge still exists after auto-build split.");
-
-            Ensure(
-                !_context.Index.TryGetEdgeObjectId(
-                    original.Id,
-                    out _),
-                "Original bent edge remains in index.");
-
-            //
-            // C должно иметь три ребра:
-            //
-            // A-C
-            // C-B
-            // D-C
-            //
-            var incidentToC =
-                _context.Edges
-                    .GetByVertex(
-                        c.Id)
-                    .ToArray();
-
-            Ensure(
-                incidentToC.Length == 3,
-                $"Auto-build split vertex has " +
-                $"{incidentToC.Length} incident edges, expected 3.");
-
-            var edgeAC =
-                incidentToC.SingleOrDefault(
-                    edge =>
-                        edge.IsIncidentTo(a.Id));
-
-            var edgeCB =
-                incidentToC.SingleOrDefault(
-                    edge =>
-                        edge.IsIncidentTo(b.Id));
-
-            var edgeDC =
-                incidentToC.SingleOrDefault(
-                    edge =>
-                        edge.IsIncidentTo(d.Id));
-
-            Ensure(
-                edgeAC is not null,
-                "Auto-build did not create A-C.");
-
-            Ensure(
-                edgeCB is not null,
-                "Auto-build did not create C-B.");
-
-            Ensure(
-                edgeDC is not null,
-                "Auto-build did not create D-C.");
-
-            //
-            // Bend distribution.
-            //
-            Ensure(
-                edgeAC.Route.Count == 1,
-                $"Expected one bend in A-C, " +
-                $"actual {edgeAC.Route.Count}.");
-
-            EnsurePoint(
-                edgeAC.Route
-                    .IntermediatePoints[0],
-                p1,
-                "A-C has incorrect bend.");
-
-            Ensure(
-                edgeCB.Route.Count == 1,
-                $"Expected one bend in C-B, " +
-                $"actual {edgeCB.Route.Count}.");
-
-            EnsurePoint(
-                edgeCB.Route
-                    .IntermediatePoints[0],
-                p2,
-                "C-B has incorrect bend.");
-
-            Ensure(
-                edgeDC.Route.IsStraight,
-                "D-C build edge must be straight.");
-
-            //
-            // Реальная DWG geometry.
-            //
-            AssertEdgePolyline(
-                edgeAC.Id,
-                a.Position,
-                p1,
-                splitPoint);
-
-            AssertEdgePolyline(
-                edgeCB.Id,
-                splitPoint,
-                p2,
-                b.Position);
-
-            AssertEdgePolyline(
-                edgeDC.Id,
-                d.Position,
-                splitPoint);
-
-            //
-            // И дополнительно убеждаемся,
-            // что A-C не был случайно создан дважды.
-            //
-            var acCount =
-                _context.Edges
-                    .GetAll()
-                    .Count(
-                        edge =>
-                            edge.IsIncidentTo(a.Id) &&
-                            edge.IsIncidentTo(c.Id));
-
-            Ensure(
-                acCount == 1,
-                $"Expected exactly one A-C edge, " +
-                $"actual {acCount}.");
+            c = executor.Execute(pick);
+            EnsurePoint(c.Position, splitPoint, "Auto-build split used Point instead of PickPoint.");
+            Ensure(buildService.CurrentVertex?.Id == c.Id, "Split vertex did not become CurrentVertex.");
+            Ensure(_context.Edges.Get(original.Id) is null, "Original bent edge still exists after auto-build split.");
+            Ensure(!_context.Index.TryGetEdgeObjectId(original.Id, out _), "Original bent edge remains in index.");
+            var incidentToC = _context.Edges.GetByVertex(c.Id).ToArray();
+            Ensure(incidentToC.Length == 3, $"Auto-build split vertex has {incidentToC.Length} incident edges, expected 3.");
+            var edgeAC = incidentToC.SingleOrDefault(edge => edge.IsIncidentTo(a.Id));
+            var edgeCB = incidentToC.SingleOrDefault(edge => edge.IsIncidentTo(b.Id));
+            var edgeDC = incidentToC.SingleOrDefault(edge => edge.IsIncidentTo(d.Id));
+            Ensure(edgeAC is not null, "Auto-build did not create A-C.");
+            Ensure(edgeCB is not null, "Auto-build did not create C-B.");
+            Ensure(edgeDC is not null, "Auto-build did not create D-C.");
+            Ensure(edgeAC.Route.Count == 1, $"Expected one bend in A-C, actual {edgeAC.Route.Count}.");
+            EnsurePoint(edgeAC.Route.IntermediatePoints[0], p1, "A-C has incorrect bend.");
+            Ensure(edgeCB.Route.Count == 1, $"Expected one bend in C-B, actual {edgeCB.Route.Count}.");
+            EnsurePoint(edgeCB.Route.IntermediatePoints[0], p2, "C-B has incorrect bend.");
+            Ensure(edgeDC.Route.IsStraight, "D-C build edge must be straight.");
+            AssertEdgePolyline(edgeAC.Id, a.Position, p1, splitPoint);
+            AssertEdgePolyline(edgeCB.Id, splitPoint, p2, b.Position);
+            AssertEdgePolyline(edgeDC.Id, d.Position, splitPoint);
+            var acCount = _context.Edges.GetAll().Count(edge => edge.IsIncidentTo(a.Id) && edge.IsIncidentTo(c.Id));
+            Ensure(acCount == 1, $"Expected exactly one A-C edge, actual {acCount}.");
         }
         finally
         {
-            //
-            // C удалит все три incident edges.
-            //
-            if (c is not null)
-            {
-                DeleteVertexIfExists(
-                    c.Id);
-            }
-
-            //
-            // На случай падения до успешного split.
-            //
-            if (original is not null &&
-                _context.Edges.Get(
-                    original.Id) is not null)
-            {
-                _context.Edges.Delete(
-                    original.Id);
-            }
-
-            if (d is not null)
-                DeleteVertexIfExists(d.Id);
-
-            if (a is not null)
-                DeleteVertexIfExists(a.Id);
-
-            if (b is not null)
-                DeleteVertexIfExists(b.Id);
+            if (c is not null) DeleteVertexIfExists(c.Id);
+            if (original is not null && _context.Edges.Get(original.Id) is not null) _context.Edges.Delete(original.Id);
+            if (d is not null) DeleteVertexIfExists(d.Id);
+            if (a is not null) DeleteVertexIfExists(a.Id);
+            if (b is not null) DeleteVertexIfExists(b.Id);
         }
     }
 
-    private void SetEdgePolylinePoint(
-        Guid edgeId,
-        int vertexIndex,
-        Point2 point)
+    private void SetEdgePolylinePoint(Guid edgeId, int vertexIndex, Point2 point)
     {
-        Ensure(
-            _context.Index.TryGetEdgeObjectId(
-                edgeId,
-                out var objectId),
-            $"Edge '{edgeId}' is missing from index.");
-
-        using var transaction =
-            _document.Database
-                .TransactionManager
-                .StartTransaction();
-
-        var polyline =
-            transaction.GetObject(
-                objectId,
-                OpenMode.ForWrite)
-            as Polyline;
-
-        Ensure(
-            polyline is not null,
-            $"Edge '{edgeId}' is not a Polyline.");
-
-        Ensure(
-            vertexIndex >= 0 &&
-            vertexIndex < polyline.NumberOfVertices,
-            $"Polyline vertex index {vertexIndex} is invalid.");
-
-        polyline.SetPointAt(
-            vertexIndex,
-            new Point2d(
-                point.X,
-                point.Y));
-
+        Ensure(_context.Index.TryGetEdgeObjectId(edgeId, out var objectId), $"Edge '{edgeId}' is missing from index.");
+        using var transaction = _document.Database.TransactionManager.StartTransaction();
+        var polyline = transaction.GetObject(objectId, OpenMode.ForWrite) as Polyline;
+        Ensure(polyline is not null, $"Edge '{edgeId}' is not a Polyline.");
+        Ensure(vertexIndex >= 0 && vertexIndex < polyline.NumberOfVertices, $"Polyline vertex index {vertexIndex} is invalid.");
+        polyline.SetPointAt(vertexIndex, new Point2d(point.X, point.Y));
         transaction.Commit();
     }
 
     private void TestAddBendPersistsToDwgPolyline()
     {
-        var vertexService =
-            new VertexService(
-                _context.Vertices);
-
-        var edgeService =
-            new EdgeService(
-                _context.Vertices,
-                _context.Edges);
-
-        var addBendService =
-            new AddBendService(
-                _context.Vertices,
-                _context.Edges);
-
+        var vertexService = new VertexService(_context.Vertices);
+        var edgeService = new EdgeService(_context.Vertices, _context.Edges);
+        var addBendService = new AddBendService(_context.Vertices, _context.Edges);
         GraphVertex? a = null;
         GraphVertex? b = null;
         GraphEdge? edge = null;
-
         try
         {
-            a =
-                vertexService.CreateVertex(
-                    new Point2(
-                        2100,
-                        2100));
-
-            b =
-                vertexService.CreateVertex(
-                    new Point2(
-                        2200,
-                        2100));
-
-            edge =
-                edgeService.CreateEdge(
-                    a.Id,
-                    b.Id);
-
-            Ensure(
-                _context.Index.TryGetEdgeObjectId(
-                    edge.Id,
-                    out var originalObjectId),
-                "Created edge is missing from index.");
-
-            AssertEdgePolyline(
-                edge.Id,
-                a.Position,
-                b.Position);
-
-            var bend =
-                new Point2(
-                    2150,
-                    2100);
-
-            var result =
-                addBendService.Add(
-                    edge.Id,
-                    bend);
-
-            Ensure(
-                result.Edge.Id ==
-                edge.Id,
-                "AddBend changed EdgeId.");
-
-            Ensure(
-                _context.Index.TryGetEdgeObjectId(
-                    edge.Id,
-                    out var updatedObjectId),
-                "Edge disappeared from index after AddBend.");
-
-            Ensure(
-                updatedObjectId ==
-                originalObjectId,
-                "AddBend replaced the DWG entity.");
-
-            AssertEdgePolyline(
-                edge.Id,
-                a.Position,
-                bend,
-                b.Position);
-
-            var restored =
-                _context.Edges.Get(
-                    edge.Id);
-
-            Ensure(
-                restored is not null,
-                "Repository could not restore edge after AddBend.");
-
-            Ensure(
-                restored.Route.Count == 1,
-                $"Expected one bend, actual " +
-                $"{restored.Route.Count}.");
-
-            EnsurePoint(
-                restored.Route
-                    .IntermediatePoints[0],
-                bend,
-                "Restored bend has incorrect position.");
+            a = vertexService.CreateVertex(new Point2(2100, 2100));
+            b = vertexService.CreateVertex(new Point2(2200, 2100));
+            edge = edgeService.CreateEdge(a.Id, b.Id);
+            Ensure(_context.Index.TryGetEdgeObjectId(edge.Id, out var originalObjectId), "Created edge is missing from index.");
+            AssertEdgePolyline(edge.Id, a.Position, b.Position);
+            var bend = new Point2(2150, 2100);
+            var result = addBendService.Add(edge.Id, bend);
+            Ensure(result.Edge.Id == edge.Id, "AddBend changed EdgeId.");
+            Ensure(_context.Index.TryGetEdgeObjectId(edge.Id, out var updatedObjectId), "Edge disappeared from index after AddBend.");
+            Ensure(updatedObjectId == originalObjectId, "AddBend replaced the DWG entity.");
+            AssertEdgePolyline(edge.Id, a.Position, bend, b.Position);
+            var restored = _context.Edges.Get(edge.Id);
+            Ensure(restored is not null, "Repository could not restore edge after AddBend.");
+            Ensure(restored.Route.Count == 1, $"Expected one bend, actual {restored.Route.Count}.");
+            EnsurePoint(restored.Route.IntermediatePoints[0], bend, "Restored bend has incorrect position.");
         }
         finally
         {
-            if (a is not null)
-                DeleteVertexIfExists(a.Id);
-
-            if (b is not null)
-                DeleteVertexIfExists(b.Id);
+            if (a is not null) DeleteVertexIfExists(a.Id);
+            if (b is not null) DeleteVertexIfExists(b.Id);
         }
     }
 
     private void TestRemoveLastBendMakesEdgeStraight()
     {
-        var vertexService =
-            new VertexService(
-                _context.Vertices);
-
-        var removeBendService =
-            new RemoveBendService(
-                _context.Edges);
-
+        var vertexService = new VertexService(_context.Vertices);
+        var removeBendService = new RemoveBendService(_context.Edges);
         GraphVertex? a = null;
         GraphVertex? b = null;
         GraphEdge? edge = null;
-
         try
         {
-            a =
-                vertexService.CreateVertex(
-                    new Point2(
-                        2300,
-                        2300));
-
-            b =
-                vertexService.CreateVertex(
-                    new Point2(
-                        2400,
-                        2300));
-
-            var bend =
-                new Point2(
-                    2350,
-                    2350);
-
-            edge =
-                GraphEdge.Create(
-                    a.Id,
-                    b.Id,
-                    new EdgeRoute(
-                        new[]
-                        {
-                        bend
-                        }));
-
-            _context.Edges.Add(
-                edge);
-
-            Ensure(
-                _context.Index.TryGetEdgeObjectId(
-                    edge.Id,
-                    out var originalObjectId),
-                "Bent edge is missing from index.");
-
-            AssertEdgePolyline(
-                edge.Id,
-                a.Position,
-                bend,
-                b.Position);
-
-            var result =
-                removeBendService.Remove(
-                    edge.Id,
-                    0);
-
-            EnsurePoint(
-                result.RemovedPoint,
-                bend,
-                "RemoveBend returned incorrect point.");
-
-            Ensure(
-                _context.Index.TryGetEdgeObjectId(
-                    edge.Id,
-                    out var updatedObjectId),
-                "Edge disappeared after RemoveBend.");
-
-            Ensure(
-                updatedObjectId ==
-                originalObjectId,
-                "RemoveBend replaced the DWG entity.");
-
-            AssertEdgePolyline(
-                edge.Id,
-                a.Position,
-                b.Position);
-
-            var restored =
-                _context.Edges.Get(
-                    edge.Id);
-
-            Ensure(
-                restored is not null,
-                "Repository could not restore straightened edge.");
-
-            Ensure(
-                restored.Route.IsStraight,
-                "Edge route is not straight after removing last bend.");
-
-            Ensure(
-                restored.Route.Count == 0,
-                $"Expected zero bends, actual " +
-                $"{restored.Route.Count}.");
+            a = vertexService.CreateVertex(new Point2(2300, 2300));
+            b = vertexService.CreateVertex(new Point2(2400, 2300));
+            var bend = new Point2(2350, 2350);
+            edge = GraphEdge.Create(a.Id, b.Id, new EdgeRoute(new[] { bend }));
+            _context.Edges.Add(edge);
+            Ensure(_context.Index.TryGetEdgeObjectId(edge.Id, out var originalObjectId), "Bent edge is missing from index.");
+            AssertEdgePolyline(edge.Id, a.Position, bend, b.Position);
+            var result = removeBendService.Remove(edge.Id, 0);
+            EnsurePoint(result.RemovedPoint, bend, "RemoveBend returned incorrect point.");
+            Ensure(_context.Index.TryGetEdgeObjectId(edge.Id, out var updatedObjectId), "Edge disappeared after RemoveBend.");
+            Ensure(updatedObjectId == originalObjectId, "RemoveBend replaced the DWG entity.");
+            AssertEdgePolyline(edge.Id, a.Position, b.Position);
+            var restored = _context.Edges.Get(edge.Id);
+            Ensure(restored is not null, "Repository could not restore straightened edge.");
+            Ensure(restored.Route.IsStraight, "Edge route is not straight after removing last bend.");
+            Ensure(restored.Route.Count == 0, $"Expected zero bends, actual {restored.Route.Count}.");
         }
         finally
         {
-            if (a is not null)
-                DeleteVertexIfExists(a.Id);
-
-            if (b is not null)
-                DeleteVertexIfExists(b.Id);
+            if (a is not null) DeleteVertexIfExists(a.Id);
+            if (b is not null) DeleteVertexIfExists(b.Id);
         }
     }
 
     private void TestPolylineModificationPreservesMovedBend()
     {
-        var vertexService =
-            new VertexService(
-                _context.Vertices);
-
+        var vertexService = new VertexService(_context.Vertices);
         GraphVertex? a = null;
         GraphVertex? b = null;
         GraphEdge? edge = null;
-
         try
         {
-            a =
-                vertexService.CreateVertex(
-                    new Point2(
-                        2500,
-                        2500));
-
-            b =
-                vertexService.CreateVertex(
-                    new Point2(
-                        2600,
-                        2500));
-
-            var p1 =
-                new Point2(
-                    2530,
-                    2540);
-
-            var p2 =
-                new Point2(
-                    2570,
-                    2540);
-
-            edge =
-                GraphEdge.Create(
-                    a.Id,
-                    b.Id,
-                    new EdgeRoute(
-                        new[]
-                        {
-                        p1,
-                        p2
-                        }));
-
-            _context.Edges.Add(
-                edge);
-
-            AssertEdgePolyline(
-                edge.Id,
-                a.Position,
-                p1,
-                p2,
-                b.Position);
-
-            var movedP1 =
-                new Point2(
-                    2530,
-                    2580);
-
-            //
-            // Polyline:
-            //
-            // [0] A
-            // [1] P1
-            // [2] P2
-            // [3] B
-            //
-            SetEdgePolylinePoint(
-                edge.Id,
-                1,
-                movedP1);
-
-            //
-            // Имитируем нормализацию,
-            // которую watcher выполняет
-            // после native grip editing.
-            //
-            _context.EdgeGeometrySynchronizer
-                .UpdateEdge(
-                    edge.Id);
-
-            AssertEdgePolyline(
-                edge.Id,
-                a.Position,
-                movedP1,
-                p2,
-                b.Position);
-
-            var restored =
-                _context.Edges.Get(
-                    edge.Id);
-
-            Ensure(
-                restored is not null,
-                "Repository could not restore grip-modified edge.");
-
-            Ensure(
-                restored.Route.Count == 2,
-                $"Expected two bends, actual " +
-                $"{restored.Route.Count}.");
-
-            EnsurePoint(
-                restored.Route
-                    .IntermediatePoints[0],
-                movedP1,
-                "Moved bend was reverted by synchronization.");
-
-            EnsurePoint(
-                restored.Route
-                    .IntermediatePoints[1],
-                p2,
-                "Unmodified bend changed during synchronization.");
+            a = vertexService.CreateVertex(new Point2(2500, 2500));
+            b = vertexService.CreateVertex(new Point2(2600, 2500));
+            var p1 = new Point2(2530, 2540);
+            var p2 = new Point2(2570, 2540);
+            edge = GraphEdge.Create(a.Id, b.Id, new EdgeRoute(new[] { p1, p2 }));
+            _context.Edges.Add(edge);
+            AssertEdgePolyline(edge.Id, a.Position, p1, p2, b.Position);
+            var movedP1 = new Point2(2530, 2580);
+            SetEdgePolylinePoint(edge.Id, 1, movedP1);
+            _context.EdgeGeometrySynchronizer.UpdateEdge(edge.Id);
+            AssertEdgePolyline(edge.Id, a.Position, movedP1, p2, b.Position);
+            var restored = _context.Edges.Get(edge.Id);
+            Ensure(restored is not null, "Repository could not restore grip-modified edge.");
+            Ensure(restored.Route.Count == 2, $"Expected two bends, actual {restored.Route.Count}.");
+            EnsurePoint(restored.Route.IntermediatePoints[0], movedP1, "Moved bend was reverted by synchronization.");
+            EnsurePoint(restored.Route.IntermediatePoints[1], p2, "Unmodified bend changed during synchronization.");
         }
         finally
         {
-            if (a is not null)
-                DeleteVertexIfExists(a.Id);
-
-            if (b is not null)
-                DeleteVertexIfExists(b.Id);
+            if (a is not null) DeleteVertexIfExists(a.Id);
+            if (b is not null) DeleteVertexIfExists(b.Id);
         }
     }
 
     private void TestPolylineEndpointModificationIsCorrected()
     {
-        var vertexService =
-            new VertexService(
-                _context.Vertices);
-
+        var vertexService = new VertexService(_context.Vertices);
         GraphVertex? a = null;
         GraphVertex? b = null;
         GraphEdge? edge = null;
-
         try
         {
-            a =
-                vertexService.CreateVertex(
-                    new Point2(
-                        2700,
-                        2700));
-
-            b =
-                vertexService.CreateVertex(
-                    new Point2(
-                        2800,
-                        2700));
-
-            var bend =
-                new Point2(
-                    2750,
-                    2750);
-
-            edge =
-                GraphEdge.Create(
-                    a.Id,
-                    b.Id,
-                    new EdgeRoute(
-                        new[]
-                        {
-                        bend
-                        }));
-
-            _context.Edges.Add(
-                edge);
-
-            AssertEdgePolyline(
-                edge.Id,
-                a.Position,
-                bend,
-                b.Position);
-
-            var invalidStart =
-                new Point2(
-                    2650,
-                    2650);
-
-            var invalidEnd =
-                new Point2(
-                    2850,
-                    2650);
-
-            //
-            // [0] = A endpoint
-            //
-            SetEdgePolylinePoint(
-                edge.Id,
-                0,
-                invalidStart);
-
-            //
-            // [2] = B endpoint
-            //
-            SetEdgePolylinePoint(
-                edge.Id,
-                2,
-                invalidEnd);
-
-            //
-            // До synchronizer действительно
-            // должна существовать повреждённая
-            // геометрия.
-            //
-            AssertEdgePolyline(
-                edge.Id,
-                invalidStart,
-                bend,
-                invalidEnd);
-
-            _context.EdgeGeometrySynchronizer
-                .UpdateEdge(
-                    edge.Id);
-
-            //
-            // Endpoints восстановлены,
-            // bend остался тем же.
-            //
-            AssertEdgePolyline(
-                edge.Id,
-                a.Position,
-                bend,
-                b.Position);
-
-            var restored =
-                _context.Edges.Get(
-                    edge.Id);
-
-            Ensure(
-                restored is not null,
-                "Repository could not restore normalized edge.");
-
-            Ensure(
-                restored.Route.Count == 1,
-                "Endpoint normalization changed bend count.");
-
-            EnsurePoint(
-                restored.Route
-                    .IntermediatePoints[0],
-                bend,
-                "Endpoint normalization changed bend position.");
+            a = vertexService.CreateVertex(new Point2(2700, 2700));
+            b = vertexService.CreateVertex(new Point2(2800, 2700));
+            var bend = new Point2(2750, 2750);
+            edge = GraphEdge.Create(a.Id, b.Id, new EdgeRoute(new[] { bend }));
+            _context.Edges.Add(edge);
+            AssertEdgePolyline(edge.Id, a.Position, bend, b.Position);
+            var invalidStart = new Point2(2650, 2650);
+            var invalidEnd = new Point2(2850, 2650);
+            SetEdgePolylinePoint(edge.Id, 0, invalidStart);
+            SetEdgePolylinePoint(edge.Id, 2, invalidEnd);
+            AssertEdgePolyline(edge.Id, invalidStart, bend, invalidEnd);
+            _context.EdgeGeometrySynchronizer.UpdateEdge(edge.Id);
+            AssertEdgePolyline(edge.Id, a.Position, bend, b.Position);
+            var restored = _context.Edges.Get(edge.Id);
+            Ensure(restored is not null, "Repository could not restore normalized edge.");
+            Ensure(restored.Route.Count == 1, "Endpoint normalization changed bend count.");
+            EnsurePoint(restored.Route.IntermediatePoints[0], bend, "Endpoint normalization changed bend position.");
         }
         finally
         {
-            if (a is not null)
-                DeleteVertexIfExists(a.Id);
-
-            if (b is not null)
-                DeleteVertexIfExists(b.Id);
+            if (a is not null) DeleteVertexIfExists(a.Id);
+            if (b is not null) DeleteVertexIfExists(b.Id);
         }
     }
 
     private void TestVertexAttachmentXRecordRoundTrip()
     {
-        var vertexService =
-            new VertexService(
-                _context.Vertices);
-
+        var vertexService = new VertexService(_context.Vertices);
         GraphVertex? vertex = null;
-
         try
         {
-            vertex =
-                vertexService.CreateVertex(
-                    new Point2(
-                        2900,
-                        2900));
-
-            var attachment =
-                new VertexAttachment(
-                    @"Files\report.pdf");
-
-            _context.Attachments.Add(
-                vertex.Id,
-                attachment);
-
-            //
-            // Repository должен прочитать
-            // данные обратно именно из DWG.
-            //
-            var restored =
-                _context.Attachments
-                    .GetAll(
-                        vertex.Id)
-                    .ToArray();
-
-            Ensure(
-                restored.Length == 1,
-                $"Expected one attachment, " +
-                $"actual {restored.Length}.");
-
-            Ensure(
-                string.Equals(
-                    restored[0].Path,
-                    attachment.Path,
-                    StringComparison.Ordinal),
-                $"Unexpected attachment path. " +
-                $"Actual: '{restored[0].Path}', " +
-                $"expected: '{attachment.Path}'.");
-
-            //
-            // Убеждаемся, что attachment
-            // не повредил основной Vertex metadata.
-            //
-            var restoredVertex =
-                _context.Vertices.Get(
-                    vertex.Id);
-
-            Ensure(
-                restoredVertex is not null,
-                "Vertex could not be restored after writing attachment.");
-
-            Ensure(
-                restoredVertex.Id ==
-                vertex.Id,
-                "Vertex Id changed after writing attachment.");
-
-            //
-            // Проверяем непосредственно структуру DWG:
-            // XRecord действительно находится
-            // на Vertex entity.
-            //
-            Ensure(
-                _context.Index.TryGetVertexObjectId(
-                    vertex.Id,
-                    out var objectId),
-                "Vertex is missing from index.");
-
-            using var transaction =
-                _document.Database
-                    .TransactionManager
-                    .StartTransaction();
-
-            var entity =
-                transaction.GetObject(
-                    objectId,
-                    OpenMode.ForRead)
-                as Entity;
-
-            Ensure(
-                entity is not null,
-                "Vertex entity could not be opened.");
-
-            Ensure(
-                !entity.ExtensionDictionary.IsNull,
-                "Vertex has no extension dictionary.");
-
-            var dictionary =
-                transaction.GetObject(
-                    entity.ExtensionDictionary,
-                    OpenMode.ForRead)
-                as DBDictionary;
-
-            Ensure(
-                dictionary is not null,
-                "Vertex extension dictionary could not be opened.");
-
-            Ensure(
-                dictionary.Contains(
-                    VertexAttachmentXRecordStore.RecordKey),
-                $"'{VertexAttachmentXRecordStore.RecordKey}' " +
-                $"XRecord was not created.");
+            vertex = vertexService.CreateVertex(new Point2(2900, 2900));
+            var attachment = new VertexAttachment(@"Files\report.pdf");
+            _context.Attachments.Add(vertex.Id, attachment);
+            var restored = _context.Attachments.GetAll(vertex.Id).ToArray();
+            Ensure(restored.Length == 1, $"Expected one attachment, actual {restored.Length}.");
+            Ensure(string.Equals(restored[0].Path, attachment.Path, StringComparison.Ordinal),
+                $"Unexpected attachment path. Actual: '{restored[0].Path}', expected: '{attachment.Path}'.");
+            var restoredVertex = _context.Vertices.Get(vertex.Id);
+            Ensure(restoredVertex is not null, "Vertex could not be restored after writing attachment.");
+            Ensure(restoredVertex.Id == vertex.Id, "Vertex Id changed after writing attachment.");
+            Ensure(_context.Index.TryGetVertexObjectId(vertex.Id, out var objectId), "Vertex is missing from index.");
+            using var transaction = _document.Database.TransactionManager.StartTransaction();
+            var entity = transaction.GetObject(objectId, OpenMode.ForRead) as Entity;
+            Ensure(entity is not null, "Vertex entity could not be opened.");
+            Ensure(!entity.ExtensionDictionary.IsNull, "Vertex has no extension dictionary.");
+            var dictionary = transaction.GetObject(entity.ExtensionDictionary, OpenMode.ForRead) as DBDictionary;
+            Ensure(dictionary is not null, "Vertex extension dictionary could not be opened.");
+            Ensure(dictionary.Contains(VertexAttachmentXRecordStore.RecordKey),
+                $"'{VertexAttachmentXRecordStore.RecordKey}' XRecord was not created.");
         }
         finally
         {
-            if (vertex is not null)
-            {
-                DeleteVertexIfExists(
-                    vertex.Id);
-            }
+            if (vertex is not null) DeleteVertexIfExists(vertex.Id);
         }
     }
 
     private void TestVertexAttachmentAddAndDetach()
     {
-        var vertexService =
-            new VertexService(
-                _context.Vertices);
-
+        var vertexService = new VertexService(_context.Vertices);
         GraphVertex? vertex = null;
-
         try
         {
-            vertex =
-                vertexService.CreateVertex(
-                    new Point2(
-                        3000,
-                        3000));
-
-            var first =
-                new VertexAttachment(
-                    @"Documents\a.pdf");
-
-            var second =
-                new VertexAttachment(
-                    @"Images\b.jpg");
-
-            _context.Attachments.Add(
-                vertex.Id,
-                first);
-
-            _context.Attachments.Add(
-                vertex.Id,
-                second);
-
-            var afterAdd =
-                _context.Attachments
-                    .GetAll(
-                        vertex.Id)
-                    .ToArray();
-
-            Ensure(
-                afterAdd.Length == 2,
-                $"Expected two attachments, " +
-                $"actual {afterAdd.Length}.");
-
-            Ensure(
-                afterAdd.Any(
-                    x =>
-                        x.Path ==
-                        first.Path),
-                "First attachment was not persisted.");
-
-            Ensure(
-                afterAdd.Any(
-                    x =>
-                        x.Path ==
-                        second.Path),
-                "Second attachment was not persisted.");
-
-            _context.Attachments.Remove(
-                vertex.Id,
-                first.Path);
-
-            var afterRemove =
-                _context.Attachments
-                    .GetAll(
-                        vertex.Id)
-                    .ToArray();
-
-            Ensure(
-                afterRemove.Length == 1,
-                $"Expected one attachment after detach, " +
-                $"actual {afterRemove.Length}.");
-
-            Ensure(
-                afterRemove[0].Path ==
-                second.Path,
-                "Detach removed the wrong attachment.");
-
-            //
-            // Теперь удаляем последний.
-            //
-            _context.Attachments.Remove(
-                vertex.Id,
-                second.Path);
-
-            var afterRemoveAll =
-                _context.Attachments
-                    .GetAll(
-                        vertex.Id);
-
-            Ensure(
-                afterRemoveAll.Count == 0,
-                "Attachments remain after removing all items.");
-
-            //
-            // Сам Vertex никуда не делся.
-            //
-            Ensure(
-                _context.Vertices.Get(
-                    vertex.Id) is not null,
-                "Detaching files deleted or corrupted the vertex.");
+            vertex = vertexService.CreateVertex(new Point2(3000, 3000));
+            var first = new VertexAttachment(@"Documents\a.pdf");
+            var second = new VertexAttachment(@"Images\b.jpg");
+            _context.Attachments.Add(vertex.Id, first);
+            _context.Attachments.Add(vertex.Id, second);
+            var afterAdd = _context.Attachments.GetAll(vertex.Id).ToArray();
+            Ensure(afterAdd.Length == 2, $"Expected two attachments, actual {afterAdd.Length}.");
+            Ensure(afterAdd.Any(x => x.Path == first.Path), "First attachment was not persisted.");
+            Ensure(afterAdd.Any(x => x.Path == second.Path), "Second attachment was not persisted.");
+            _context.Attachments.Remove(vertex.Id, first.Path);
+            var afterRemove = _context.Attachments.GetAll(vertex.Id).ToArray();
+            Ensure(afterRemove.Length == 1, $"Expected one attachment after detach, actual {afterRemove.Length}.");
+            Ensure(afterRemove[0].Path == second.Path, "Detach removed the wrong attachment.");
+            _context.Attachments.Remove(vertex.Id, second.Path);
+            var afterRemoveAll = _context.Attachments.GetAll(vertex.Id);
+            Ensure(afterRemoveAll.Count == 0, "Attachments remain after removing all items.");
+            Ensure(_context.Vertices.Get(vertex.Id) is not null, "Detaching files deleted or corrupted the vertex.");
         }
         finally
         {
-            if (vertex is not null)
-            {
-                DeleteVertexIfExists(
-                    vertex.Id);
-            }
+            if (vertex is not null) DeleteVertexIfExists(vertex.Id);
         }
     }
 
     private void TestAttachmentDetachPreservesPhysicalFile()
     {
-        var vertexService =
-            new VertexService(
-                _context.Vertices);
-
+        var vertexService = new VertexService(_context.Vertices);
         GraphVertex? vertex = null;
-
         string? tempDirectory = null;
         string? tempFile = null;
-
         try
         {
-            vertex =
-                vertexService.CreateVertex(
-                    new Point2(
-                        3400,
-                        3400));
-
-            tempDirectory =
-                Path.Combine(
-                    Path.GetTempPath(),
-                    "GraphPluginTests",
-                    Guid.NewGuid()
-                        .ToString("N"));
-
-            Directory.CreateDirectory(
-                tempDirectory);
-
-            tempFile =
-                Path.Combine(
-                    tempDirectory,
-                    "attachment.txt");
-
-            File.WriteAllText(
-                tempFile,
-                "GraphPlugin attachment test.");
-
-            Ensure(
-                File.Exists(tempFile),
-                "Test file was not created.");
-
-            //
-            // drawingPath = null намеренно:
-            // для этого теста нам нужна абсолютная
-            // ссылка без зависимости от расположения DWG.
-            //
-            var attachment =
-                _context.AttachmentService.Attach(
-                    vertex.Id,
-                    tempFile,
-                    drawingPath: null);
-
-            var beforeDetach =
-                _context.Attachments
-                    .GetAll(
-                        vertex.Id)
-                    .ToArray();
-
-            Ensure(
-                beforeDetach.Length == 1,
-                $"Expected one attachment before detach, " +
-                $"actual {beforeDetach.Length}.");
-
-            Ensure(
-                File.Exists(tempFile),
-                "Attaching a file unexpectedly deleted it.");
-
-            _context.AttachmentService.Detach(
-                vertex.Id,
-                attachment.Path);
-
-            var afterDetach =
-                _context.Attachments
-                    .GetAll(
-                        vertex.Id)
-                    .ToArray();
-
-            Ensure(
-                afterDetach.Length == 0,
-                $"Attachment reference remains after detach. " +
-                $"Actual count: {afterDetach.Length}.");
-
-            //
-            // Главный invariant теста.
-            //
-            Ensure(
-                File.Exists(tempFile),
-                "Detaching an attachment deleted the physical file.");
-
-            //
-            // Vertex тоже должен остаться.
-            //
-            Ensure(
-                _context.Vertices.Get(
-                    vertex.Id) is not null,
-                "Detaching an attachment deleted or corrupted the vertex.");
+            vertex = vertexService.CreateVertex(new Point2(3400, 3400));
+            tempDirectory = Path.Combine(Path.GetTempPath(), "GraphPluginTests", Guid.NewGuid().ToString("N"));
+            Directory.CreateDirectory(tempDirectory);
+            tempFile = Path.Combine(tempDirectory, "attachment.txt");
+            File.WriteAllText(tempFile, "GraphPlugin attachment test.");
+            Ensure(File.Exists(tempFile), "Test file was not created.");
+            var attachment = _context.AttachmentService.Attach(vertex.Id, tempFile, drawingPath: null);
+            var beforeDetach = _context.Attachments.GetAll(vertex.Id).ToArray();
+            Ensure(beforeDetach.Length == 1, $"Expected one attachment before detach, actual {beforeDetach.Length}.");
+            Ensure(File.Exists(tempFile), "Attaching a file unexpectedly deleted it.");
+            _context.AttachmentService.Detach(vertex.Id, attachment.Path);
+            var afterDetach = _context.Attachments.GetAll(vertex.Id).ToArray();
+            Ensure(afterDetach.Length == 0, $"Attachment reference remains after detach. Actual count: {afterDetach.Length}.");
+            Ensure(File.Exists(tempFile), "Detaching an attachment deleted the physical file.");
+            Ensure(_context.Vertices.Get(vertex.Id) is not null, "Detaching an attachment deleted or corrupted the vertex.");
         }
         finally
         {
-            if (vertex is not null)
-            {
-                DeleteVertexIfExists(
-                    vertex.Id);
-            }
-
-            //
-            // Это исключительно cleanup самого теста.
-            // Production Detach никогда этого не делает.
-            //
-            if (tempFile is not null &&
-                File.Exists(tempFile))
-            {
-                File.Delete(
-                    tempFile);
-            }
-
-            if (tempDirectory is not null &&
-                Directory.Exists(tempDirectory))
-            {
-                Directory.Delete(
-                    tempDirectory,
-                    recursive: true);
-            }
+            if (vertex is not null) DeleteVertexIfExists(vertex.Id);
+            if (tempFile is not null && File.Exists(tempFile)) File.Delete(tempFile);
+            if (tempDirectory is not null && Directory.Exists(tempDirectory)) Directory.Delete(tempDirectory, recursive: true);
         }
     }
 
     public void VerifyCppStyleInteropTest()
     {
         var document = _document;
-
         var context = _context;
-
         var store = new CppStyleInteropManifestStore();
-
         CppStyleInteropManifest manifest;
-
-        using (var transaction =
-               document.Database
-                   .TransactionManager
-                   .StartTransaction())
+        using (var transaction = document.Database.TransactionManager.StartTransaction())
         {
-            
-            manifest = store
-                .ReadStyleManifest(
-                    document.Database,
-                    transaction);
+            manifest = store.ReadStyleManifest(document.Database, transaction);
         }
-
-        var vertex =
-            context.Vertices.Get(
-                manifest.VertexId);
-
-        Ensure(
-            vertex is not null,
-            "C# repository cannot read C++ replacement vertex.");
-
-        Ensure(
-            vertex.Style.Shape ==
-                VertexShape.Triangle,
-            "C++ replacement was not restored as Triangle.");
-
-        Ensure(
-            vertex.Style.Color ==
-                GraphColor.Red,
-            "Triangle color is not Red.");
-
-        Ensure(
-            context.Index.TryGetVertexObjectId(
-                manifest.VertexId,
-                out var currentObjectId),
-            "C# GraphEntityIndex does not contain replaced vertex.");
-
-        Ensure(
-            !string.Equals(
-                currentObjectId.Handle.ToString(),
-                manifest.OldHandle,
-                StringComparison.OrdinalIgnoreCase),
-            "GraphEntityIndex still points to old Circle ObjectId.");
-
-        using (var transaction =
-               document.Database
-                   .TransactionManager
-                   .StartTransaction())
+        var vertex = context.Vertices.Get(manifest.VertexId);
+        Ensure(vertex is not null, "C# repository cannot read C++ replacement vertex.");
+        Ensure(vertex.Style.Shape == VertexShape.Triangle, "C++ replacement was not restored as Triangle.");
+        Ensure(vertex.Style.Color == GraphColor.Red, "Triangle color is not Red.");
+        Ensure(context.Index.TryGetVertexObjectId(manifest.VertexId, out var currentObjectId), "C# GraphEntityIndex does not contain replaced vertex.");
+        Ensure(!string.Equals(currentObjectId.Handle.ToString(), manifest.OldHandle, StringComparison.OrdinalIgnoreCase), "GraphEntityIndex still points to old Circle ObjectId.");
+        using (var transaction = document.Database.TransactionManager.StartTransaction())
         {
-            var entity =
-                transaction.GetObject(
-                    currentObjectId,
-                    OpenMode.ForRead);
-
-            Ensure(
-                entity is Polyline,
-                "C# index does not point to replacement Triangle Polyline.");
+            var entity = transaction.GetObject(currentObjectId, OpenMode.ForRead);
+            Ensure(entity is Polyline, "C# index does not point to replacement Triangle Polyline.");
         }
-
-        var attachments =
-            context.Attachments
-                .GetAll(
-                    manifest.VertexId);
-
-        Ensure(
-            attachments.Any(
-                x => string.Equals(
-                    x.Path,
-                    manifest.AttachmentPath,
-                    StringComparison.OrdinalIgnoreCase)),
-            "Attachment was lost during C++ style replacement.");
-
-        _document.Editor.WriteMessage(
-                "\n[PASS] C++ style interop test.");
-        //
-        // Cleanup.
-        //
-        context.Graph.DeleteVertex(
-            manifest.VertexId);
-
+        var attachments = context.Attachments.GetAll(manifest.VertexId);
+        Ensure(attachments.Any(x => string.Equals(x.Path, manifest.AttachmentPath, StringComparison.OrdinalIgnoreCase)), "Attachment was lost during C++ style replacement.");
+        _document.Editor.WriteMessage("\n[PASS] C++ style interop test.");
+        context.Graph.DeleteVertex(manifest.VertexId);
         store.Delete(document.Database);
-
     }
 
     public void VerifyCppDeleteUndoTest()
     {
-        var manifestStore =
-            new CppDeleteUndoTestManifestStore();
-
+        var manifestStore = new CppDeleteUndoTestManifestStore();
         try
         {
             CppDeleteUndoTestManifest manifest;
-
-            //
-            // Транзакция нужна ТОЛЬКО для чтения manifest.
-            //
-            using (var transaction =
-                   _document.Database
-                       .TransactionManager
-                       .StartTransaction())
+            using (var transaction = _document.Database.TransactionManager.StartTransaction())
             {
-                manifest =
-                    manifestStore.Read(
-                        _document.Database,
-                        transaction);
-
+                manifest = manifestStore.Read(_document.Database, transaction);
                 transaction.Commit();
             }
-
-            var vertexA =
-                _context.Vertices.Get(
-                    manifest.VertexAId);
-
-            var vertexB =
-                _context.Vertices.Get(
-                    manifest.VertexBId);
-
-            var vertexC =
-                _context.Vertices.Get(
-                    manifest.VertexCId);
-
-            Ensure(
-                vertexA is not null,
-                "Vertex A was not restored after UNDO.");
-
-            Ensure(
-                vertexB is not null,
-                "Vertex B disappeared.");
-
-            Ensure(
-                vertexC is not null,
-                "Vertex C disappeared.");
-
-            var edgeAB =
-                _context.Edges.Get(
-                    manifest.EdgeABId);
-
-            var edgeAC =
-                _context.Edges.Get(
-                    manifest.EdgeACId);
-
-            var edgeBC =
-                _context.Edges.Get(
-                    manifest.EdgeBCId);
-
-            Ensure(
-                edgeAB is not null,
-                "Edge A-B was not restored.");
-
-            Ensure(
-                edgeAC is not null,
-                "Edge A-C was not restored.");
-
-            Ensure(
-                edgeBC is not null,
-                "Edge B-C disappeared.");
-
-            Ensure(
-                _context.Index.TryGetVertexObjectId(
-                    manifest.VertexAId,
-                    out var vertexAObjectId),
-                "Vertex A is missing from index.");
-
-            Ensure(
-                !vertexAObjectId.IsNull &&
-                !vertexAObjectId.IsErased,
-                "Vertex A ObjectId is invalid.");
-
-            Ensure(
-                _context.Index.TryGetEdgeObjectId(
-                    manifest.EdgeABId,
-                    out var edgeABObjectId),
-                "Edge A-B is missing from index.");
-
-            Ensure(
-                _context.Index.TryGetEdgeObjectId(
-                    manifest.EdgeACId,
-                    out var edgeACObjectId),
-                "Edge A-C is missing from index.");
-
-            Ensure(
-                _context.Index.TryGetEdgeObjectId(
-                    manifest.EdgeBCId,
-                    out var edgeBCObjectId),
-                "Edge B-C is missing from index.");
-
-            Ensure(
-                !edgeABObjectId.IsErased,
-                "Edge A-B is still erased.");
-
-            Ensure(
-                !edgeACObjectId.IsErased,
-                "Edge A-C is still erased.");
-
-            Ensure(
-                !edgeBCObjectId.IsErased,
-                "Edge B-C was unexpectedly erased.");
-
-            var incidentEdges =
-                _context.Index
-                    .GetIncidentEdgeIds(
-                        manifest.VertexAId)
-                    .ToHashSet();
-
-            Ensure(
-                incidentEdges.Count == 2,
-                $"Expected 2 incident edges for A, " +
-                $"actual {incidentEdges.Count}.");
-
-            Ensure(
-                incidentEdges.Contains(
-                    manifest.EdgeABId),
-                "A-B is missing from incident index.");
-
-            Ensure(
-                incidentEdges.Contains(
-                    manifest.EdgeACId),
-                "A-C is missing from incident index.");
-
-            Ensure(
-                !incidentEdges.Contains(
-                    manifest.EdgeBCId),
-                "B-C is incorrectly incident to A.");
-
-            _document.Editor.WriteMessage(
-                "\n[PASS] C++ cascade delete -> " +
-                "UNDO -> C# restore.");
-
-            //
-            // Здесь уже НЕТ открытой внешней transaction.
-            // Каждый DeleteVertexIfExists может нормально
-            // использовать свои repository transactions.
-            //
-            DeleteVertexIfExists(
-                manifest.VertexAId);
-
-            DeleteVertexIfExists(
-                manifest.VertexBId);
-
-            DeleteVertexIfExists(
-                manifest.VertexCId);
-
-            //
-            // Manifest удаляем отдельной transaction
-            // и обязательно Commit().
-            //
-            using (var transaction =
-                   _document.Database
-                       .TransactionManager
-                       .StartTransaction())
+            var vertexA = _context.Vertices.Get(manifest.VertexAId);
+            var vertexB = _context.Vertices.Get(manifest.VertexBId);
+            var vertexC = _context.Vertices.Get(manifest.VertexCId);
+            Ensure(vertexA is not null, "Vertex A was not restored after UNDO.");
+            Ensure(vertexB is not null, "Vertex B disappeared.");
+            Ensure(vertexC is not null, "Vertex C disappeared.");
+            var edgeAB = _context.Edges.Get(manifest.EdgeABId);
+            var edgeAC = _context.Edges.Get(manifest.EdgeACId);
+            var edgeBC = _context.Edges.Get(manifest.EdgeBCId);
+            Ensure(edgeAB is not null, "Edge A-B was not restored.");
+            Ensure(edgeAC is not null, "Edge A-C was not restored.");
+            Ensure(edgeBC is not null, "Edge B-C disappeared.");
+            Ensure(_context.Index.TryGetVertexObjectId(manifest.VertexAId, out var vertexAObjectId), "Vertex A is missing from index.");
+            Ensure(!vertexAObjectId.IsNull && !vertexAObjectId.IsErased, "Vertex A ObjectId is invalid.");
+            Ensure(_context.Index.TryGetEdgeObjectId(manifest.EdgeABId, out var edgeABObjectId), "Edge A-B is missing from index.");
+            Ensure(_context.Index.TryGetEdgeObjectId(manifest.EdgeACId, out var edgeACObjectId), "Edge A-C is missing from index.");
+            Ensure(_context.Index.TryGetEdgeObjectId(manifest.EdgeBCId, out var edgeBCObjectId), "Edge B-C is missing from index.");
+            Ensure(!edgeABObjectId.IsErased, "Edge A-B is still erased.");
+            Ensure(!edgeACObjectId.IsErased, "Edge A-C is still erased.");
+            Ensure(!edgeBCObjectId.IsErased, "Edge B-C was unexpectedly erased.");
+            var incidentEdges = _context.Index.GetIncidentEdgeIds(manifest.VertexAId).ToHashSet();
+            Ensure(incidentEdges.Count == 2, $"Expected 2 incident edges for A, actual {incidentEdges.Count}.");
+            Ensure(incidentEdges.Contains(manifest.EdgeABId), "A-B is missing from incident index.");
+            Ensure(incidentEdges.Contains(manifest.EdgeACId), "A-C is missing from incident index.");
+            Ensure(!incidentEdges.Contains(manifest.EdgeBCId), "B-C is incorrectly incident to A.");
+            _document.Editor.WriteMessage("\n[PASS] C++ cascade delete -> UNDO -> C# restore.");
+            DeleteVertexIfExists(manifest.VertexAId);
+            DeleteVertexIfExists(manifest.VertexBId);
+            DeleteVertexIfExists(manifest.VertexCId);
+            using (var transaction = _document.Database.TransactionManager.StartTransaction())
             {
-                manifestStore.Delete(
-                    _document.Database,
-                    transaction);
-
+                manifestStore.Delete(_document.Database, transaction);
                 transaction.Commit();
             }
-
-            _document.Editor.WriteMessage(
-                "\nTest objects cleaned up.");
+            _document.Editor.WriteMessage("\nTest objects cleaned up.");
         }
         catch (System.Exception ex)
         {
-            _document.Editor.WriteMessage(
-                $"\n[FAIL] C++ delete/undo test:\n{ex}");
+            _document.Editor.WriteMessage($"\n[FAIL] C++ delete/undo test:\n{ex}");
         }
     }
 
-    private void DeleteVertexIfExists(
-    Guid vertexId)
+    private void DeleteVertexIfExists(Guid vertexId)
     {
         if (_context.Vertices.Get(vertexId) is null)
-        {
             return;
-        }
-
         _context.Graph.DeleteVertex(vertexId);
     }
 }
