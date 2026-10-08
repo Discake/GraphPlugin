@@ -89,10 +89,13 @@
     <ClInclude Include="Persistence\VertexMetadataStore.h" />
     <ClInclude Include="Services\NativeVertexDeletionService.h" />
     <ClInclude Include="Services\NativeVertexStyleService.h" />
+    <ClInclude Include="Tests\DeleteUndoScenario.h" />
     <ClInclude Include="Tests\NativeIntegrationTestException.h" />
     <ClInclude Include="Tests\NativeIntegrationTestRunner.h" />
     <ClInclude Include="Tests\NativeStagedTestSchema.h" />
     <ClInclude Include="Tests\NativeTestCommands.h" />
+    <ClInclude Include="Tests\NativeTestDwgHelpers.h" />
+    <ClInclude Include="Tests\StyleInteropScenario.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Commands\GraphCommands.cpp" />
@@ -100,8 +103,11 @@
     <ClCompile Include="Persistence\VertexMetadataStore.cpp" />
     <ClCompile Include="Services\NativeVertexDeletionService.cpp" />
     <ClCompile Include="Services\NativeVertexStyleService.cpp" />
+    <ClCompile Include="Tests\DeleteUndoScenario.cpp" />
     <ClCompile Include="Tests\NativeIntegrationTestRunner.cpp" />
     <ClCompile Include="Tests\NativeTestCommands.cpp" />
+    <ClCompile Include="Tests\NativeTestDwgHelpers.cpp" />
+    <ClCompile Include="Tests\StyleInteropScenario.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <Target Name="StageNativePlugin" AfterTargets="Build">

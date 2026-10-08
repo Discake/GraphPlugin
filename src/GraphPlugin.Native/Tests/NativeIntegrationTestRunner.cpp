@@ -1,32 +1,39 @@
 #include "NativeIntegrationTestRunner.h"
-#include "NativeIntegrationTestException.h"
-#include "NativeStagedTestSchema.h"
 
 #include "../Persistence/GraphDwgSchema.h"
 #include "../Persistence/NativeVertexMetadata.h"
 #include "../Persistence/VertexMetadataStore.h"
 #include "../Services/NativeVertexDeletionService.h"
+#include "NativeIntegrationTestException.h"
+#include "NativeTestDwgHelpers.h"
 
 using namespace System;
-
 using namespace HostMgd::ApplicationServices;
 using namespace HostMgd::EditorInput;
-
 using namespace Teigha::DatabaseServices;
 using namespace Teigha::Geometry;
-
 using namespace GraphPlugin::Native::Persistence;
 using namespace GraphPlugin::Native::Services;
 
 namespace GraphPlugin::Native::Tests
 {
+    NativeIntegrationTestRunner::NativeIntegrationTestRunner(
+        Document^ document)
+    {
+        if (document == nullptr)
+        {
+            throw gcnew ArgumentNullException(
+                "document");
+        }
+
+        _document = document;
+        _editor = document->Editor;
+    }
+
     void NativeIntegrationTestRunner::RunAll()
     {
-        int passed =
-            0;
-
-        int failed =
-            0;
+        int passed = 0;
+        int failed = 0;
 
         _editor->WriteMessage(
             "\n=== GraphPlugin.Native tests ===");
@@ -34,7 +41,6 @@ namespace GraphPlugin::Native::Tests
         try
         {
             TestVertexMetadataRoundTrip();
-
             ++passed;
 
             _editor->WriteMessage(
@@ -55,7 +61,6 @@ namespace GraphPlugin::Native::Tests
         try
         {
             TestVertexWriterPreservesAttachments();
-
             ++passed;
 
             _editor->WriteMessage(
@@ -76,7 +81,6 @@ namespace GraphPlugin::Native::Tests
         try
         {
             TestCascadeDelete();
-
             ++passed;
 
             _editor->WriteMessage(
@@ -106,24 +110,6 @@ namespace GraphPlugin::Native::Tests
             "\n===============================");
     }
 
-    NativeIntegrationTestRunner::
-        NativeIntegrationTestRunner(
-            Document^ document)
-    {
-        if (document == nullptr)
-        {
-            throw gcnew ArgumentNullException(
-                "document");
-        }
-
-        _document =
-            document;
-
-        _editor =
-            document->Editor;
-    }
-
-
     void NativeIntegrationTestRunner::Ensure(
         bool condition,
         String^ message)
@@ -135,213 +121,9 @@ namespace GraphPlugin::Native::Tests
         }
     }
 
-
-    BlockTableRecord^
-        NativeIntegrationTestRunner::GetModelSpace(
-            Transaction^ transaction)
+    void NativeIntegrationTestRunner::TestVertexMetadataRoundTrip()
     {
-        Database^ database =
-            _document->Database;
-
-        BlockTable^ blockTable =
-            dynamic_cast<BlockTable^>(
-                transaction->GetObject(
-                    database->BlockTableId,
-                    OpenMode::ForRead));
-
-        if (blockTable == nullptr)
-        {
-            throw gcnew NativeIntegrationTestException(
-                "BlockTable could not be opened.");
-        }
-
-        BlockTableRecord^ modelSpace =
-            dynamic_cast<BlockTableRecord^>(
-                transaction->GetObject(
-                    blockTable[
-                        BlockTableRecord::ModelSpace],
-                        OpenMode::ForWrite));
-
-        if (modelSpace == nullptr)
-        {
-            throw gcnew NativeIntegrationTestException(
-                "ModelSpace could not be opened.");
-        }
-
-        return modelSpace;
-    }
-
-    Circle^ NativeIntegrationTestRunner::CreateVertex(
-        Transaction^ transaction,
-        BlockTableRecord^ modelSpace,
-        Guid vertexId,
-        Point3d position)
-    {
-        constexpr double Size =
-            10.0;
-
-        Circle^ circle =
-            gcnew Circle(
-                position,
-                Vector3d::ZAxis,
-                Size);
-
-        circle->ColorIndex =
-            5;
-
-        modelSpace->AppendEntity(
-            circle);
-
-        transaction
-            ->AddNewlyCreatedDBObject(
-                circle,
-                true);
-
-        NativeVertexMetadata^ metadata =
-            gcnew NativeVertexMetadata();
-
-        metadata->VertexId =
-            vertexId;
-
-        metadata->Shape =
-            NativeVertexShape::Circle;
-
-        metadata->Color =
-            NativeGraphColor::Blue;
-
-        metadata->Size =
-            Size;
-
-        VertexMetadataStore^ store =
-            gcnew VertexMetadataStore();
-
-        store->Write(
-            circle,
-            transaction,
-            metadata);
-
-        return circle;
-    }
-
-    Polyline^ NativeIntegrationTestRunner::CreateEdge(
-        Transaction^ transaction,
-        BlockTableRecord^ modelSpace,
-        Guid edgeId,
-        Guid vertexAId,
-        Guid vertexBId,
-        Point2d start,
-        Point2d end)
-    {
-        Polyline^ edge =
-            gcnew Polyline(2);
-
-        edge->AddVertexAt(
-            0,
-            start,
-            0.0,
-            0.0,
-            0.0);
-
-        edge->AddVertexAt(
-            1,
-            end,
-            0.0,
-            0.0,
-            0.0);
-
-        edge->Closed =
-            false;
-
-        modelSpace->AppendEntity(
-            edge);
-
-        transaction
-            ->AddNewlyCreatedDBObject(
-                edge,
-                true);
-
-        WriteEdgeMetadata(
-            edge,
-            transaction,
-            edgeId,
-            vertexAId,
-            vertexBId);
-
-        return edge;
-    }
-
-    void NativeIntegrationTestRunner::WriteEdgeMetadata(
-        Entity^ entity,
-        Transaction^ transaction,
-        Guid edgeId,
-        Guid vertexAId,
-        Guid vertexBId)
-    {
-        if (entity->ExtensionDictionary.IsNull)
-        {
-            entity->CreateExtensionDictionary();
-        }
-
-        DBDictionary^ dictionary =
-            dynamic_cast<DBDictionary^>(
-                transaction->GetObject(
-                    entity->ExtensionDictionary,
-                    OpenMode::ForWrite));
-
-        Ensure(
-            dictionary != nullptr,
-            "Edge extension dictionary could not be opened.");
-
-        array<TypedValue>^ values =
-            gcnew array<TypedValue>(4);
-
-        values[0] =
-            TypedValue(
-                static_cast<int>(
-                    DxfCode::Int32),
-                GraphDwgSchema::Version);
-
-        values[1] =
-            TypedValue(
-                static_cast<int>(
-                    DxfCode::Text),
-                edgeId.ToString("D"));
-
-        values[2] =
-            TypedValue(
-                static_cast<int>(
-                    DxfCode::Text),
-                vertexAId.ToString("D"));
-
-        values[3] =
-            TypedValue(
-                static_cast<int>(
-                    DxfCode::Text),
-                vertexBId.ToString("D"));
-
-        Xrecord^ record =
-            gcnew Xrecord();
-
-        record->Data =
-            gcnew ResultBuffer(
-                values);
-
-        dictionary->SetAt(
-            GraphDwgSchema::EdgeRecord,
-            record);
-
-        transaction
-            ->AddNewlyCreatedDBObject(
-                record,
-                true);
-    }
-
-    void NativeIntegrationTestRunner::
-        TestVertexMetadataRoundTrip()
-    {
-        Database^ database =
-            _document->Database;
-
+        Database^ database = _document->Database;
         Transaction^ transaction =
             database
             ->TransactionManager
@@ -350,14 +132,15 @@ namespace GraphPlugin::Native::Tests
         try
         {
             BlockTableRecord^ modelSpace =
-                GetModelSpace(
-                    transaction);
+                NativeTestDwgHelpers::GetModelSpace(
+                    database,
+                    transaction,
+                    OpenMode::ForWrite);
 
-            Guid expectedId =
-                Guid::NewGuid();
+            Guid expectedId = Guid::NewGuid();
 
             Circle^ circle =
-                CreateVertex(
+                NativeTestDwgHelpers::CreateVertex(
                     transaction,
                     modelSpace,
                     expectedId,
@@ -379,28 +162,21 @@ namespace GraphPlugin::Native::Tests
                 "Vertex metadata was not restored.");
 
             Ensure(
-                actual->VertexId ==
-                expectedId,
+                actual->VertexId == expectedId,
                 "VertexId changed after round-trip.");
 
             Ensure(
-                actual->Shape ==
-                NativeVertexShape::Circle,
+                actual->Shape == NativeVertexShape::Circle,
                 "Vertex shape changed after round-trip.");
 
             Ensure(
-                actual->Color ==
-                NativeGraphColor::Blue,
+                actual->Color == NativeGraphColor::Blue,
                 "Vertex color changed after round-trip.");
 
             Ensure(
                 actual->Size == 10.0,
                 "Vertex size changed after round-trip.");
 
-            //
-            // Test fixture никогда не попадает
-            // в окончательный DWG.
-            //
             transaction->Abort();
         }
         finally
@@ -409,72 +185,9 @@ namespace GraphPlugin::Native::Tests
         }
     }
 
-    void NativeIntegrationTestRunner::
-        WriteTestAttachment(
-            Entity^ entity,
-            Transaction^ transaction,
-            String^ path)
+    void NativeIntegrationTestRunner::TestVertexWriterPreservesAttachments()
     {
-        if (entity->ExtensionDictionary.IsNull)
-        {
-            entity->CreateExtensionDictionary();
-        }
-
-        DBDictionary^ dictionary =
-            dynamic_cast<DBDictionary^>(
-                transaction->GetObject(
-                    entity->ExtensionDictionary,
-                    OpenMode::ForWrite));
-
-        Ensure(
-            dictionary != nullptr,
-            "ExtensionDictionary could not be opened.");
-
-        array<TypedValue>^ values =
-            gcnew array<TypedValue>(3);
-
-        values[0] =
-            TypedValue(
-                static_cast<int>(
-                    DxfCode::Int32),
-                GraphDwgSchema::Version);
-
-        values[1] =
-            TypedValue(
-                static_cast<int>(
-                    DxfCode::Int32),
-                1);
-
-        values[2] =
-            TypedValue(
-                static_cast<int>(
-                    DxfCode::Text),
-                path);
-
-        Xrecord^ record =
-            gcnew Xrecord();
-
-        record->Data =
-            gcnew ResultBuffer(
-                values);
-
-        dictionary->SetAt(
-            GraphDwgSchema::
-            VertexAttachmentsRecord,
-            record);
-
-        transaction
-            ->AddNewlyCreatedDBObject(
-                record,
-                true);
-    }
-
-    void NativeIntegrationTestRunner::
-        TestVertexWriterPreservesAttachments()
-    {
-        Database^ database =
-            _document->Database;
-
+        Database^ database = _document->Database;
         Transaction^ transaction =
             database
             ->TransactionManager
@@ -483,14 +196,15 @@ namespace GraphPlugin::Native::Tests
         try
         {
             BlockTableRecord^ modelSpace =
-                GetModelSpace(
-                    transaction);
+                NativeTestDwgHelpers::GetModelSpace(
+                    database,
+                    transaction,
+                    OpenMode::ForWrite);
 
-            Guid vertexId =
-                Guid::NewGuid();
+            Guid vertexId = Guid::NewGuid();
 
             Circle^ circle =
-                CreateVertex(
+                NativeTestDwgHelpers::CreateVertex(
                     transaction,
                     modelSpace,
                     vertexId,
@@ -499,28 +213,18 @@ namespace GraphPlugin::Native::Tests
                         100000.0,
                         0.0));
 
-            WriteTestAttachment(
+            NativeTestDwgHelpers::WriteAttachment(
                 circle,
                 transaction,
                 "Files\\native-test.pdf");
 
-            //
-            // Повторная запись GRAPH_VERTEX.
-            //
             NativeVertexMetadata^ metadata =
                 gcnew NativeVertexMetadata();
 
-            metadata->VertexId =
-                vertexId;
-
-            metadata->Shape =
-                NativeVertexShape::Circle;
-
-            metadata->Color =
-                NativeGraphColor::Blue;
-
-            metadata->Size =
-                20.0;
+            metadata->VertexId = vertexId;
+            metadata->Shape = NativeVertexShape::Circle;
+            metadata->Color = NativeGraphColor::Blue;
+            metadata->Size = 20.0;
 
             VertexMetadataStore^ store =
                 gcnew VertexMetadataStore();
@@ -542,15 +246,13 @@ namespace GraphPlugin::Native::Tests
 
             Ensure(
                 dictionary->Contains(
-                    GraphDwgSchema::
-                    VertexRecord),
+                    GraphDwgSchema::VertexRecord),
                 "GRAPH_VERTEX disappeared.");
 
             Ensure(
                 dictionary->Contains(
-                    GraphDwgSchema::
-                    VertexAttachmentsRecord),
-                "GRAPH_VERTEX_ATTACHMENTS was destroyed " +
+                    GraphDwgSchema::VertexAttachmentsRecord),
+                "GRAPH_VERTEX_ATTACHMENTS was destroyed "
                 "by VertexMetadataStore.Write.");
 
             transaction->Abort();
@@ -561,12 +263,9 @@ namespace GraphPlugin::Native::Tests
         }
     }
 
-    void NativeIntegrationTestRunner::
-        TestCascadeDelete()
+    void NativeIntegrationTestRunner::TestCascadeDelete()
     {
-        Database^ database =
-            _document->Database;
-
+        Database^ database = _document->Database;
         Transaction^ transaction =
             database
             ->TransactionManager
@@ -575,8 +274,10 @@ namespace GraphPlugin::Native::Tests
         try
         {
             BlockTableRecord^ modelSpace =
-                GetModelSpace(
-                    transaction);
+                NativeTestDwgHelpers::GetModelSpace(
+                    database,
+                    transaction,
+                    OpenMode::ForWrite);
 
             Guid aId = Guid::NewGuid();
             Guid bId = Guid::NewGuid();
@@ -584,35 +285,35 @@ namespace GraphPlugin::Native::Tests
             Guid dId = Guid::NewGuid();
 
             Circle^ a =
-                CreateVertex(
+                NativeTestDwgHelpers::CreateVertex(
                     transaction,
                     modelSpace,
                     aId,
                     Point3d(101000, 100000, 0));
 
             Circle^ b =
-                CreateVertex(
+                NativeTestDwgHelpers::CreateVertex(
                     transaction,
                     modelSpace,
                     bId,
                     Point3d(101100, 100000, 0));
 
             Circle^ c =
-                CreateVertex(
+                NativeTestDwgHelpers::CreateVertex(
                     transaction,
                     modelSpace,
                     cId,
                     Point3d(101000, 100100, 0));
 
             Circle^ d =
-                CreateVertex(
+                NativeTestDwgHelpers::CreateVertex(
                     transaction,
                     modelSpace,
                     dId,
                     Point3d(101100, 100100, 0));
 
             Polyline^ ab =
-                CreateEdge(
+                NativeTestDwgHelpers::CreateEdge(
                     transaction,
                     modelSpace,
                     Guid::NewGuid(),
@@ -622,7 +323,7 @@ namespace GraphPlugin::Native::Tests
                     Point2d(101100, 100000));
 
             Polyline^ ac =
-                CreateEdge(
+                NativeTestDwgHelpers::CreateEdge(
                     transaction,
                     modelSpace,
                     Guid::NewGuid(),
@@ -632,7 +333,7 @@ namespace GraphPlugin::Native::Tests
                     Point2d(101000, 100100));
 
             Polyline^ cd =
-                CreateEdge(
+                NativeTestDwgHelpers::CreateEdge(
                     transaction,
                     modelSpace,
                     Guid::NewGuid(),
