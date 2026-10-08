@@ -1,11 +1,10 @@
 ﻿using GraphPlugin.Application.Abstractions.Persistence;
 using GraphPlugin.Domain.Models;
 using GraphPlugin.Nanocad.Runtime;
-using GraphPlugin.NanoCad.Runtime;
 using HostMgd.ApplicationServices;
 using Teigha.DatabaseServices;
 
-namespace GraphPlugin.NanoCad.Persistence;
+namespace GraphPlugin.Nanocad.Persistence;
 
 public sealed class NanoCadVertexAttachmentRepository
     : IVertexAttachmentRepository
