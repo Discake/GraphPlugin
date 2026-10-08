@@ -24,8 +24,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\GraphPlugin.Application\GraphPlugin.Application.csproj" />
-    <ProjectReference Include="..\GraphPlugin.Domain\GraphPlugin.Domain.csproj" />
+    <ProjectReference Include="..\..\src\GraphPlugin.Application\GraphPlugin.Application.csproj" />
+    <ProjectReference Include="..\..\src\GraphPlugin.Domain\GraphPlugin.Domain.csproj" />
   </ItemGroup>
 
 </Project>

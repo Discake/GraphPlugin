@@ -2,10 +2,10 @@
   <Configurations>
     <Platform Name="x64" />
   </Configurations>
-  <Project Path="GraphPlugin.Application/GraphPlugin.Application.csproj" />
-  <Project Path="GraphPlugin.Domain/GraphPlugin.Domain.csproj" />
-  <Project Path="GraphPlugin.Nanocad/GraphPlugin.Nanocad.csproj" />
-  <Project Path="GraphPlugin.Nanocad.IntegrationTests/GraphPlugin.Nanocad.IntegrationTests.csproj" />
-  <Project Path="GraphPlugin.Native/GraphPlugin.Native.vcxproj" />
-  <Project Path="GraphPlugin.Tests/GraphPlugin.Tests.csproj" />
+  <Project Path="src/GraphPlugin.Application/GraphPlugin.Application.csproj" />
+  <Project Path="src/GraphPlugin.Domain/GraphPlugin.Domain.csproj" />
+  <Project Path="src/GraphPlugin.Nanocad/GraphPlugin.Nanocad.csproj" />
+  <Project Path="tests/GraphPlugin.Nanocad.IntegrationTests/GraphPlugin.Nanocad.IntegrationTests.csproj" />
+  <Project Path="src/GraphPlugin.Native/GraphPlugin.Native.vcxproj" />
+  <Project Path="tests/GraphPlugin.Tests/GraphPlugin.Tests.csproj" />
 </Solution>
