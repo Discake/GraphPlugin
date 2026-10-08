@@ -6,8 +6,6 @@ using HostMgd.EditorInput;
 using System.Diagnostics;
 using Teigha.Runtime;
 
-using NanoApplication = HostMgd.ApplicationServices.Application;
-
 namespace GraphPlugin.Nanocad.Commands;
 
 public sealed class AttachmentCommands
@@ -15,19 +13,14 @@ public sealed class AttachmentCommands
     [CommandMethod("GRAPHATTACHFILE")]
     public void GraphAttachFile()
     {
-        var document =
-            NanoApplication
-                .DocumentManager
-                .MdiActiveDocument;
+        var context =
+            PluginServices.CurrentContext;
 
-        if (document is null)
-            return;
+        var document =
+            context.Document;
 
         var editor =
             document.Editor;
-
-        var context =
-            PluginServices.CurrentContext;
 
         try
         {
@@ -75,19 +68,14 @@ public sealed class AttachmentCommands
     [CommandMethod("GRAPHVERTEXFILES")]
     public void GraphVertexFiles()
     {
-        var document =
-            NanoApplication
-                .DocumentManager
-                .MdiActiveDocument;
+        var context =
+            PluginServices.CurrentContext;
 
-        if (document is null)
-            return;
+        var document =
+            context.Document;
 
         var editor =
             document.Editor;
-
-        var context =
-            PluginServices.CurrentContext;
 
         try
         {
@@ -123,19 +111,14 @@ public sealed class AttachmentCommands
     [CommandMethod("GRAPHOPENFILE")]
     public void GraphOpenFile()
     {
-        var document =
-            NanoApplication
-                .DocumentManager
-                .MdiActiveDocument;
+        var context =
+            PluginServices.CurrentContext;
 
-        if (document is null)
-            return;
+        var document =
+            context.Document;
 
         var editor =
             document.Editor;
-
-        var context =
-            PluginServices.CurrentContext;
 
         try
         {
@@ -201,19 +184,14 @@ public sealed class AttachmentCommands
     [CommandMethod("GRAPHDETACHFILE")]
     public void GraphDetachFile()
     {
-        var document =
-            NanoApplication
-                .DocumentManager
-                .MdiActiveDocument;
+        var context =
+            PluginServices.CurrentContext;
 
-        if (document is null)
-            return;
+        var document =
+            context.Document;
 
         var editor =
             document.Editor;
-
-        var context =
-            PluginServices.CurrentContext;
 
         try
         {
