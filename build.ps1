@@ -45,6 +45,7 @@ if (-not (Test-Path $hostMgdPath)) {
 
 $msbuildArguments = @(
     $solutionPath,
+    "/restore",
     "/m",
     "/p:Platform=x64",
     "/p:Configuration=$Configuration",
@@ -55,6 +56,7 @@ $msbuildArguments = @(
 Write-Host "MSBuild: $msbuildPath"
 Write-Host "Configuration: $Configuration | Platform: x64"
 Write-Host "nanoCAD: $NanoCadInstallDir"
+Write-Host "NuGet restore: MSBuild /restore"
 
 & $msbuildPath @msbuildArguments
 
