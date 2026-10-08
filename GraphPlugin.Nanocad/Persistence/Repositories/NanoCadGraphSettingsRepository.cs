@@ -58,6 +58,19 @@ public sealed class NanoCadGraphSettingsRepository
         if (values.Length < 4)
             return GraphSettings.Default;
 
+        var version =
+            Convert.ToInt32(
+                values[0].Value);
+
+        if (version !=
+            GraphMetadataKeys.CurrentSettingsVersion)
+        {
+            throw new InvalidOperationException(
+                $"Unsupported {GraphMetadataKeys.SettingsRecord} " +
+                $"version: {version}. Supported version: " +
+                $"{GraphMetadataKeys.CurrentSettingsVersion}.");
+        }
+
         var color =
             (GraphColor)Convert.ToInt32(
                 values[1].Value);
