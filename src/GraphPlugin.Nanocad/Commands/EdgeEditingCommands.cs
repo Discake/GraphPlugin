@@ -7,8 +7,6 @@ using Teigha.DatabaseServices;
 using Teigha.Geometry;
 using Teigha.Runtime;
 
-using NanoApplication = HostMgd.ApplicationServices.Application;
-
 namespace GraphPlugin.Nanocad.Commands;
 
 public sealed class EdgeEditingCommands
@@ -21,19 +19,14 @@ public sealed class EdgeEditingCommands
     [CommandMethod("GRAPHSPLITEDGE")]
     public void SplitEdge()
     {
-        var document =
-            NanoApplication
-                .DocumentManager
-                .MdiActiveDocument;
+        var context =
+            PluginServices.CurrentContext;
 
-        if (document is null)
-            return;
+        var document =
+            context.Document;
 
         var editor =
             document.Editor;
-
-        var context =
-            PluginServices.CurrentContext;
 
         editor.WriteMessage(
             "\nРазбиение ребра.");
@@ -134,22 +127,17 @@ public sealed class EdgeEditingCommands
     [CommandMethod("GRAPHADDBEND")]
     public void GraphAddBend()
     {
-        var document =
-            NanoApplication
-                .DocumentManager
-                .MdiActiveDocument;
-
-        if (document is null)
-            return;
-
         var context =
             PluginServices.CurrentContext;
+
+        var document =
+            context.Document;
 
         try
         {
             var selection =
                 SelectEdge(
-                    context.Document.Editor,
+                    document.Editor,
                     context);
 
             if (selection is null)
