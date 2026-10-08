@@ -1,8 +1,8 @@
-﻿using GraphPlugin.Application.Abstractions.Persistence;
+using GraphPlugin.Application.Abstractions.Persistence;
 using GraphPlugin.Domain.Geometry;
 using GraphPlugin.Domain.Models;
 
-namespace GraphPlugin.Application.Services;
+namespace GraphPlugin.Application.Editing.Bends;
 
 public sealed class AddBendService
 {
@@ -65,10 +65,6 @@ public sealed class AddBendService
                 nameof(point));
         }
 
-        //
-        // Используем нормализованную точку маршрута,
-        // а не потенциально слегка неточный input.
-        //
         var bendPoint =
             projection.Point;
 
