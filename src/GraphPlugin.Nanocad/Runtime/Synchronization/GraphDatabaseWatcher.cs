@@ -1,7 +1,6 @@
-using GraphPlugin.Application.Services;
+using GraphPlugin.Application.Graph;
 using GraphPlugin.Nanocad.Persistence.Metadata;
 using HostMgd.ApplicationServices;
-
 using Teigha.DatabaseServices;
 
 namespace GraphPlugin.Nanocad.Runtime;
@@ -21,9 +20,7 @@ public sealed class GraphDatabaseWatcher
 
     private readonly Document _document;
     private readonly GraphEntityIndex _index;
-
-    private readonly EdgeGeometrySynchronizer
-        _synchronizer;
+    private readonly EdgeGeometrySynchronizer _synchronizer;
 
     private readonly HashSet<Guid>
         _dirtyVertices = new();
@@ -43,14 +40,11 @@ public sealed class GraphDatabaseWatcher
     private readonly HashSet<ObjectId>
         _pendingErasedObjectIds = new();
 
-    private readonly GraphService _graphService;
-
+    private readonly EdgeService _edgeService;
     private readonly XRecordMetadataStore _metadata;
 
     private bool _started;
-
     private bool _internalDeletion;
-
     private int _suspendCount;
 
     public bool IsSuspended =>
@@ -60,13 +54,13 @@ public sealed class GraphDatabaseWatcher
         Document document,
         GraphEntityIndex index,
         EdgeGeometrySynchronizer synchronizer,
-        GraphService graphService,
+        EdgeService edgeService,
         XRecordMetadataStore metadata)
     {
         _document = document;
         _index = index;
         _synchronizer = synchronizer;
-        _graphService = graphService;
+        _edgeService = edgeService;
         _metadata = metadata;
     }
 
@@ -157,17 +151,8 @@ public sealed class GraphDatabaseWatcher
         try
         {
             FlushRestoredObjects();
-
-            //
-            // Сначала replacement.
-            //
             FlushAppendedObjects();
-
-            //
-            // Только потом логические erase.
-            //
             FlushErasedObjects();
-
             FlushDirtyVertices();
             FlushDirtyEdges();
         }
@@ -233,9 +218,6 @@ public sealed class GraphDatabaseWatcher
             return;
         }
 
-        //
-        // Unerase / Undo.
-        //
         _pendingErasedObjectIds.Remove(
             objectId);
 
@@ -275,10 +257,8 @@ public sealed class GraphDatabaseWatcher
     private void ClearPending()
     {
         _appendedObjects.Clear();
-
         _pendingErasedObjectIds.Clear();
         _pendingErases.Clear();
-
         _restoredObjects.Clear();
         _dirtyVertices.Clear();
         _dirtyEdges.Clear();
@@ -290,26 +270,20 @@ public sealed class GraphDatabaseWatcher
             return;
 
         var edgeIds =
-            _dirtyEdges
-                .ToArray();
+            _dirtyEdges.ToArray();
 
         _dirtyEdges.Clear();
 
-        foreach (var edgeId in
-                 edgeIds)
+        foreach (var edgeId in edgeIds)
         {
             try
             {
-                _synchronizer
-                    .UpdateEdge(
-                        edgeId);
+                _synchronizer.UpdateEdge(
+                    edgeId);
             }
             catch
             {
-                //
-                // Edge мог быть удалён
-                // в той же команде.
-                //
+                // Edge may have been deleted by the same command.
             }
         }
     }
@@ -324,71 +298,36 @@ public sealed class GraphDatabaseWatcher
 
         _pendingErases.Clear();
 
-        //
-        // Сначала физически удалённые Edge.
-        //
         foreach (var erased in pending)
         {
-            if (erased.Kind !=
-                PendingEraseKind.Edge)
-            {
+            if (erased.Kind != PendingEraseKind.Edge)
                 continue;
-            }
 
-            FlushErasedEdge(
-                erased);
+            FlushErasedEdge(erased);
         }
 
-        //
-        // Потом Vertex.
-        //
         foreach (var erased in pending)
         {
-            if (erased.Kind !=
-                PendingEraseKind.Vertex)
-            {
+            if (erased.Kind != PendingEraseKind.Vertex)
                 continue;
-            }
 
-            FlushErasedVertex(
-                erased);
+            FlushErasedVertex(erased);
         }
     }
 
     private void FlushErasedVertex(
         PendingErase erased)
     {
-        //
-        // Какой DWG object СЕЙЧАС представляет
-        // эту логическую Vertex?
-        //
         if (!_index.TryGetVertexObjectId(
                 erased.GraphObjectId,
                 out var currentObjectId))
         {
-            //
-            // Уже обработано каким-то другим путём.
-            //
             return;
         }
 
-        //
-        // Старый Circle был удалён, но VertexId уже
-        // перенесён на новый Triangle.
-        //
-        // Значит это replacement, а НЕ логическое
-        // удаление Vertex.
-        //
-        if (currentObjectId !=
-            erased.ObjectId)
-        {
+        if (currentObjectId != erased.ObjectId)
             return;
-        }
 
-        //
-        // Только здесь это настоящее удаление
-        // логической Vertex.
-        //
         DeleteVertexAfterExternalErase(
             erased.GraphObjectId,
             erased.ObjectId);
@@ -405,14 +344,9 @@ public sealed class GraphDatabaseWatcher
 
         foreach (var edgeId in incidentEdges)
         {
-            _graphService.DeleteEdge(edgeId);
+            _edgeService.DeleteEdge(edgeId);
         }
 
-        //
-        // Саму Vertex entity повторно Erase()
-        // делать уже не нужно:
-        // пользователь/nanoCAD её уже стёр.
-        //
         _index.RemoveVertex(
             vertexId);
     }
@@ -427,14 +361,8 @@ public sealed class GraphDatabaseWatcher
             return;
         }
 
-        if (currentObjectId !=
-            erased.ObjectId)
-        {
-            //
-            // Представление Edge было заменено.
-            //
+        if (currentObjectId != erased.ObjectId)
             return;
-        }
 
         _index.RemoveEdge(
             erased.GraphObjectId);
@@ -498,8 +426,6 @@ public sealed class GraphDatabaseWatcher
                 (objectId, entity));
         }
 
-        // PASS 1:
-        // сначала восстанавливаем все Vertex.
         foreach (var item in entities)
         {
             RestoreVertexIfNeeded(
@@ -508,8 +434,6 @@ public sealed class GraphDatabaseWatcher
                 transaction);
         }
 
-        // PASS 2:
-        // после этого восстанавливаем Edge.
         foreach (var item in entities)
         {
             RestoreEdgeIfNeeded(
@@ -585,8 +509,7 @@ public sealed class GraphDatabaseWatcher
             return;
 
         var objectIds =
-            _appendedObjects
-                .ToArray();
+            _appendedObjects.ToArray();
 
         _appendedObjects.Clear();
 
@@ -603,10 +526,6 @@ public sealed class GraphDatabaseWatcher
                 continue;
             }
 
-            //
-            // Наши C# repositories уже могли
-            // синхронно зарегистрировать объект.
-            //
             if (_index.TryGetVertexId(
                     objectId,
                     out _))
@@ -633,9 +552,6 @@ public sealed class GraphDatabaseWatcher
                 continue;
             }
 
-            //
-            // Сначала Vertex.
-            //
             var vertexMetadata =
                 _metadata.ReadVertex(
                     entity,
@@ -648,9 +564,7 @@ public sealed class GraphDatabaseWatcher
                         out var existingObjectId))
                 {
                     if (existingObjectId == objectId)
-                    {
                         continue;
-                    }
 
                     if (_pendingErasedObjectIds.Contains(
                             existingObjectId) ||
@@ -663,10 +577,6 @@ public sealed class GraphDatabaseWatcher
                         continue;
                     }
 
-                    //
-                    // Два живых объекта с одинаковым VertexId
-                    // — это повреждение topology.
-                    //
                     throw new InvalidOperationException(
                         $"Duplicate graph vertex id " +
                         $"{vertexMetadata.Id}.");
@@ -679,9 +589,6 @@ public sealed class GraphDatabaseWatcher
                 continue;
             }
 
-            //
-            // Потом Edge.
-            //
             var edge =
                 _metadata.ReadEdge(
                     entity,
