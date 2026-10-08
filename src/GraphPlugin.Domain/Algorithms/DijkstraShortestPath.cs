@@ -41,6 +41,11 @@ public sealed class DijkstraShortestPath
                 nameof(endVertexId));
         }
 
+        var adjacency =
+            BuildAdjacency(
+                verticesById,
+                edges);
+
         if (startVertexId == endVertexId)
         {
             return ShortestPathResult.Create(
@@ -48,11 +53,6 @@ public sealed class DijkstraShortestPath
                 Array.Empty<Guid>(),
                 0);
         }
-
-        var adjacency =
-            BuildAdjacency(
-                verticesById,
-                edges);
 
         var distances =
             verticesById.Keys.ToDictionary(
