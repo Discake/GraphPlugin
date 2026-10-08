@@ -146,12 +146,16 @@ foreach ($assembly in $assemblies) {
 
 $loadInstructions = @"
 GraphPlugin $Configuration bundle
+Target nanoCAD: x64 24.1
 
 Keep all DLL files in this directory together.
 
 Load into nanoCAD with NETLOAD:
 1. GraphPlugin.Nanocad.dll
 2. GraphPlugin.Native.dll
+
+After loading GraphPlugin.Nanocad.dll, run GRAPHCONTROL to open the main GraphPlugin Control Center.
+The same actions remain available as GRAPH* commands; see README.md in the repository for the UI-to-command mapping.
 
 Optional integration-test commands:
 3. GraphPlugin.Nanocad.IntegrationTests.dll
