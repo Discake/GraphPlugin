@@ -1,8 +1,8 @@
-﻿using GraphPlugin.Application.Abstractions.Persistence;
+using GraphPlugin.Application.Abstractions.Persistence;
 using GraphPlugin.Domain.Geometry;
 using GraphPlugin.Domain.Models;
 
-namespace GraphPlugin.Application.Services;
+namespace GraphPlugin.Application.Editing.Splitting;
 
 public sealed class SplitEdgeService
 {
@@ -57,11 +57,6 @@ public sealed class SplitEdgeService
                 originalEdge.Route,
                 splitPoint);
 
-        //
-        // Важно:
-        // используем именно нормализованную точку,
-        // которую вернул EdgeRouteGeometry.
-        //
         var newVertex =
             new GraphVertex(
                 Guid.NewGuid(),
@@ -80,44 +75,21 @@ public sealed class SplitEdgeService
                 vertexB.Id,
                 routeSplit.RightRoute);
 
-        var vertexAdded =
-            false;
-
-        var edgeAAdded =
-            false;
-
-        var edgeBAdded =
-            false;
+        var vertexAdded = false;
+        var edgeAAdded = false;
+        var edgeBAdded = false;
 
         try
         {
-            //
-            // Сначала создаём всю новую структуру.
-            //
-            _vertices.Add(
-                newVertex);
+            _vertices.Add(newVertex);
+            vertexAdded = true;
 
-            vertexAdded =
-                true;
+            _edges.Add(edgeA);
+            edgeAAdded = true;
 
-            _edges.Add(
-                edgeA);
+            _edges.Add(edgeB);
+            edgeBAdded = true;
 
-            edgeAAdded =
-                true;
-
-            _edges.Add(
-                edgeB);
-
-            edgeBAdded =
-                true;
-
-            //
-            // Исходное ребро удаляем последним.
-            //
-            // Пока всё выше не прошло успешно,
-            // старое ребро остаётся нетронутым.
-            //
             _edges.Delete(
                 originalEdge.Id);
 
@@ -129,30 +101,14 @@ public sealed class SplitEdgeService
         }
         catch
         {
-            //
-            // Best-effort rollback.
-            //
-            // Если исходное ребро ещё существует,
-            // удаляем только то, что успели добавить.
-            //
-
             if (edgeBAdded)
-            {
-                TryDeleteEdge(
-                    edgeB.Id);
-            }
+                TryDeleteEdge(edgeB.Id);
 
             if (edgeAAdded)
-            {
-                TryDeleteEdge(
-                    edgeA.Id);
-            }
+                TryDeleteEdge(edgeA.Id);
 
             if (vertexAdded)
-            {
-                TryDeleteVertex(
-                    newVertex.Id);
-            }
+                TryDeleteVertex(newVertex.Id);
 
             throw;
         }
@@ -175,8 +131,7 @@ public sealed class SplitEdgeService
     {
         try
         {
-            _edges.Delete(
-                edgeId);
+            _edges.Delete(edgeId);
         }
         catch
         {
@@ -189,8 +144,7 @@ public sealed class SplitEdgeService
     {
         try
         {
-            _vertices.Delete(
-                vertexId);
+            _vertices.Delete(vertexId);
         }
         catch
         {
