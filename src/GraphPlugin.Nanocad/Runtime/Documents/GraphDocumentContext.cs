@@ -1,7 +1,6 @@
 using GraphPlugin.Application.Abstractions.Persistence;
 using GraphPlugin.Application.Services;
-using GraphPlugin.NanoCad.Drawing;
-using GraphPlugin.NanoCad.Runtime;
+using GraphPlugin.Nanocad.Drawing;
 using HostMgd.ApplicationServices;
 
 namespace GraphPlugin.Nanocad.Runtime;
