@@ -4,7 +4,7 @@
 
 ## Общая схема
 
-Основная C#-часть построена слоями с направлением зависимостей от host-specific к чистому коду:
+Основная C#-часть построена по слоям. Зависимости направлены от интеграционного слоя к чистой предметной логике:
 
 ```text
 GraphPlugin.Domain
@@ -14,18 +14,19 @@ GraphPlugin.Application
 GraphPlugin.Nanocad
 ```
 
-Дополнительно существуют два независимых проекта:
+Дополнительно существуют два проекта:
 
 ```text
 GraphPlugin.Native
-    C++/CLI реализация части операций с вершинами
-    через тот же DWG persistence contract
+    C++/CLI-реализация части операций с вершинами
+    через тот же DWG-контракт хранения данных
 
 GraphPlugin.Nanocad.IntegrationTests
-    regression/integration harness, выполняемый внутри nanoCAD
+    набор интеграционных и регрессионных тестов,
+    выполняемый внутри nanoCAD
 ```
 
-Главный принцип: `Domain` и `Application` не знают о nanoCAD API. Все зависимости на `Document`, `Database`, `ObjectId`, `Entity`, transactions и события host находятся в `GraphPlugin.Nanocad` или `GraphPlugin.Native`.
+Главный принцип: `GraphPlugin.Domain` и `GraphPlugin.Application` не зависят от nanoCAD API. Все зависимости на `Document`, `Database`, `ObjectId`, `Entity`, транзакции и события nanoCAD находятся в `GraphPlugin.Nanocad` или `GraphPlugin.Native`.
 
 ## 1. GraphPlugin.Domain
 
@@ -46,25 +47,26 @@ Domain/
 
 - `GraphVertex` — вершина со стабильным `Guid`, положением и стилем;
 - `GraphEdge` — ребро между двумя `VertexId`;
-- `EdgeRoute` — промежуточная геометрия ребра, включая bends;
-- `VertexStyle`, `EdgeStyle`, `GraphSettings` — доменные настройки;
-- `VertexAttachment` — ссылка на файл, связанная с вершиной.
+- `EdgeRoute` — маршрут ребра с промежуточными bend-точками;
+- `VertexStyle`, `EdgeStyle`, `GraphSettings` — предметные настройки;
+- `VertexAttachment` — ссылка на файл, связанную с вершиной.
 
-Domain не хранит собственный долгоживущий объект `Graph`. Persisted state принадлежит DWG, а алгоритмы получают нужный snapshot данных от application layer.
+Domain не хранит отдельный долгоживущий объект `Graph`. Постоянное состояние принадлежит DWG, а алгоритмы получают необходимый снимок данных от слоя Application.
 
 ### Геометрия
 
-`Geometry` содержит host-independent типы и вычисления:
+`Geometry` содержит независимые от nanoCAD типы и вычисления:
 
 - `Point2`;
-- операции с route/bend geometry;
-- проекции и разбиение маршрутов.
+- операции с маршрутом Edge и bend-точками;
+- проекции;
+- разбиение маршрутов.
 
-Это позволяет unit-тестировать геометрию без nanoCAD runtime.
+Это позволяет тестировать геометрию обычными unit tests без запуска nanoCAD.
 
 ### Кратчайший путь
 
-`DijkstraShortestPath` — чистый алгоритм. Он получает коллекции вершин и рёбер, один раз строит:
+`DijkstraShortestPath` — чистый алгоритм. Он получает коллекции вершин и рёбер и один раз строит:
 
 ```text
 VertexId -> GraphVertex
@@ -73,13 +75,13 @@ VertexId -> incident GraphEdge[]
 
 После этого выполняется поиск Дейкстры.
 
-`EdgeLengthCalculator` вычисляет вес ребра по текущим координатам endpoint-вершин и геометрии `EdgeRoute`. Для bent edge используется полная длина полилинейного маршрута.
+`EdgeLengthCalculator` вычисляет вес ребра по текущим координатам конечных Vertex и геометрии `EdgeRoute`. Для ребра с bend-точками используется полная длина полилинейного маршрута.
 
-Отдельный интерфейс `IShortestPathService` не используется: алгоритм является чистой реализацией Domain и не представляет инфраструктурную границу.
+Отдельный интерфейс `IShortestPathService` не используется: алгоритм не является инфраструктурной границей и существует как конкретная чистая реализация Domain.
 
 ## 2. GraphPlugin.Application
 
-Application layer реализует use cases и объявляет абстракции persistence.
+`GraphPlugin.Application` реализует пользовательские сценарии и объявляет абстракции доступа к постоянному состоянию.
 
 ```text
 Application/
@@ -93,7 +95,7 @@ Application/
 └── Styling/
 ```
 
-### Persistence abstractions
+### Абстракции persistence
 
 Основные интерфейсы:
 
@@ -101,18 +103,18 @@ Application/
 - `IEdgeRepository`;
 - `IGraphSettingsRepository`;
 - `IVertexAttachmentRepository`;
-- host-independent style/application abstractions.
+- независимые от nanoCAD абстракции применения стилей.
 
-Именно эти интерфейсы отделяют use cases от DWG persistence.
+Именно эти интерфейсы отделяют пользовательские сценарии от конкретного хранения данных в DWG.
 
-### Graph services
+### Сервисы графа
 
-`VertexService` отвечает за lifecycle Vertex:
+`VertexService` отвечает за жизненный цикл Vertex:
 
 - создание;
-- каскадное удаление Vertex вместе с incident edges.
+- каскадное удаление Vertex вместе со всеми incident Edge.
 
-`EdgeService` отвечает за lifecycle Edge:
+`EdgeService` отвечает за жизненный цикл Edge:
 
 - создание;
 - удаление.
@@ -121,42 +123,42 @@ Application/
 
 `GraphBuildService` хранит кратковременное состояние интерактивного построения цепочки и создаёт связи между последовательно выбранными вершинами.
 
-### Editing
+### Редактирование
 
-Application services для редактирования изолированы по use case:
+Сервисы редактирования разделены по пользовательским сценариям:
 
-- `SplitEdgeService` — разбиение ребра новой вершиной;
-- `AddBendService` — добавление bend;
-- `MoveBendService` — обновление bend geometry;
-- `RemoveBendService` — удаление bend.
+- `SplitEdgeService` — разбиение Edge новой Vertex;
+- `AddBendService` — добавление bend-точки;
+- `MoveBendService` — обновление положения bend-точки;
+- `RemoveBendService` — удаление bend-точки.
 
 Эти сервисы работают через repositories и не открывают nanoCAD transactions самостоятельно.
 
-### Routing
+### Поиск пути
 
-`ShortestPathService` является application-level use case:
+`ShortestPathService` — сервис уровня Application:
 
 ```text
 repositories
     ↓
-GetAll vertices + edges
+получение всех Vertex и Edge
     ↓
 DijkstraShortestPath
     ↓
 ShortestPathResult
 ```
 
-Он не содержит алгоритм поиска сам, а отвечает за получение актуального snapshot из persistence.
+Он не реализует сам алгоритм поиска, а получает актуальный снимок графа из repositories и передаёт его в Domain.
 
-### Attachments и styling
+### Attachments и стили
 
-`VertexAttachmentService` управляет attachment paths и их разрешением относительно DWG.
+`VertexAttachmentService` управляет ссылками на прикреплённые файлы и разрешает относительные пути относительно DWG.
 
-`GraphSettingsService` читает/изменяет глобальные настройки и инициирует применение Edge style через abstraction, реализованную host layer.
+`GraphSettingsService` читает и изменяет глобальные настройки графа, а также инициирует применение Edge style через абстракцию, реализованную на стороне nanoCAD.
 
 ## 3. GraphPlugin.Nanocad
 
-Это host adapter и composition root C#-части.
+`GraphPlugin.Nanocad` — интеграционный слой C#-части и место сборки зависимостей.
 
 Основные области ответственности:
 
@@ -169,20 +171,20 @@ Nanocad/
 └── Bootstrap/
 ```
 
-### Commands
+### Команды
 
 Команды nanoCAD являются внешней точкой входа. Они:
 
 1. получают текущий `GraphDocumentContext`;
 2. читают пользовательский ввод через Editor API;
-3. вызывают application/runtime service;
+3. вызывают нужный Application или Runtime service;
 4. выводят результат пользователю.
 
-Бизнес-правила не должны переноситься в command classes.
+Предметные правила не должны переноситься в классы команд.
 
 ### Persistence
 
-DWG repositories реализуют application abstractions:
+DWG repositories реализуют интерфейсы Application:
 
 ```text
 IVertexRepository
@@ -198,21 +200,21 @@ IVertexAttachmentRepository
     -> NanoCadVertexAttachmentRepository
 ```
 
-Persisted представление:
+Постоянное представление:
 
-- Vertex — `Circle` или закрытый triangular `Polyline`;
+- Vertex — `Circle` или закрытый треугольный `Polyline`;
 - Edge — `Polyline`;
-- topology и stable GUID — XRecords;
+- topology и стабильные GUID — XRecord;
 - attachments — отдельный XRecord Vertex;
-- global settings — XRecord в Named Objects Dictionary.
+- глобальные настройки — XRecord в Named Objects Dictionary.
 
-Полный бинарный контракт описан в `docs/dwg-schema.md`.
+Подробный формат описан в [dwg-schema.md](dwg-schema.md).
 
-## 4. DWG как source of truth
+## 4. DWG как источник постоянного состояния
 
 GraphPlugin не сериализует отдельный .NET object graph.
 
-Источник persisted state — сам DWG:
+Источник постоянного состояния — сам DWG:
 
 ```text
 DWG entities + XRecords
@@ -222,7 +224,7 @@ GraphEntityIndexBuilder
 GraphEntityIndex
 ```
 
-`GraphEntityIndex` — только runtime cache. Он хранит быстрые отображения:
+`GraphEntityIndex` — только runtime-кэш. Он хранит быстрые соответствия:
 
 ```text
 VertexId <-> ObjectId
@@ -230,43 +232,43 @@ EdgeId   <-> ObjectId
 VertexId -> incident EdgeId[]
 ```
 
-При открытии документа индекс перестраивается по metadata из DWG. Это значит, что runtime state можно восстановить без дополнительного sidecar-файла или отдельной сериализации.
+При открытии документа индекс перестраивается по metadata из DWG. Поэтому runtime state можно восстановить без отдельного sidecar-файла и без дополнительной сериализации графа.
 
-## 5. Document-scoped context
+## 5. Контекст на один документ
 
-Сервисы создаются один раз на открытый nanoCAD `Document`.
+Сервисы создаются один раз для каждого открытого nanoCAD `Document`.
 
-Composition root — `GraphDocumentContextFactory`.
+Точка сборки зависимостей — `GraphDocumentContextFactory`.
 
-Он последовательно создаёт:
+Она последовательно создаёт:
 
 ```text
-metadata/index
+metadata + index
     ↓
 repositories
     ↓
-application services
+Application services
     ↓
-runtime services
+Runtime services
     ↓
 GraphDocumentContext
 ```
 
-В `GraphDocumentContext` находятся repositories и сервисы, относящиеся к одному DWG-документу.
+`GraphDocumentContext` содержит repositories и сервисы, относящиеся к одному DWG-документу.
 
-`GraphDocumentContextManager` хранит:
+`GraphDocumentContextManager` хранит соответствие:
 
 ```text
 Document -> GraphDocumentContext
 ```
 
-При первом обращении context создаётся, а `GraphDatabaseWatcher` запускается. При закрытии документа watcher останавливается и context удаляется. При shutdown все document contexts очищаются.
+При первом обращении context создаётся, а `GraphDatabaseWatcher` запускается. При закрытии документа watcher останавливается и context удаляется. При завершении работы плагина все contexts очищаются.
 
 DI container намеренно не используется: composition root небольшой и явно собран в одном factory, поэтому зависимости легко проследить по коду.
 
-## 6. Runtime synchronization
+## 6. Синхронизация с редактированием DWG
 
-Пользователь может изменять DWG не только через GraphPlugin commands, но и обычными средствами nanoCAD: grip editing, `ERASE`, `UNDO`.
+Пользователь может изменять DWG не только командами GraphPlugin, но и штатными средствами nanoCAD: grip editing, `ERASE`, `UNDO`.
 
 За синхронизацию отвечает `GraphDatabaseWatcher`.
 
@@ -279,86 +281,86 @@ DI container намеренно не используется: composition root 
 - `Document.CommandCancelled`;
 - `Document.CommandFailed`.
 
-События объектов во время команды сначала накапливаются. После `CommandEnded` watcher выполняет обработку в порядке:
+События объектов, возникающие во время команды, сначала накапливаются. После `CommandEnded` watcher обрабатывает их в следующем порядке:
 
 ```text
-1. restored objects
-2. appended/replacement objects
-3. erased objects
-4. dirty vertices
-5. dirty edges
+1. восстановленные объекты
+2. добавленные или заменённые объекты
+3. удалённые объекты
+4. изменённые Vertex
+5. изменённые Edge
 ```
 
-Это важно, потому что одна пользовательская команда может породить несколько связанных DB events.
+Это важно, поскольку одна пользовательская команда может породить несколько связанных событий базы данных.
 
 ### Перемещение Vertex
 
 ```text
-native grip edit
+grip editing
     ↓
 ObjectModified(Vertex)
     ↓
-mark Vertex dirty
+Vertex помечается как изменённая
     ↓
 CommandEnded
     ↓
 EdgeGeometrySynchronizer
     ↓
-incident Edge polylines updated
+обновляются incident Edge polylines
 ```
 
-Синхронизация происходит по окончательному положению Vertex после завершения команды.
+Синхронизация выполняется по итоговому положению Vertex после завершения команды.
 
 ### Удаление Vertex
 
-При обычном `ERASE` сама Vertex entity уже удаляется nanoCAD. Watcher после завершения команды:
+При обычном `ERASE` сущность Vertex уже удаляется самим nanoCAD. После завершения команды watcher:
 
-1. определяет logical `VertexId` через runtime index;
+1. определяет логический `VertexId` через runtime index;
 2. удаляет incident Edge через `EdgeService`;
-3. удаляет Vertex mapping из index.
+3. удаляет соответствие Vertex из index.
 
-Vertex повторно не стирается через repository.
+Повторно вызывать удаление Vertex через repository не требуется.
 
 ### UNDO
 
-При unerase watcher получает восстановленные `ObjectId`, читает их XRecords и в два прохода восстанавливает runtime topology:
+При восстановлении удалённого объекта watcher получает его `ObjectId`, читает XRecord и в два прохода восстанавливает runtime topology:
 
 ```text
-PASS 1: Vertex
-PASS 2: Edge
+ПРОХОД 1: Vertex
+ПРОХОД 2: Edge
 ```
 
-Так Edge добавляются в index только после восстановления endpoint vertices.
+Так Edge добавляются в index только после восстановления их endpoint Vertex.
 
-### Circle <-> Triangle replacement
+### Замена Circle <-> Triangle
 
-Смена формы Vertex физически заменяет DWG entity, но logical `VertexId` сохраняется.
+Смена формы Vertex физически заменяет DWG-сущность, но логический `VertexId` сохраняется.
 
-Watcher отличает replacement от настоящего удаления: если тот же `VertexId` уже связан с новым живым `ObjectId`, erase старого объекта не считается удалением логической вершины.
+Watcher отличает такую замену от настоящего удаления: если тот же `VertexId` уже связан с новым живым `ObjectId`, удаление старой сущности не считается удалением логической Vertex.
 
-## 7. Edge geometry
+## 7. Геометрия Edge
 
 Topology Edge и drawing geometry разделены:
 
 ```text
 Topology:
 VertexAId + VertexBId
-        хранится в GRAPH_EDGE
+    хранится в GRAPH_EDGE
 
 Geometry:
 Polyline vertices
-        хранится нативно в DWG
+    хранится нативно в DWG
 ```
 
-Endpoint polyline positions синхронизируются с Vertex positions.
+Конечные точки Polyline синхронизируются с положением endpoint Vertex.
 
-Промежуточные вершины polyline являются bends и сохраняются при перемещении endpoint Vertex.
+Промежуточные вершины Polyline являются bend-точками и сохраняются при перемещении конечных Vertex.
 
-Это позволяет использовать стандартные nanoCAD grip points для редактирования bend geometry без отдельной custom entity implementation.
+Благодаря этому для редактирования bends можно использовать стандартные grip points nanoCAD без собственной custom entity implementation.
 
-## 8. C++/CLI architecture
+## 8. Архитектура C++/CLI
 
-`GraphPlugin.Native` не зависит от C# runtime objects. Interop строится через общий persistence contract.
+`GraphPlugin.Native` не зависит от C# runtime objects. Взаимодействие строится через общий DWG persistence contract.
 
 ```text
 GraphPlugin.Native/
@@ -368,20 +370,20 @@ GraphPlugin.Native/
 └── Tests/
 ```
 
-### Production
+### Рабочий код
 
 `Commands/GraphCommands.*` содержит только пользовательские native commands.
 
-`Persistence` содержит native readers/writers для `GRAPH_VERTEX` / `GRAPH_EDGE` metadata.
+`Persistence` содержит C++ readers/writers для metadata `GRAPH_VERTEX` и `GRAPH_EDGE`.
 
 `Services` содержит операции:
 
 - `NativeVertexStyleService`;
 - `NativeVertexDeletionService`.
 
-### Tests
+### Тестовый код
 
-Test infrastructure физически отделена от production code:
+Тестовая инфраструктура физически отделена от рабочего кода:
 
 ```text
 Tests/
@@ -394,24 +396,24 @@ Tests/
 └── NativeStagedTestSchema.h
 ```
 
-`NativeTestCommands` является тонким command host и делегирует работу runner/scenario classes.
+`NativeTestCommands` является тонким хостом команд и делегирует работу runner/scenario classes.
 
-`NativeTestDwgHelpers` содержит только test-specific DWG helpers и не используется production code.
+`NativeTestDwgHelpers` содержит только вспомогательные операции для тестов и не используется рабочим кодом.
 
-### C# / C++ interoperability
+### Взаимодействие C# и C++
 
-Общими должны оставаться:
+Между реализациями должны оставаться синхронизированными:
 
-- XRecord names;
-- schema versions;
-- field order;
-- DXF value types;
-- numeric enum contracts;
-- GUID semantics.
+- имена XRecord;
+- версии схемы;
+- порядок полей;
+- DXF-типы значений;
+- числовые значения enum;
+- правила хранения GUID.
 
-C++-изменение Vertex сразу становится доступно C#-части после обработки DWG events, потому что обе реализации читают один и тот же persisted contract.
+Изменение Vertex из C++ становится доступно C#-части после обработки событий DWG, потому что обе реализации читают один и тот же постоянный контракт.
 
-## 9. Основные data flows
+## 9. Основные потоки данных
 
 ### Создание Vertex
 
@@ -445,7 +447,7 @@ Polyline + GRAPH_EDGE XRecord
 GraphEntityIndex adjacency
 ```
 
-### Shortest path
+### Кратчайший путь
 
 ```text
 GRAPHSHORTESTPATH
@@ -461,7 +463,7 @@ ShortestPathResult
 ShortestPathHighlighter
 ```
 
-### Persistence reopen
+### Повторное открытие DWG
 
 ```text
 SAVE / CLOSE / OPEN
@@ -472,64 +474,49 @@ GraphDocumentContextFactory
     ↓
 GraphEntityIndexBuilder
     ↓
-restored runtime context
+восстановленный runtime context
 ```
 
-## 10. Testing architecture
+## 10. Архитектура тестирования
 
 Тестирование разделено по уровню.
 
 ### Unit tests
 
-`GraphPlugin.Tests` зависит только от Domain/Application и не требует host assemblies для предметных тестов.
+`GraphPlugin.Tests` зависит только от Domain/Application и не требует nanoCAD assemblies для предметных тестов.
 
 Проверяются:
 
 - domain models;
 - geometry;
 - Dijkstra;
-- application services;
-- persistence contracts/enums.
+- Application services;
+- persistence contracts и enum values.
 
-### nanoCAD regression harness
+### Регрессионный harness внутри nanoCAD
 
-`GraphPlugin.Nanocad.IntegrationTests` загружается отдельно и предоставляет два основных workflow:
+`GraphPlugin.Nanocad.IntegrationTests` загружается отдельно и предоставляет два основных сценария:
 
 ```text
 GRAPHTESTS
 GRAPHTESTS_PERSISTENCE
 ```
 
-`GRAPHTESTS` сохраняет реальные nanoCAD command boundaries и проверяет, в частности, настоящий `ERASE`/`UNDO`, watcher synchronization и C++/C# interoperability.
+`GRAPHTESTS` сохраняет реальные границы команд nanoCAD и проверяет, в частности, настоящий `ERASE`/`UNDO`, синхронизацию watcher и C++/C# interoperability.
 
-Persistence test специально требует реального `SAVE -> CLOSE -> OPEN`, чтобы не подменять проверку сериализации чтением того же runtime state.
+Persistence-сценарий специально требует реального `SAVE -> CLOSE -> OPEN`, чтобы не подменять проверку сериализации чтением того же runtime state.
 
-Подробнее: `docs/testing.md`.
+Подробнее: [testing.md](testing.md).
 
 ## 11. Архитектурные инварианты
 
 При дальнейшем развитии проекта важно сохранять следующие правила:
 
-1. `Domain` не должен ссылаться на nanoCAD assemblies.
-2. `Application` не должен знать про `Document`, `Database`, `ObjectId` или `Entity`.
-3. Persisted state хранится в DWG; `GraphEntityIndex` не является persistence storage.
-4. Stable logical identity — `Guid`, а не `ObjectId` или `Handle`.
-5. Edge topology задаётся metadata, а не выводится из совпадения координат polyline endpoints.
-6. Удаление Vertex всегда означает удаление incident edges.
-7. C# и C++ обязаны соблюдать один DWG schema contract.
-8. Изменение schema layout требует решения о версии и interop regression test.
-9. Host event synchronization должна учитывать command boundaries и `UNDO`.
-10. Test-only helpers и commands не должны попадать обратно в production command classes.
-
-## 12. Осознанные упрощения
-
-Текущая архитектура не вводит абстракции без реальной границы ответственности:
-
-- нет отдельного persisted `Graph` aggregate;
-- нет `IShortestPathService` при единственном чистом алгоритме;
-- нет общего `GraphService` с разнородными операциями;
-- нет DI container;
-- нет custom DWG entity type для Edge/Vertex;
-- нет общей runtime-модели между C# и C++.
-
-Эти решения уменьшают количество слоёв и делают критичные для nanoCAD операции — persistence, transactions, command boundaries и synchronization — явными в коде.
+1. `GraphPlugin.Domain` не должен ссылаться на nanoCAD assemblies.
+2. `GraphPlugin.Application` не должен знать о `Document`, `Database`, `ObjectId` или `Entity`.
+3. Постоянное состояние хранится в DWG; `GraphEntityIndex` не является persistence storage.
+4. Стабильная логическая идентичность задаётся `Guid`, а не `ObjectId` или `Handle`.
+5. Edge topology задаётся metadata, а не определяется совпадением координат концов Polyline.
+6. Удаление Vertex всегда означает удаление всех incident Edge.
+7. C# и C++ обязаны соблюдать единый DWG schema contract.
+8. Изменение формата схемы требует решения о версии и повторного interop/regression-тестирования.

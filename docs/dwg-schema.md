@@ -1,50 +1,50 @@
-# DWG persistence schema
+# Схема хранения данных в DWG
 
-GraphPlugin stores graph state in ordinary nanoCAD entities plus XRecords. The DWG file is the persistence boundary shared by the C# and C++ implementations.
+GraphPlugin хранит состояние графа в обычных сущностях nanoCAD и связанных с ними XRecord. Сам DWG является общей границей persistence для C#- и C++-реализаций.
 
-All currently supported records use schema version `1`. A record that explicitly declares another version must be rejected instead of being interpreted as version `1`.
+Все поддерживаемые сейчас записи используют версию схемы `1`. Если запись явно содержит другую версию, она должна быть отклонена, а не интерпретирована как версия `1`.
 
-## Entity representation
+## Представление сущностей
 
 ### Vertex
 
-A vertex is stored as a native drawing entity:
+Vertex хранится как обычная DWG-сущность:
 
-- `Circle` for `VertexShape.Circle`
-- closed triangular `Polyline` for `VertexShape.Triangle`
+- `Circle` для `VertexShape.Circle`;
+- закрытый треугольный `Polyline` для `VertexShape.Triangle`.
 
-The entity extension dictionary contains the `GRAPH_VERTEX` XRecord.
+Extension Dictionary этой сущности содержит XRecord `GRAPH_VERTEX`.
 
 ### Edge
 
-An edge is always stored as a `Polyline`.
+Edge всегда хранится как `Polyline`.
 
-- a straight edge has two polyline vertices: A and B;
-- intermediate polyline vertices are graph bends;
-- topology is not inferred from the polyline endpoints and is stored explicitly in `GRAPH_EDGE`.
+- прямое ребро содержит две вершины полилинии: A и B;
+- промежуточные вершины полилинии являются bend-точками;
+- topology не выводится из положения концов полилинии и хранится явно в `GRAPH_EDGE`.
 
 ## `GRAPH_VERTEX`
 
-Location: vertex entity extension dictionary.
+Расположение: Extension Dictionary сущности Vertex.
 
-| Index | DXF value | Meaning |
+| Индекс | DXF-тип | Значение |
 | --- | --- | --- |
-| 0 | `Int32` | schema version (`1`) |
-| 1 | `Text` | stable `VertexId` GUID in `D` format |
+| 0 | `Int32` | версия схемы (`1`) |
+| 1 | `Text` | стабильный GUID `VertexId` в формате `D` |
 | 2 | `Int32` | `VertexShape` |
 | 3 | `Int32` | `GraphColor` |
-| 4 | `Real` | vertex size |
+| 4 | `Real` | размер Vertex |
 
-`VertexShape` numeric contract:
+Числовой контракт `VertexShape`:
 
-| Value | Shape |
+| Значение | Форма |
 | ---: | --- |
 | 0 | Circle |
 | 1 | Triangle |
 
-`GraphColor` numeric contract:
+Числовой контракт `GraphColor`:
 
-| Value | Color |
+| Значение | Цвет |
 | ---: | --- |
 | 0 | Blue |
 | 1 | Red |
@@ -52,75 +52,112 @@ Location: vertex entity extension dictionary.
 | 3 | White |
 | 4 | Black |
 
-The C++ `NativeVertexShape` and `NativeGraphColor` values must remain numerically identical to the C# domain enums.
+Значения `NativeVertexShape` и `NativeGraphColor` в C++ должны численно совпадать с соответствующими enum в C# Domain.
 
 ## `GRAPH_EDGE`
 
-Location: edge polyline extension dictionary.
+Расположение: Extension Dictionary полилинии Edge.
 
-| Index | DXF value | Meaning |
+| Индекс | DXF-тип | Значение |
 | --- | --- | --- |
-| 0 | `Int32` | schema version (`1`) |
-| 1 | `Text` | stable `EdgeId` GUID in `D` format |
-| 2 | `Text` | endpoint A `VertexId` |
-| 3 | `Text` | endpoint B `VertexId` |
+| 0 | `Int32` | версия схемы (`1`) |
+| 1 | `Text` | стабильный GUID `EdgeId` в формате `D` |
+| 2 | `Text` | `VertexId` конца A |
+| 3 | `Text` | `VertexId` конца B |
 
-The edge route itself is stored in the native polyline geometry and is therefore persisted by the DWG entity.
+Сам маршрут ребра хранится в нативной геометрии `Polyline` и поэтому сохраняется средствами DWG.
 
 ## `GRAPH_VERTEX_ATTACHMENTS`
 
-Location: vertex entity extension dictionary.
+Расположение: Extension Dictionary сущности Vertex.
 
-| Index | DXF value | Meaning |
+| Индекс | DXF-тип | Значение |
 | --- | --- | --- |
-| 0 | `Int32` | schema version (`1`) |
-| 1 | `Int32` | attachment count `N` |
-| 2..`N + 1` | `Text` | attachment paths |
+| 0 | `Int32` | версия схемы (`1`) |
+| 1 | `Int32` | количество attachment paths `N` |
+| 2..`N + 1` | `Text` | пути прикреплённых файлов |
 
-The number of stored path values must exactly match the declared count.
+Количество фактически сохранённых путей должно точно совпадать со значением `N`.
 
 ## `GRAPH_PLUGIN_SETTINGS`
 
-Location: Named Objects Dictionary.
+Расположение: Named Objects Dictionary документа.
 
-| Index | DXF value | Meaning |
+| Индекс | DXF-тип | Значение |
 | --- | --- | --- |
-| 0 | `Int32` | schema version (`1`) |
-| 1 | `Int32` | edge `GraphColor` |
+| 0 | `Int32` | версия схемы (`1`) |
+| 1 | `Int32` | `GraphColor` для Edge |
 | 2 | `Int32` | `EdgeLineType` |
-| 3 | `Real` | edge line weight in millimetres |
+| 3 | `Real` | толщина линии Edge в миллиметрах |
 
-`EdgeLineType` numeric contract:
+Числовой контракт `EdgeLineType`:
 
-| Value | Line type |
+| Значение | Тип линии |
 | ---: | --- |
 | 0 | Continuous |
 | 1 | Dashed |
 | 2 | Dotted |
 
-## Versioning policy
+## Политика версионирования
 
-The version stored in an XRecord describes that record's layout, not the plugin assembly version.
+Версия, записанная в XRecord, описывает формат конкретной записи, а не версию сборки плагина.
 
-Rules:
+Правила:
 
-1. Writers always emit the current schema version.
-2. Readers accept only versions whose layout they explicitly understand.
-3. An unsupported explicit version is an error; it must not silently fall back to defaults or be interpreted as the current layout.
-4. Missing graph metadata means that the drawing entity is not a GraphPlugin entity.
-5. Missing global settings mean `GraphSettings.Default`; this is different from an existing settings record with an unsupported version.
-6. A future schema migration should add an explicit reader/migration path rather than weakening the version check.
+1. Writers всегда записывают текущую версию схемы.
+2. Readers принимают только те версии, формат которых они явно поддерживают.
+3. Неизвестная явно указанная версия считается ошибкой и не должна молча интерпретироваться как текущая.
+4. Отсутствие graph metadata означает, что DWG-сущность не является сущностью GraphPlugin.
+5. Отсутствие глобальных настроек означает `GraphSettings.Default`; это отличается от существующей записи настроек с неподдерживаемой версией.
+6. Будущая миграция схемы должна добавлять явный путь чтения/миграции, а не ослаблять проверку версии.
 
 ## C# / C++ interoperability
 
-C# and C++ do not share runtime model objects. They interoperate through the DWG contract above.
+C# и C++ не используют общие runtime model objects. Их взаимодействие основано на DWG-контракте, описанном выше.
 
-The following constants must remain synchronized between the two implementations:
+Между двумя реализациями должны оставаться синхронизированными:
 
-- record names;
-- record versions;
-- field order and DXF types;
-- `VertexShape` numeric values;
-- `GraphColor` numeric values.
+- имена XRecord;
+- версии записей;
+- порядок полей;
+- DXF-типы значений;
+- числовые значения `VertexShape`;
+- числовые значения `GraphColor`;
+- правила хранения GUID.
 
-Changing any of these is a persistence-format change and requires a schema-version decision and interoperability regression tests.
+Изменение любого из этих пунктов является изменением persistence format и требует решения о новой версии схемы, а также повторного interop/regression-тестирования.
+
+## Почему topology хранится отдельно от geometry
+
+Для Edge геометрия и topology намеренно разделены:
+
+```text
+Topology:
+VertexAId + VertexBId
+    -> GRAPH_EDGE
+
+Geometry:
+Polyline vertices
+    -> DWG geometry
+```
+
+Это позволяет:
+
+- сохранять bends независимо от endpoint metadata;
+- перемещать Vertex и синхронизировать только конечные точки Polyline;
+- не определять связь между вершинами по совпадению координат;
+- сохранять стабильные GUID даже при замене физической DWG-сущности.
+
+## Восстановление после открытия DWG
+
+При инициализации документа `GraphEntityIndexBuilder` сканирует DWG-сущности и читает `GRAPH_VERTEX` / `GRAPH_EDGE` metadata.
+
+На основании сохранённых GUID восстанавливается runtime index:
+
+```text
+VertexId <-> ObjectId
+EdgeId   <-> ObjectId
+VertexId -> incident EdgeId[]
+```
+
+`GraphEntityIndex` не является отдельным persistence storage: его можно полностью перестроить из DWG.

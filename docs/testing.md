@@ -1,58 +1,120 @@
-# Integration test workflow
+# Интеграционное тестирование
 
-The nanoCAD integration test assembly exposes two primary user workflows.
+Интеграционная сборка для nanoCAD предоставляет два основных пользовательских сценария: проверку поведения в текущем документе и проверку сохранения/повторного открытия DWG.
 
-## 1. Current-document regression
+## 1. Регрессионная проверка текущего документа
 
-Load these assemblies from `artifacts/plugin/<Configuration>`:
+Загрузите из `artifacts/plugin/<Configuration>` следующие сборки:
 
-- `GraphPlugin.Nanocad.dll`
-- `GraphPlugin.Nanocad.IntegrationTests.dll`
-- `GraphPlugin.Native.dll`
+- `GraphPlugin.Nanocad.dll`;
+- `GraphPlugin.Nanocad.IntegrationTests.dll`;
+- `GraphPlugin.Native.dll`.
 
-Run:
+После этого выполните:
 
 ```text
 GRAPHTESTS
 ```
 
-The command automatically runs the C# integration suite, the edge ERASE/UNDO scenario,
-the vertex cascade ERASE/UNDO scenario, the attachment ERASE/UNDO scenario, the native
-C++ integration suite, and the staged C++/C# interop scenarios.
+Команда автоматически запускает:
 
-The harness uses an internal continuation command to preserve real nanoCAD command
-boundaries. ERASE processing is therefore still handled by `GraphDatabaseWatcher` on
-`CommandEnded`, and UNDO is executed through the nanoCAD command stack rather than by
-calling repository methods directly.
+- основной набор C# integration tests;
+- сценарий удаления Edge через `ERASE` и восстановления через реальный nanoCAD `UNDO`;
+- сценарий каскадного удаления Vertex и восстановления через `UNDO`;
+- сценарий удаления/восстановления Vertex с attachment metadata;
+- нативные C++ integration tests;
+- C++ → C# сценарий смены стиля Vertex;
+- C++ cascade delete → nanoCAD `UNDO` → C# verification.
 
-Do not run other commands while `GRAPHTESTS` is progressing through its queued steps.
+Тестовый harness специально использует реальные границы команд nanoCAD. Поэтому обработка `ERASE` по-прежнему проходит через `GraphDatabaseWatcher` после `CommandEnded`, а `UNDO` выполняется через штатный стек команд nanoCAD, а не имитируется прямыми вызовами repositories.
 
-## 2. Persistence regression
+Пока `GRAPHTESTS` последовательно запускает внутренние шаги, не следует вводить другие команды вручную.
 
-Run:
+### Что считается успешным результатом
+
+В конце печатается единый отчёт с количеством пройденных и проваленных проверок. Для штатной regression-проверки ожидается:
+
+```text
+Failed: 0
+```
+
+`GRAPHCPPRUNTESTS`, запускаемый внутри общего сценария, также выводит собственный подробный отчёт нативных тестов.
+
+## 2. Проверка persistence через SAVE / CLOSE / OPEN
+
+Для проверки фактического сохранения данных в DWG выполните:
 
 ```text
 GRAPHTESTS_PERSISTENCE
 ```
 
-The first invocation prepares both the graph/settings persistence scenario and the
-attachment persistence scenario in the active DWG. Then:
+Первый запуск одновременно подготавливает:
 
-1. save the DWG;
-2. close it;
-3. open the same DWG again;
-4. run `GRAPHTESTS_PERSISTENCE` again.
+- граф и topology metadata;
+- настройки и Edge style;
+- attachment metadata.
 
-The second invocation verifies the restored graph topology, runtime index, edge style,
-settings and attachment XRecords, prints one combined report, and removes the test
-objects from the currently opened document.
+После подготовки необходимо выполнить реальный цикл:
 
-The command refuses to verify while the original nanoCAD `Document` instance is still
-active, which protects against accidentally checking persistence without a close/open
-cycle.
+1. сохранить DWG;
+2. закрыть документ;
+3. открыть тот же DWG снова;
+4. ещё раз выполнить `GRAPHTESTS_PERSISTENCE`.
 
-## Legacy staged commands
+Второй запуск проверяет:
 
-The old user-facing prepare/erase/verify command wrappers were removed after the two
-regression workflows became available. Diagnostic probe commands remain separate because
-they are interactive debugging tools rather than regression scenarios.
+- восстановление Vertex и Edge;
+- стабильность GUID;
+- topology metadata;
+- перестроенный `GraphEntityIndex`;
+- глобальные настройки;
+- Edge style;
+- attachment XRecords.
+
+После успешной проверки тестовые объекты удаляются из открытого документа.
+
+Команда не позволяет выполнить фазу verification в том же экземпляре `Document`, в котором была выполнена подготовка. Это защищает от ложной проверки persistence без настоящего `CLOSE / OPEN`.
+
+## Почему persistence проверяется отдельно
+
+`GRAPHTESTS` подходит для большинства регрессий, но не может доказать, что данные действительно были записаны в DWG и корректно прочитаны после повторного открытия.
+
+Поэтому persistence-сценарий намеренно разделён на две фазы и требует участия пользователя в `SAVE / CLOSE / OPEN`.
+
+## Внутренние команды harness
+
+Для автоматизации staged-сценариев используются внутренние команды продолжения и мутации. Они не предназначены для ручного запуска.
+
+В частности, harness отделяет команды, которые должны создать запись в стеке `UNDO`, от служебных команд проверки. Благодаря этому `UNDO 1` отменяет именно тестируемое изменение, а не внутренний шаг тестового runner.
+
+## Устаревшие staged-команды
+
+Ранее отдельные сценарии запускались вручную последовательностями `PREPARE / ERASE / VERIFY / UNDO / VERIFY`. Пользовательские wrappers для этих сценариев были удалены после появления двух автоматизированных workflows.
+
+Отдельные diagnostic probe-команды могут оставаться в integration assembly, поскольку они предназначены для интерактивной диагностики, а не для обычного регрессионного прогона.
+
+## Рекомендуемый финальный прогон
+
+Перед сдачей или после крупного рефакторинга рекомендуется выполнить:
+
+```powershell
+.\build.ps1
+.\build.ps1 -Configuration Release
+dotnet test .\tests\GraphPlugin.Tests\GraphPlugin.Tests.csproj
+```
+
+Затем в nanoCAD:
+
+```text
+GRAPHTESTS
+```
+
+и один полный цикл:
+
+```text
+GRAPHTESTS_PERSISTENCE
+SAVE
+CLOSE
+OPEN
+GRAPHTESTS_PERSISTENCE
+```
