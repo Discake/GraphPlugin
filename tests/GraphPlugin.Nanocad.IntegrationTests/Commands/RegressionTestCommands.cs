@@ -102,7 +102,7 @@ public sealed class RegressionTestCommands
                 document,
                 session);
         }
-        catch (Exception exception)
+        catch (System.Exception exception)
         {
             editor.WriteMessage(
                 $"\n[FAIL] Could not start regression suite:\n{exception}");
@@ -191,7 +191,7 @@ public sealed class RegressionTestCommands
                         $"Unsupported regression stage: {session.Stage}.");
             }
         }
-        catch (Exception exception)
+        catch (System.Exception exception)
         {
             AddFailure(
                 session,
@@ -306,7 +306,7 @@ public sealed class RegressionTestCommands
 
             QueueContinue(document);
         }
-        catch (Exception exception)
+        catch (System.Exception exception)
         {
             AddFailure(
                 session,
@@ -345,7 +345,7 @@ public sealed class RegressionTestCommands
 
             QueueContinue(document);
         }
-        catch (Exception exception)
+        catch (System.Exception exception)
         {
             AddFailure(
                 session,
@@ -380,7 +380,7 @@ public sealed class RegressionTestCommands
                 "Edge erased",
                 runner.VerifyEdgeErased());
         }
-        catch (Exception exception)
+        catch (System.Exception exception)
         {
             AddFailure(
                 session,
@@ -411,7 +411,7 @@ public sealed class RegressionTestCommands
                 "Edge UNDO",
                 runner.VerifyEdgeUndo());
         }
-        catch (Exception exception)
+        catch (System.Exception exception)
         {
             AddFailure(
                 session,
@@ -453,7 +453,7 @@ public sealed class RegressionTestCommands
 
             QueueContinue(document);
         }
-        catch (Exception exception)
+        catch (System.Exception exception)
         {
             AddFailure(
                 session,
@@ -492,7 +492,7 @@ public sealed class RegressionTestCommands
 
             QueueContinue(document);
         }
-        catch (Exception exception)
+        catch (System.Exception exception)
         {
             AddFailure(
                 session,
@@ -527,7 +527,7 @@ public sealed class RegressionTestCommands
                 "Vertex cascade erased",
                 runner.VerifyVertexErased());
         }
-        catch (Exception exception)
+        catch (System.Exception exception)
         {
             AddFailure(
                 session,
@@ -558,7 +558,7 @@ public sealed class RegressionTestCommands
                 "Vertex cascade UNDO",
                 runner.VerifyVertexUndo());
         }
-        catch (Exception exception)
+        catch (System.Exception exception)
         {
             AddFailure(
                 session,
@@ -600,7 +600,7 @@ public sealed class RegressionTestCommands
 
             QueueContinue(document);
         }
-        catch (Exception exception)
+        catch (System.Exception exception)
         {
             AddFailure(
                 session,
@@ -641,7 +641,7 @@ public sealed class RegressionTestCommands
 
             QueueContinue(document);
         }
-        catch (Exception exception)
+        catch (System.Exception exception)
         {
             AddFailure(
                 session,
@@ -675,7 +675,7 @@ public sealed class RegressionTestCommands
                 "Attachment erased",
                 runner.VerifyErased());
         }
-        catch (Exception exception)
+        catch (System.Exception exception)
         {
             AddFailure(
                 session,
@@ -706,7 +706,7 @@ public sealed class RegressionTestCommands
                 "Attachment UNDO",
                 runner.VerifyUndo());
         }
-        catch (Exception exception)
+        catch (System.Exception exception)
         {
             AddFailure(
                 session,
@@ -749,7 +749,7 @@ public sealed class RegressionTestCommands
                 document,
                 PluginServices.CurrentContext);
         }
-        catch (Exception exception)
+        catch (System.Exception exception)
         {
             AddFailure(
                 session,
@@ -803,7 +803,7 @@ public sealed class RegressionTestCommands
                 "Native interop",
                 "C++ style replacement -> C# verification");
         }
-        catch (Exception exception)
+        catch (System.Exception exception)
         {
             AddFailure(
                 session,
@@ -962,7 +962,7 @@ public sealed class RegressionTestCommands
                 throw;
             }
         }
-        catch (Exception exception)
+        catch (System.Exception exception)
         {
             try
             {
@@ -998,7 +998,7 @@ public sealed class RegressionTestCommands
                 "DWG graph",
                 graphRunner.Verify());
         }
-        catch (Exception exception)
+        catch (System.Exception exception)
         {
             results.Add(
                 new IntegrationTestResult(
@@ -1014,7 +1014,7 @@ public sealed class RegressionTestCommands
                 "DWG attachments",
                 attachmentRunner.Verify());
         }
-        catch (Exception exception)
+        catch (System.Exception exception)
         {
             results.Add(
                 new IntegrationTestResult(
@@ -1036,7 +1036,7 @@ public sealed class RegressionTestCommands
             document.Editor.WriteMessage(
                 "\nPersistence test objects were removed from the current document.");
         }
-        catch (Exception exception)
+        catch (System.Exception exception)
         {
             document.Editor.WriteMessage(
                 $"\n[WARN] Persistence cleanup failed: {exception.Message}");
@@ -1156,7 +1156,7 @@ public sealed class RegressionTestCommands
                     PluginServices.CurrentContext)
                 .Clear();
         }
-        catch (Exception exception)
+        catch (System.Exception exception)
         {
             AddFailure(
                 session,
@@ -1177,7 +1177,7 @@ public sealed class RegressionTestCommands
                     PluginServices.CurrentContext)
                 .Clear();
         }
-        catch (Exception exception)
+        catch (System.Exception exception)
         {
             AddFailure(
                 session,
@@ -1432,7 +1432,7 @@ public sealed class RegressionTestCommands
         CurrentDocumentTestSession session,
         string section,
         string name,
-        Exception exception)
+        System.Exception exception)
     {
         session.Results.Add(
             new IntegrationTestResult(
