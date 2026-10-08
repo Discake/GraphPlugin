@@ -1,7 +1,7 @@
-﻿using GraphPlugin.Application.Abstractions.Persistence;
+using GraphPlugin.Application.Abstractions.Persistence;
 using GraphPlugin.Domain.Models;
 
-namespace GraphPlugin.Application.Services;
+namespace GraphPlugin.Application.Graph;
 
 public sealed class EdgeService
 {
@@ -12,8 +12,15 @@ public sealed class EdgeService
         IVertexRepository vertices,
         IEdgeRepository edges)
     {
-        _vertices = vertices;
-        _edges = edges;
+        _vertices =
+            vertices ??
+            throw new ArgumentNullException(
+                nameof(vertices));
+
+        _edges =
+            edges ??
+            throw new ArgumentNullException(
+                nameof(edges));
     }
 
     public GraphEdge CreateEdge(
@@ -52,9 +59,13 @@ public sealed class EdgeService
                 vertexB.Id,
                 route);
 
-        _edges.Add(
-            edge);
+        _edges.Add(edge);
 
         return edge;
+    }
+
+    public void DeleteEdge(Guid edgeId)
+    {
+        _edges.Delete(edgeId);
     }
 }
