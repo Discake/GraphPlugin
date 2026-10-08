@@ -2,7 +2,7 @@
 
 using Teigha.DatabaseServices;
 
-namespace GraphPlugin.NanoCad.Persistence;
+namespace GraphPlugin.Nanocad.Persistence;
 
 public sealed class UndoTestManifestStore
 {
