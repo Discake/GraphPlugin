@@ -10,20 +10,23 @@ public sealed class GraphControlCommands
     [CommandMethod("GRAPHCONTROL")]
     public void ShowControlCenter()
     {
-        var context = PluginServices.CurrentContext;
-        var settings = context.Settings.GetSettings();
+        while (true)
+        {
+            var context = PluginServices.CurrentContext;
+            var settings = context.Settings.GetSettings();
 
-        using var form = new GraphControlForm(
-            context.Vertices.GetAll().Count,
-            context.Edges.GetAll().Count,
-            settings.EdgeStyle,
-            context.Settings.ChangeEdgeStyle
-        );
+            using var form = new GraphControlForm(
+                context.Vertices.GetAll().Count,
+                context.Edges.GetAll().Count,
+                settings.EdgeStyle,
+                context.Settings.ChangeEdgeStyle
+            );
 
-        if (form.ShowDialog() != DialogResult.OK)
-            return;
+            if (form.ShowDialog() != DialogResult.OK)
+                return;
 
-        ExecuteAction(form.SelectedAction);
+            ExecuteAction(form.SelectedAction);
+        }
     }
 
     private static void ExecuteAction(GraphControlAction action)

@@ -33,7 +33,7 @@ public sealed class GraphControlForm : Form
         MinimizeBox = false;
         ShowInTaskbar = false;
         AutoScaleMode = AutoScaleMode.Dpi;
-        ClientSize = new Size(500, 500);
+        ClientSize = new Size(540, 590);
         MinimumSize = Size;
         MaximumSize = Size;
         Font = new Font("Segoe UI", 9F);
@@ -47,8 +47,8 @@ public sealed class GraphControlForm : Form
             Padding = new Padding(0),
         };
         root.RowStyles.Add(new RowStyle(SizeType.AutoSize));
-        root.RowStyles.Add(new RowStyle(SizeType.Percent, 54F));
-        root.RowStyles.Add(new RowStyle(SizeType.Percent, 46F));
+        root.RowStyles.Add(new RowStyle(SizeType.Absolute, 250F));
+        root.RowStyles.Add(new RowStyle(SizeType.Absolute, 200F));
         root.RowStyles.Add(new RowStyle(SizeType.AutoSize));
         root.RowStyles.Add(new RowStyle(SizeType.AutoSize));
 
@@ -122,11 +122,11 @@ public sealed class GraphControlForm : Form
         };
         layout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50F));
         layout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50F));
-        layout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
-        layout.RowStyles.Add(new RowStyle(SizeType.Percent, 25F));
-        layout.RowStyles.Add(new RowStyle(SizeType.Percent, 25F));
-        layout.RowStyles.Add(new RowStyle(SizeType.Percent, 25F));
-        layout.RowStyles.Add(new RowStyle(SizeType.Percent, 25F));
+        layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 34F));
+        layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 46F));
+        layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 46F));
+        layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 46F));
+        layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 46F));
 
         var statsLabel = new Label
         {
@@ -160,7 +160,7 @@ public sealed class GraphControlForm : Form
             Text = "Стиль рёбер",
             Dock = DockStyle.Fill,
             Padding = new Padding(10),
-            Margin = new Padding(0, 0, 0, 0),
+            Margin = new Padding(0),
         };
 
         var layout = new TableLayoutPanel
@@ -171,10 +171,10 @@ public sealed class GraphControlForm : Form
         };
         layout.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 110F));
         layout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100F));
-        layout.RowStyles.Add(new RowStyle(SizeType.Percent, 25F));
-        layout.RowStyles.Add(new RowStyle(SizeType.Percent, 25F));
-        layout.RowStyles.Add(new RowStyle(SizeType.Percent, 25F));
-        layout.RowStyles.Add(new RowStyle(SizeType.Percent, 25F));
+        layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 38F));
+        layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 38F));
+        layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 38F));
+        layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 48F));
 
         var colorComboBox = new ComboBox
         {
@@ -213,6 +213,7 @@ public sealed class GraphControlForm : Form
             Text = "Применить стиль",
             Dock = DockStyle.Fill,
             Margin = new Padding(3, 6, 3, 0),
+            TextAlign = ContentAlignment.MiddleCenter,
         };
         applyButton.Click += ApplyStyle;
 
@@ -230,7 +231,9 @@ public sealed class GraphControlForm : Form
         {
             Text = text,
             Dock = DockStyle.Fill,
-            Margin = new Padding(4),
+            Margin = new Padding(6, 4, 6, 4),
+            TextAlign = ContentAlignment.MiddleCenter,
+            UseVisualStyleBackColor = true,
         };
 
         button.Click += (_, _) => SelectAction(action);
