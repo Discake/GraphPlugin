@@ -15,11 +15,11 @@
 
   <ItemGroup>
     <Reference Include="hostdbmgd">
-      <HintPath>..\..\..\Program Files\Nanosoft\nanoCAD x64 24.1\bin\hostdbmgd.dll</HintPath>
+      <HintPath>$(NanoCadInstallDir)\bin\hostdbmgd.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="hostmgd">
-      <HintPath>..\..\..\Program Files\Nanosoft\nanoCAD x64 24.1\bin\hostmgd.dll</HintPath>
+      <HintPath>$(NanoCadInstallDir)\bin\hostmgd.dll</HintPath>
       <Private>False</Private>
     </Reference>
   </ItemGroup>
