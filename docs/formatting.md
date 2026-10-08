@@ -97,14 +97,16 @@ clang-format --version
 Форматирование:
 
 ```powershell
-dotnet csharpier format .
+dotnet tool run csharpier -- format .
 ```
 
 Проверка:
 
 ```powershell
-dotnet csharpier check .
+dotnet tool run csharpier -- check .
 ```
+
+Команда запускается через local tool manifest, поэтому глобальная установка CSharpier не требуется.
 
 Благодаря `.csharpierignore` команда не изменяет `.csproj`, `.slnx`, `.vcxproj` и другие XML/MSBuild-файлы.
 
