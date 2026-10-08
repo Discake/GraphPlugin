@@ -1,6 +1,6 @@
-﻿using GraphPlugin.Domain.Models;
+using GraphPlugin.Domain.Models;
 
-namespace GraphPlugin.Application.Services;
+namespace GraphPlugin.Application.Editing.Splitting;
 
 public sealed record SplitEdgeResult(
     GraphEdge OriginalEdge,
