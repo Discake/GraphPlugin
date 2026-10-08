@@ -4,7 +4,9 @@ param(
 
     [string]$NanoCadVersion = "24.1",
 
-    [string]$NanoCadInstallDir
+    [string]$NanoCadInstallDir,
+
+    [switch]$SkipStage
 )
 
 Set-StrictMode -Version Latest
@@ -62,4 +64,10 @@ Write-Host "NuGet restore: MSBuild /restore"
 
 if ($LASTEXITCODE -ne 0) {
     exit $LASTEXITCODE
+}
+
+if (-not $SkipStage) {
+    $stageScript = Join-Path $PSScriptRoot "stage-plugin.ps1"
+
+    & $stageScript -Configuration $Configuration
 }

@@ -30,7 +30,48 @@ Or pass the installation directory explicitly:
   -NanoCadInstallDir "D:\Nanosoft\nanoCAD x64 25.0"
 ```
 
-`build.ps1` uses `vswhere.exe` from Visual Studio Installer to locate the MSBuild installation and then builds `GraphPlugin.slnx` as `x64`.
+`build.ps1` uses `vswhere.exe` from Visual Studio Installer to locate the MSBuild installation, restores packages with MSBuild `/restore`, and then builds `GraphPlugin.slnx` as `x64`.
+
+After a successful build it also stages the plugin bundle into:
+
+```text
+artifacts\plugin\Debug
+```
+
+or:
+
+```text
+artifacts\plugin\Release
+```
+
+The bundle contains:
+
+- `GraphPlugin.Domain.dll`
+- `GraphPlugin.Application.dll`
+- `GraphPlugin.Nanocad.dll`
+- `GraphPlugin.Nanocad.IntegrationTests.dll`
+- `GraphPlugin.Native.dll`
+- `LOAD.txt`
+
+Keep all DLLs together. Load `GraphPlugin.Nanocad.dll` and `GraphPlugin.Native.dll` with `NETLOAD`. Load `GraphPlugin.Nanocad.IntegrationTests.dll` as well when integration-test commands are needed. `GraphPlugin.Domain.dll` and `GraphPlugin.Application.dll` are dependencies and are not loaded directly.
+
+To build without staging the bundle:
+
+```powershell
+.\build.ps1 -SkipStage
+```
+
+If the solution was built from Visual Studio, the same bundle can be created without rebuilding:
+
+```powershell
+.\stage-plugin.ps1 -Configuration Debug
+```
+
+or:
+
+```powershell
+.\stage-plugin.ps1 -Configuration Release
+```
 
 ## Visual Studio Developer PowerShell
 
