@@ -2,18 +2,26 @@
 
 В репозитории используются два форматтера:
 
-- **CSharpier** — для C#;
+- **dotnet format** — для C#;
 - **clang-format** — для C++/CLI.
 
-Целевая ширина строки — около **120 символов**. Это не жёсткий запрет, но короткие выражения не должны искусственно раскладываться на множество строк.
+Целевая ширина строки — около **120 символов**. Для C# это ориентир из `.editorconfig`: Roslyn не выполняет агрессивный перенос длинных выражений, зато сохраняет намеренные пустые строки и не переформатирует код так жёстко, как CSharpier.
 
-## Почему не `dotnet format`
+## Почему `dotnet format`
 
-`dotnet format` хорошо применяет Roslyn-правила и анализаторы, но обычно сохраняет многие уже существующие ручные переносы строк. Для этого проекта этого недостаточно: значительная часть C#-кода ранее была разбита слишком вертикально.
+После первоначального выравнивания C#-кода важно сохранить ручное смысловое разделение блоков пустыми строками. `dotnet format whitespace` исправляет отступы, пробелы и базовое форматирование Roslyn, но не перепечатывает всё синтаксическое дерево заново.
 
-CSharpier повторно печатает синтаксическое дерево и поэтому лучше подходит для одноразового выравнивания всего проекта и дальнейшего поддержания единого стиля.
+Это позволяет придерживаться такого стиля:
 
-`dotnet format` можно использовать отдельно для анализаторов и code-style fixes, но он не является основным formatter'ом исходников в этом репозитории.
+```csharp
+var context = PluginServices.CurrentContext;
+var document = context.Document;
+var editor = document.Editor;
+
+editor.WriteMessage("\nПостроение графа.");
+```
+
+При этом formatter не умеет определять смысловые группы локальных переменных и автоматически вставлять пустую строку между ними и следующим действием. Такие пустые строки считаются частью читаемого исходного кода и должны сохраняться при последующих запусках formatter.
 
 ## Конфигурация
 
@@ -21,25 +29,21 @@ CSharpier повторно печатает синтаксическое дер�
 
 ```text
 .editorconfig
-.csharpierrc.json
-.csharpierignore
 .clang-format
-.config/dotnet-tools.json
 format.ps1
 ```
 
 ### C#
 
-CSharpier закреплён как локальный .NET tool версии `1.3.0` в `.config/dotnet-tools.json`.
+`.editorconfig` задаёт основные правила C# и ширину строки 120 символов.
 
-`.csharpierrc.json` задаёт:
+Для C# используется встроенная команда .NET SDK:
 
-- ширину печати 120 символов;
-- 4 пробела на уровень отступа;
-- пробелы вместо tab;
-- сохранение типа перевода строк существующего файла.
+```text
+dotnet format <project> whitespace
+```
 
-`.csharpierignore` исключает `bin`, `obj`, `artifacts` и XML/MSBuild-файлы: CSharpier используется только для `.cs`.
+Дополнительный local tool устанавливать не требуется.
 
 ### C++/CLI
 
@@ -59,12 +63,9 @@ CSharpier закреплён как локальный .NET tool версии `1
 .\format.ps1
 ```
 
-Скрипт:
+Скрипт последовательно форматирует все C#-проекты через `dotnet format whitespace`, затем находит `clang-format` в `PATH` или в установленной Visual Studio и форматирует `.cpp`, `.cxx`, `.h`, `.hpp` в `src/GraphPlugin.Native`.
 
-1. восстанавливает локальный CSharpier через `dotnet tool restore`;
-2. форматирует C#;
-3. находит `clang-format` в `PATH` или в установленной Visual Studio;
-4. форматирует `.cpp`, `.cxx`, `.h`, `.hpp` в `src/GraphPlugin.Native`.
+C#-проекты форматируются отдельно, чтобы не передавать смешанный C#/C++ solution в `dotnet format`.
 
 ## Только проверка без изменения файлов
 
@@ -72,43 +73,35 @@ CSharpier закреплён как локальный .NET tool версии `1
 .\format.ps1 -Check
 ```
 
-Для C# используется `csharpier check`, для C++ — `clang-format --dry-run --Werror`.
+Для C# используется:
 
-Эта команда подходит для локальной проверки перед commit/PR и позже может быть перенесена в CI.
-
-## Первый запуск
-
-CSharpier устанавливать глобально не требуется. Достаточно:
-
-```powershell
-dotnet tool restore
+```text
+dotnet format <project> whitespace --verify-no-changes
 ```
 
-Для C++ проверьте доступность clang-format:
+Для C++ используется:
 
-```powershell
-clang-format --version
+```text
+clang-format --dry-run --Werror
 ```
 
-Если команда не найдена, установите LLVM или компонент Visual Studio **C++ Clang tools for Windows**. `format.ps1` также пытается найти `clang-format.exe` внутри последней установленной Visual Studio через `vswhere.exe`.
+Команда подходит для локальной проверки перед commit/PR и позже может быть перенесена в CI.
 
-## Ручной запуск CSharpier
+## Ручной запуск для C#
 
-Форматирование:
-
-```powershell
-dotnet tool run csharpier -- format .
-```
-
-Проверка:
+Например, для Domain:
 
 ```powershell
-dotnet tool run csharpier -- check .
+dotnet format .\src\GraphPlugin.Domain\GraphPlugin.Domain.csproj whitespace
 ```
 
-Команда запускается через local tool manifest, поэтому глобальная установка CSharpier не требуется.
+Только проверка:
 
-Благодаря `.csharpierignore` команда не изменяет `.csproj`, `.slnx`, `.vcxproj` и другие XML/MSBuild-файлы.
+```powershell
+dotnet format .\src\GraphPlugin.Domain\GraphPlugin.Domain.csproj whitespace --verify-no-changes
+```
+
+Аналогично можно запускать formatter для остальных C#-проектов. Обычно удобнее использовать `format.ps1`.
 
 ## Ручной запуск clang-format
 
@@ -118,11 +111,11 @@ dotnet tool run csharpier -- check .
 clang-format -i .\src\GraphPlugin.Native\Commands\GraphCommands.cpp
 ```
 
-Для всей native-части удобнее использовать `format.ps1`.
+Если команда не найдена, установите LLVM или компонент Visual Studio **C++ Clang tools for Windows**. `format.ps1` также пытается найти `clang-format.exe` внутри последней установленной Visual Studio через `vswhere.exe`.
 
-## После массового форматирования
+## После форматирования
 
-После первого форматирования всего репозитория рекомендуется проверить diff и затем выполнить:
+После массового форматирования рекомендуется проверить diff и затем выполнить:
 
 ```powershell
 .\build.ps1
@@ -135,27 +128,20 @@ dotnet test .\tests\GraphPlugin.Tests\GraphPlugin.Tests.csproj
 GRAPHTESTS
 ```
 
-Форматирование должно быть отдельным commit без изменений поведения. Это сильно упрощает review: большой diff можно однозначно рассматривать как механический.
+Форматирование следует коммитить отдельно от изменений поведения. Большой diff в таком случае можно однозначно рассматривать как механический.
 
 ## Стиль, к которому стремимся
 
-Предпочтительно:
+Связанные объявления локальных переменных можно держать одним блоком, а следующий логический шаг отделять пустой строкой:
 
 ```csharp
-var vertexService = new VertexService(vertexRepository, edgeRepository);
+var context = PluginServices.CurrentContext;
+var document = context.Document;
+var editor = document.Editor;
 
-context.VertexService.CreateVertex(
-    new Point2(point.X, point.Y),
-    shape);
+var vertices = context.Vertices.GetAll();
+
+editor.WriteMessage($"\nНайдено вершин: {vertices.Count}");
 ```
 
-Вместо искусственно вертикального варианта:
-
-```csharp
-var vertexService =
-    new VertexService(
-        vertexRepository,
-        edgeRepository);
-```
-
-Переносы должны появляться из-за реальной длины выражения и структуры кода, а не после каждого оператора или каждого аргумента.
+Не требуется вставлять пустую строку между каждой локальной переменной. Разделение должно отражать смысловые блоки кода.

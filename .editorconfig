@@ -10,10 +10,6 @@ indent_size = 4
 [*.cs]
 max_line_length = 120
 
-# Форматирование C# выполняет CSharpier. Отключаем IDE0055,
-# чтобы Roslyn/Visual Studio не пытались переформатировать код иначе.
-dotnet_diagnostic.IDE0055.severity = none
-
 csharp_using_directive_placement = outside_namespace:suggestion
 csharp_style_namespace_declarations = file_scoped:suggestion
 csharp_prefer_braces = true:suggestion

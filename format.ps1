@@ -7,24 +7,27 @@ $ErrorActionPreference = "Stop"
 Push-Location $PSScriptRoot
 
 try {
-    Write-Host "Restoring local .NET tools..."
-    & dotnet tool restore
+    $csharpProjects = @(
+        ".\src\GraphPlugin.Domain\GraphPlugin.Domain.csproj",
+        ".\src\GraphPlugin.Application\GraphPlugin.Application.csproj",
+        ".\src\GraphPlugin.Nanocad\GraphPlugin.Nanocad.csproj",
+        ".\tests\GraphPlugin.Tests\GraphPlugin.Tests.csproj",
+        ".\tests\GraphPlugin.Nanocad.IntegrationTests\GraphPlugin.Nanocad.IntegrationTests.csproj"
+    )
 
-    if ($LASTEXITCODE -ne 0) {
-        throw "dotnet tool restore failed with exit code $LASTEXITCODE."
-    }
+    foreach ($project in $csharpProjects) {
+        if ($Check) {
+            Write-Host "Checking C# formatting: $project"
+            & dotnet format $project whitespace --verify-no-changes
+        }
+        else {
+            Write-Host "Formatting C#: $project"
+            & dotnet format $project whitespace
+        }
 
-    if ($Check) {
-        Write-Host "Checking C# formatting with CSharpier..."
-        & dotnet tool run csharpier -- check .
-    }
-    else {
-        Write-Host "Formatting C# with CSharpier..."
-        & dotnet tool run csharpier -- format .
-    }
-
-    if ($LASTEXITCODE -ne 0) {
-        throw "CSharpier failed with exit code $LASTEXITCODE."
+        if ($LASTEXITCODE -ne 0) {
+            throw "dotnet format failed for '$project' with exit code $LASTEXITCODE."
+        }
     }
 
     $clangFormatPath = $null
