@@ -2,13 +2,61 @@
 
 The solution targets .NET 6 and x64 nanoCAD. The default nanoCAD version is 24.1.
 
-## Default build
+## Recommended command-line build
 
-If nanoCAD is installed to the standard location, no extra properties are required:
+Regular PowerShell does not always have `MSBuild.exe` on `PATH`, even when Visual Studio can build the solution successfully. Use the repository build launcher instead:
 
 ```powershell
-msbuild GraphPlugin.slnx /p:Platform=x64 /p:Configuration=Debug
+.\build.ps1
 ```
+
+Release build:
+
+```powershell
+.\build.ps1 -Configuration Release
+```
+
+Build against another standard nanoCAD version:
+
+```powershell
+.\build.ps1 -NanoCadVersion 25.0
+```
+
+Or pass the installation directory explicitly:
+
+```powershell
+.\build.ps1 `
+  -Configuration Release `
+  -NanoCadInstallDir "D:\Nanosoft\nanoCAD x64 25.0"
+```
+
+`build.ps1` uses `vswhere.exe` from Visual Studio Installer to locate the MSBuild installation and then builds `GraphPlugin.slnx` as `x64`.
+
+## Visual Studio Developer PowerShell
+
+An alternative is to open **Developer PowerShell for Visual Studio**. That shell initializes the Visual Studio build environment, so `msbuild` can be invoked directly:
+
+```powershell
+msbuild GraphPlugin.slnx /m /p:Platform=x64 /p:Configuration=Debug
+```
+
+From an ordinary PowerShell session, the same MSBuild path can be resolved manually:
+
+```powershell
+$vswhere = "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe"
+$msbuild = & $vswhere `
+  -latest `
+  -products * `
+  -requires Microsoft.Component.MSBuild `
+  -find "MSBuild\**\Bin\MSBuild.exe" |
+  Select-Object -First 1
+
+& $msbuild GraphPlugin.slnx /m /p:Platform=x64 /p:Configuration=Debug
+```
+
+`dotnet build` is not the canonical build command for this solution because `GraphPlugin.Native` is a C++/CLI project and is built by Visual Studio MSBuild.
+
+## nanoCAD installation properties
 
 The default install directory is resolved as:
 
@@ -16,9 +64,7 @@ The default install directory is resolved as:
 $(ProgramFiles)\Nanosoft\nanoCAD x64 24.1
 ```
 
-## Building against another nanoCAD installation
-
-Override the installation directory explicitly:
+The MSBuild properties can also be supplied directly:
 
 ```powershell
 msbuild GraphPlugin.slnx `
