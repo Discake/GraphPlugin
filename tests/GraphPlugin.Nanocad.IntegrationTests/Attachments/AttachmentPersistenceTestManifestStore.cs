@@ -1,6 +1,6 @@
 ﻿using Teigha.DatabaseServices;
 
-namespace GraphPlugin.NanoCad.Runtime;
+namespace GraphPlugin.Nanocad.Runtime;
 
 public sealed class AttachmentPersistenceTestManifestStore
 {
