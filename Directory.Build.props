@@ -1,0 +1,6 @@
+<Project>
+  <PropertyGroup>
+    <NanoCadVersion Condition="'$(NanoCadVersion)' == ''">24.1</NanoCadVersion>
+    <NanoCadInstallDir Condition="'$(NanoCadInstallDir)' == ''">$(ProgramFiles)\Nanosoft\nanoCAD x64 $(NanoCadVersion)</NanoCadInstallDir>
+  </PropertyGroup>
+</Project>

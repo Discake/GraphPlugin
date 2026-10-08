@@ -1,0 +1,126 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <VCProjectVersion>18.0</VCProjectVersion>
+    <EnableManagedPackageReferenceSupport>true</EnableManagedPackageReferenceSupport>
+    <ProjectGuid>{BCD6B3CE-D70C-F635-162D-765B568E9590}</ProjectGuid>
+    <Keyword>NetCoreCProj</Keyword>
+    <RootNamespace>GraphPluginNative</RootNamespace>
+    <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+    <TargetFramework>net6.0</TargetFramework>
+    <WindowsTargetPlatformMinVersion>6.0</WindowsTargetPlatformMinVersion>
+    <NanoCadVersion Condition="'$(NanoCadVersion)' == ''">24.1</NanoCadVersion>
+    <NanoCadInstallDir Condition="'$(NanoCadInstallDir)' == ''">$(ProgramFiles)\Nanosoft\nanoCAD x64 $(NanoCadVersion)</NanoCadInstallDir>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v143</PlatformToolset>
+    <CLRSupport>NetCore</CLRSupport>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v143</PlatformToolset>
+    <CLRSupport>NetCore</CLRSupport>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="Shared">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup />
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <PreprocessorDefinitions>_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <LanguageStandard>stdcpp17</LanguageStandard>
+    </ClCompile>
+    <Link>
+      <AdditionalDependencies />
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <PreprocessorDefinitions>NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <LanguageStandard>stdcpp17</LanguageStandard>
+    </ClCompile>
+    <Link>
+      <AdditionalDependencies />
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <Reference Include="hostdbmgd">
+      <HintPath>$(NanoCadInstallDir)\bin\hostdbmgd.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="hostmgd">
+      <HintPath>$(NanoCadInstallDir)\bin\hostmgd.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="Commands\GraphCommands.h" />
+    <ClInclude Include="Persistence\EdgeMetadataStore.h" />
+    <ClInclude Include="Persistence\GraphDwgSchema.h" />
+    <ClInclude Include="Persistence\NativeEdgeMetadata.h" />
+    <ClInclude Include="Persistence\NativeVertexMetadata.h" />
+    <ClInclude Include="Persistence\VertexMetadataStore.h" />
+    <ClInclude Include="Services\NativeVertexDeletionService.h" />
+    <ClInclude Include="Services\NativeVertexStyleService.h" />
+    <ClInclude Include="Tests\DeleteUndoScenario.h" />
+    <ClInclude Include="Tests\NativeIntegrationTestException.h" />
+    <ClInclude Include="Tests\NativeIntegrationTestRunner.h" />
+    <ClInclude Include="Tests\NativeStagedTestSchema.h" />
+    <ClInclude Include="Tests\NativeTestCommands.h" />
+    <ClInclude Include="Tests\NativeTestDwgHelpers.h" />
+    <ClInclude Include="Tests\StyleInteropScenario.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="Commands\GraphCommands.cpp" />
+    <ClCompile Include="Persistence\EdgeMetadataStore.cpp" />
+    <ClCompile Include="Persistence\VertexMetadataStore.cpp" />
+    <ClCompile Include="Services\NativeVertexDeletionService.cpp" />
+    <ClCompile Include="Services\NativeVertexStyleService.cpp" />
+    <ClCompile Include="Tests\DeleteUndoScenario.cpp" />
+    <ClCompile Include="Tests\NativeIntegrationTestRunner.cpp" />
+    <ClCompile Include="Tests\NativeTestCommands.cpp" />
+    <ClCompile Include="Tests\NativeTestDwgHelpers.cpp" />
+    <ClCompile Include="Tests\StyleInteropScenario.cpp" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <Target Name="StageNativePlugin" AfterTargets="Build">
+    <PropertyGroup>
+      <PluginStageDir>$(MSBuildThisFileDirectory)..\..\artifacts\plugin\$(Configuration)\</PluginStageDir>
+    </PropertyGroup>
+
+    <MakeDir Directories="$(PluginStageDir)" />
+    <Copy
+      SourceFiles="$(TargetPath)"
+      DestinationFolder="$(PluginStageDir)"
+      SkipUnchangedFiles="true" />
+  </Target>
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>

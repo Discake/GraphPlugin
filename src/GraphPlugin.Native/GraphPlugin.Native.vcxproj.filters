@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Commands">
+      <UniqueIdentifier>{99ed5ece-fde8-4e23-873a-949430a28040}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Persistence">
+      <UniqueIdentifier>{b5fc661f-a25b-4dfe-9a4f-5200f39cee70}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Services">
+      <UniqueIdentifier>{e864642d-e52d-42f6-aee1-f4b0a30c7e7f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Tests">
+      <UniqueIdentifier>{4c4010d8-dd56-46e6-86ea-a6677b8f2fe5}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="Commands\GraphCommands.h">
+      <Filter>Commands</Filter>
+    </ClInclude>
+    <ClInclude Include="Persistence\EdgeMetadataStore.h">
+      <Filter>Persistence</Filter>
+    </ClInclude>
+    <ClInclude Include="Persistence\GraphDwgSchema.h">
+      <Filter>Persistence</Filter>
+    </ClInclude>
+    <ClInclude Include="Persistence\NativeEdgeMetadata.h">
+      <Filter>Persistence</Filter>
+    </ClInclude>
+    <ClInclude Include="Persistence\NativeVertexMetadata.h">
+      <Filter>Persistence</Filter>
+    </ClInclude>
+    <ClInclude Include="Persistence\VertexMetadataStore.h">
+      <Filter>Persistence</Filter>
+    </ClInclude>
+    <ClInclude Include="Services\NativeVertexDeletionService.h">
+      <Filter>Services</Filter>
+    </ClInclude>
+    <ClInclude Include="Services\NativeVertexStyleService.h">
+      <Filter>Services</Filter>
+    </ClInclude>
+    <ClInclude Include="Tests\DeleteUndoScenario.h">
+      <Filter>Tests</Filter>
+    </ClInclude>
+    <ClInclude Include="Tests\NativeIntegrationTestException.h">
+      <Filter>Tests</Filter>
+    </ClInclude>
+    <ClInclude Include="Tests\NativeIntegrationTestRunner.h">
+      <Filter>Tests</Filter>
+    </ClInclude>
+    <ClInclude Include="Tests\NativeStagedTestSchema.h">
+      <Filter>Tests</Filter>
+    </ClInclude>
+    <ClInclude Include="Tests\NativeTestCommands.h">
+      <Filter>Tests</Filter>
+    </ClInclude>
+    <ClInclude Include="Tests\NativeTestDwgHelpers.h">
+      <Filter>Tests</Filter>
+    </ClInclude>
+    <ClInclude Include="Tests\StyleInteropScenario.h">
+      <Filter>Tests</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="Commands\GraphCommands.cpp">
+      <Filter>Commands</Filter>
+    </ClCompile>
+    <ClCompile Include="Persistence\EdgeMetadataStore.cpp">
+      <Filter>Persistence</Filter>
+    </ClCompile>
+    <ClCompile Include="Persistence\VertexMetadataStore.cpp">
+      <Filter>Persistence</Filter>
+    </ClCompile>
+    <ClCompile Include="Services\NativeVertexDeletionService.cpp">
+      <Filter>Services</Filter>
+    </ClCompile>
+    <ClCompile Include="Services\NativeVertexStyleService.cpp">
+      <Filter>Services</Filter>
+    </ClCompile>
+    <ClCompile Include="Tests\DeleteUndoScenario.cpp">
+      <Filter>Tests</Filter>
+    </ClCompile>
+    <ClCompile Include="Tests\NativeIntegrationTestRunner.cpp">
+      <Filter>Tests</Filter>
+    </ClCompile>
+    <ClCompile Include="Tests\NativeTestCommands.cpp">
+      <Filter>Tests</Filter>
+    </ClCompile>
+    <ClCompile Include="Tests\NativeTestDwgHelpers.cpp">
+      <Filter>Tests</Filter>
+    </ClCompile>
+    <ClCompile Include="Tests\StyleInteropScenario.cpp">
+      <Filter>Tests</Filter>
+    </ClCompile>
+  </ItemGroup>
+</Project>

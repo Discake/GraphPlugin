@@ -1,0 +1,39 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net6.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <PlatformTarget>x64</PlatformTarget>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\GraphPlugin.Nanocad\GraphPlugin.Nanocad.csproj" />
+    <ProjectReference Include="..\..\src\GraphPlugin.Application\GraphPlugin.Application.csproj" />
+    <ProjectReference Include="..\..\src\GraphPlugin.Domain\GraphPlugin.Domain.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Reference Include="hostdbmgd">
+      <HintPath>$(NanoCadInstallDir)\bin\hostdbmgd.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="hostmgd">
+      <HintPath>$(NanoCadInstallDir)\bin\hostmgd.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+  </ItemGroup>
+
+  <Target Name="StageIntegrationTestPlugin" AfterTargets="Build">
+    <PropertyGroup>
+      <PluginStageDir>$(MSBuildThisFileDirectory)..\..\artifacts\plugin\$(Configuration)\</PluginStageDir>
+    </PropertyGroup>
+
+    <MakeDir Directories="$(PluginStageDir)" />
+    <Copy
+      SourceFiles="$(TargetPath)"
+      DestinationFolder="$(PluginStageDir)"
+      SkipUnchangedFiles="true" />
+  </Target>
+
+</Project>
