@@ -1,28 +1,22 @@
 ﻿using GraphPlugin.Application.Abstractions;
 using GraphPlugin.Domain.Models;
 using GraphPlugin.Nanocad.Runtime;
-using HostMgd.ApplicationServices;
 using Teigha.DatabaseServices;
+using NanoApplication =
+    HostMgd.ApplicationServices.Application;
 
 namespace GraphPlugin.Nanocad.Drawing;
 
 public sealed class EdgeStyleApplier
     : IEdgeStyleApplier
 {
-    private readonly Document _document;
     private readonly GraphEntityIndex _index;
     private readonly LinetypeManager _linetypes;
 
     public EdgeStyleApplier(
-        Document document,
         GraphEntityIndex index,
         LinetypeManager linetypes)
     {
-        _document =
-            document ??
-            throw new ArgumentNullException(
-                nameof(document));
-
         _index = index;
         _linetypes = linetypes;
     }
@@ -30,8 +24,13 @@ public sealed class EdgeStyleApplier
     public void ApplyToAll(
         EdgeStyle style)
     {
+        var document =
+            NanoApplication
+                .DocumentManager
+                .MdiActiveDocument;
+
         var database =
-            _document.Database;
+            document.Database;
 
         using var transaction =
             database.TransactionManager
