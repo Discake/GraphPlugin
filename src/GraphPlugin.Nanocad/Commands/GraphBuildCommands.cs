@@ -2,8 +2,6 @@ using GraphPlugin.Nanocad.Bootstrap;
 using GraphPlugin.NanoCad.Runtime;
 using Teigha.Runtime;
 
-using NanoApplication = HostMgd.ApplicationServices.Application;
-
 namespace GraphPlugin.Nanocad.Commands;
 
 public sealed class GraphBuildCommands
@@ -11,19 +9,14 @@ public sealed class GraphBuildCommands
     [CommandMethod("GRAPHBUILD")]
     public void GraphBuild()
     {
-        var document =
-            NanoApplication
-                .DocumentManager
-                .MdiActiveDocument;
+        var context =
+            PluginServices.CurrentContext;
 
-        if (document is null)
-            return;
+        var document =
+            context.Document;
 
         var editor =
             document.Editor;
-
-        var context =
-            PluginServices.CurrentContext;
 
         editor.WriteMessage(
             "\nПостроение графа." +
