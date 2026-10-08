@@ -3,6 +3,7 @@ using System.Windows.Forms;
 using GraphPlugin.Domain.Models;
 using GraphPlugin.Nanocad.Bootstrap;
 using GraphPlugin.Nanocad.UI.GraphControl;
+using HostMgd.ApplicationServices;
 using Teigha.Runtime;
 
 namespace GraphPlugin.Nanocad.Commands;
@@ -20,6 +21,7 @@ public sealed class GraphControlCommands
     }
 
     private static GraphControlForm? _form;
+    private static Document? _queuedCommandDocument;
 
     [CommandMethod("GRAPHCONTROL")]
     public void ShowControlCenter()
@@ -49,6 +51,8 @@ public sealed class GraphControlCommands
         {
             if (ReferenceEquals(_form, form))
                 _form = null;
+
+            StopWaitingForQueuedCommand();
         };
 
         _form = form;
@@ -80,6 +84,8 @@ public sealed class GraphControlCommands
             GraphControlAction.ClearShortestPath => "GRAPHCLEARPATH",
             GraphControlAction.AttachFile => "GRAPHATTACHFILE",
             GraphControlAction.DetachFile => "GRAPHDETACHFILE",
+            GraphControlAction.OpenFile => "GRAPHOPENFILE",
+            GraphControlAction.ListFiles => "GRAPHVERTEXFILES",
             GraphControlAction.None => null,
             _ => null,
         };
@@ -88,7 +94,67 @@ public sealed class GraphControlCommands
             return;
 
         var context = PluginServices.CurrentContext;
-        context.Document.SendStringToExecute(command + " ", true, false, false);
+        var document = context.Document;
+
+        StartWaitingForQueuedCommand(document);
+
+        try
+        {
+            _form?.Hide();
+            document.SendStringToExecute(command + " ", true, false, false);
+        }
+        catch
+        {
+            StopWaitingForQueuedCommand();
+            RestoreControlCenter();
+            throw;
+        }
+    }
+
+    private static void StartWaitingForQueuedCommand(Document document)
+    {
+        StopWaitingForQueuedCommand();
+
+        _queuedCommandDocument = document;
+        document.CommandEnded += OnQueuedCommandFinished;
+        document.CommandCancelled += OnQueuedCommandFinished;
+        document.CommandFailed += OnQueuedCommandFinished;
+    }
+
+    private static void StopWaitingForQueuedCommand()
+    {
+        if (_queuedCommandDocument is null)
+            return;
+
+        _queuedCommandDocument.CommandEnded -= OnQueuedCommandFinished;
+        _queuedCommandDocument.CommandCancelled -= OnQueuedCommandFinished;
+        _queuedCommandDocument.CommandFailed -= OnQueuedCommandFinished;
+        _queuedCommandDocument = null;
+    }
+
+    private static void OnQueuedCommandFinished(object sender, CommandEventArgs e)
+    {
+        StopWaitingForQueuedCommand();
+
+        if (_form is not { IsDisposed: false })
+            return;
+
+        if (_form.IsHandleCreated)
+            _form.BeginInvoke((Action)RestoreControlCenter);
+        else
+            RestoreControlCenter();
+    }
+
+    private static void RestoreControlCenter()
+    {
+        if (_form is not { IsDisposed: false })
+            return;
+
+        if (!_form.Visible)
+            _form.Show();
+
+        _form.Activate();
+        _form.BringToFront();
     }
 
     private static void ApplyEdgeStyle(EdgeStyle style)

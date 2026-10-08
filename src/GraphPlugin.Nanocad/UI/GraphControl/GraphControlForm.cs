@@ -39,8 +39,8 @@ public sealed class GraphControlForm : Form
         ShowInTaskbar = false;
         AutoScaleMode = AutoScaleMode.Font;
         AutoScroll = true;
-        ClientSize = new Size(620, 680);
-        MinimumSize = new Size(620, 620);
+        ClientSize = new Size(620, 760);
+        MinimumSize = new Size(620, 680);
         Font = new Font("Segoe UI", 9F);
         Padding = new Padding(12);
 
@@ -141,7 +141,7 @@ public sealed class GraphControlForm : Form
             AutoSize = true,
             AutoSizeMode = AutoSizeMode.GrowAndShrink,
             ColumnCount = 2,
-            RowCount = 6,
+            RowCount = 7,
         };
         layout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50F));
         layout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50F));
@@ -166,10 +166,12 @@ public sealed class GraphControlForm : Form
         layout.Controls.Add(CreateActionButton("Кратчайший путь", GraphControlAction.ShortestPath), 1, 3);
         layout.Controls.Add(CreateActionButton("Прикрепить файл", GraphControlAction.AttachFile), 0, 4);
         layout.Controls.Add(CreateActionButton("Открепить файл", GraphControlAction.DetachFile), 1, 4);
+        layout.Controls.Add(CreateActionButton("Открыть файл", GraphControlAction.OpenFile), 0, 5);
+        layout.Controls.Add(CreateActionButton("Список файлов", GraphControlAction.ListFiles), 1, 5);
 
         var clearPathButton = CreateActionButton("Очистить кратчайший путь", GraphControlAction.ClearShortestPath);
         layout.SetColumnSpan(clearPathButton, 2);
-        layout.Controls.Add(clearPathButton, 0, 5);
+        layout.Controls.Add(clearPathButton, 0, 6);
 
         group.Controls.Add(layout);
 
@@ -206,7 +208,7 @@ public sealed class GraphControlForm : Form
             Name = "ColorComboBox",
             Dock = DockStyle.Fill,
             DropDownStyle = ComboBoxStyle.DropDownList,
-            Margin = new Padding(5, 5, 5, 5),
+            Margin = new Padding(5),
         };
 
         var lineTypeComboBox = new ComboBox
@@ -214,7 +216,7 @@ public sealed class GraphControlForm : Form
             Name = "LineTypeComboBox",
             Dock = DockStyle.Fill,
             DropDownStyle = ComboBoxStyle.DropDownList,
-            Margin = new Padding(5, 5, 5, 5),
+            Margin = new Padding(5),
         };
 
         var lineWeightInput = new NumericUpDown
@@ -226,7 +228,7 @@ public sealed class GraphControlForm : Form
             Minimum = 0.01M,
             Maximum = 10M,
             Value = (decimal)Math.Clamp(currentStyle.LineWeightMm, 0.01, 10.0),
-            Margin = new Padding(5, 5, 5, 5),
+            Margin = new Padding(5),
         };
 
         layout.Controls.Add(CreateFieldLabel("Цвет"), 0, 0);

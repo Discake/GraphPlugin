@@ -12,4 +12,6 @@ public enum GraphControlAction
     ClearShortestPath,
     AttachFile,
     DetachFile,
+    OpenFile,
+    ListFiles,
 }
