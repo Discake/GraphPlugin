@@ -16,11 +16,11 @@ try {
 
     if ($Check) {
         Write-Host "Checking C# formatting with CSharpier..."
-        & dotnet csharpier check .
+        & dotnet tool run csharpier -- check .
     }
     else {
         Write-Host "Formatting C# with CSharpier..."
-        & dotnet csharpier format .
+        & dotnet tool run csharpier -- format .
     }
 
     if ($LASTEXITCODE -ne 0) {
