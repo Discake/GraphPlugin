@@ -1,9 +1,9 @@
+using System.Diagnostics;
 using GraphPlugin.Domain.Models;
 using GraphPlugin.Nanocad.Bootstrap;
 using GraphPlugin.Nanocad.Runtime;
 using HostMgd.ApplicationServices;
 using HostMgd.EditorInput;
-using System.Diagnostics;
 using Teigha.Runtime;
 
 namespace GraphPlugin.Nanocad.Commands;
@@ -13,264 +13,172 @@ public sealed class AttachmentCommands
     [CommandMethod("GRAPHATTACHFILE")]
     public void GraphAttachFile()
     {
-        var context =
-            PluginServices.CurrentContext;
+        var context = PluginServices.CurrentContext;
 
-        var document =
-            context.Document;
+        var document = context.Document;
 
-        var editor =
-            document.Editor;
+        var editor = document.Editor;
 
         try
         {
-            var vertex =
-                SelectVertex(
-                    document,
-                    context,
-                    "\nSelect vertex to attach file: ");
+            var vertex = SelectVertex(document, context, "\nSelect vertex to attach file: ");
 
             if (vertex is null)
                 return;
 
-            var fileOptions =
-                new PromptOpenFileOptions(
-                    "\nSelect file to attach");
+            var fileOptions = new PromptOpenFileOptions("\nSelect file to attach");
 
-            var fileResult =
-                editor.GetFileNameForOpen(
-                    fileOptions);
+            var fileResult = editor.GetFileNameForOpen(fileOptions);
 
             if (fileResult.Status != PromptStatus.OK)
                 return;
 
-            var attachment =
-                context.AttachmentService.Attach(
-                    vertex.Id,
-                    fileResult.StringResult,
-                    GetDrawingPath(document));
+            var attachment = context.AttachmentService.Attach(
+                vertex.Id,
+                fileResult.StringResult,
+                GetDrawingPath(document)
+            );
 
-            editor.WriteMessage(
-                "\nFile attached.");
+            editor.WriteMessage("\nFile attached.");
 
-            editor.WriteMessage(
-                $"\nStored path: " +
-                $"{attachment.Path}");
+            editor.WriteMessage($"\nStored path: " + $"{attachment.Path}");
         }
         catch (System.Exception exception)
         {
-            editor.WriteMessage(
-                $"\nCannot attach file: " +
-                $"{exception.Message}");
+            editor.WriteMessage($"\nCannot attach file: " + $"{exception.Message}");
         }
     }
 
     [CommandMethod("GRAPHVERTEXFILES")]
     public void GraphVertexFiles()
     {
-        var context =
-            PluginServices.CurrentContext;
+        var context = PluginServices.CurrentContext;
 
-        var document =
-            context.Document;
+        var document = context.Document;
 
-        var editor =
-            document.Editor;
+        var editor = document.Editor;
 
         try
         {
-            var vertex =
-                SelectVertex(
-                    document,
-                    context,
-                    "\nSelect vertex: ");
+            var vertex = SelectVertex(document, context, "\nSelect vertex: ");
 
             if (vertex is null)
                 return;
 
-            var attachments =
-                context.AttachmentService
-                    .GetAll(vertex.Id)
-                    .ToArray();
+            var attachments = context.AttachmentService.GetAll(vertex.Id).ToArray();
 
-            editor.WriteMessage(
-                $"\nVertex: {vertex.Id}");
+            editor.WriteMessage($"\nVertex: {vertex.Id}");
 
-            PrintAttachments(
-                document,
-                attachments);
+            PrintAttachments(document, attachments);
         }
         catch (System.Exception exception)
         {
-            editor.WriteMessage(
-                $"\nCannot read attached files: " +
-                $"{exception.Message}");
+            editor.WriteMessage($"\nCannot read attached files: " + $"{exception.Message}");
         }
     }
 
     [CommandMethod("GRAPHOPENFILE")]
     public void GraphOpenFile()
     {
-        var context =
-            PluginServices.CurrentContext;
+        var context = PluginServices.CurrentContext;
 
-        var document =
-            context.Document;
+        var document = context.Document;
 
-        var editor =
-            document.Editor;
+        var editor = document.Editor;
 
         try
         {
-            var vertex =
-                SelectVertex(
-                    document,
-                    context,
-                    "\nSelect vertex: ");
+            var vertex = SelectVertex(document, context, "\nSelect vertex: ");
 
             if (vertex is null)
                 return;
 
-            var attachments =
-                context.AttachmentService
-                    .GetAll(vertex.Id)
-                    .ToArray();
+            var attachments = context.AttachmentService.GetAll(vertex.Id).ToArray();
 
-            var attachment =
-                ChooseAttachment(
-                    document,
-                    attachments,
-                    "\nEnter file number to open: ");
+            var attachment = ChooseAttachment(document, attachments, "\nEnter file number to open: ");
 
             if (attachment is null)
                 return;
 
-            var path =
-                context.AttachmentService
-                    .ResolvePath(
-                        vertex.Id,
-                        attachment.Path,
-                        GetDrawingPath(document));
+            var path = context.AttachmentService.ResolvePath(vertex.Id, attachment.Path, GetDrawingPath(document));
 
             if (!File.Exists(path))
             {
-                editor.WriteMessage(
-                    "\nAttached file was not found.");
+                editor.WriteMessage("\nAttached file was not found.");
 
-                editor.WriteMessage(
-                    $"\nResolved path: {path}");
+                editor.WriteMessage($"\nResolved path: {path}");
 
                 return;
             }
 
-            Process.Start(
-                new ProcessStartInfo
-                {
-                    FileName = path,
-                    UseShellExecute = true
-                });
+            Process.Start(new ProcessStartInfo { FileName = path, UseShellExecute = true });
 
-            editor.WriteMessage(
-                $"\nOpened: {path}");
+            editor.WriteMessage($"\nOpened: {path}");
         }
         catch (System.Exception exception)
         {
-            editor.WriteMessage(
-                $"\nCannot open attached file: " +
-                $"{exception.Message}");
+            editor.WriteMessage($"\nCannot open attached file: " + $"{exception.Message}");
         }
     }
 
     [CommandMethod("GRAPHDETACHFILE")]
     public void GraphDetachFile()
     {
-        var context =
-            PluginServices.CurrentContext;
+        var context = PluginServices.CurrentContext;
 
-        var document =
-            context.Document;
+        var document = context.Document;
 
-        var editor =
-            document.Editor;
+        var editor = document.Editor;
 
         try
         {
-            var vertex =
-                SelectVertex(
-                    document,
-                    context,
-                    "\nSelect vertex: ");
+            var vertex = SelectVertex(document, context, "\nSelect vertex: ");
 
             if (vertex is null)
                 return;
 
-            var attachments =
-                context.AttachmentService
-                    .GetAll(vertex.Id)
-                    .ToArray();
+            var attachments = context.AttachmentService.GetAll(vertex.Id).ToArray();
 
-            var attachment =
-                ChooseAttachment(
-                    document,
-                    attachments,
-                    "\nEnter file number to detach: ");
+            var attachment = ChooseAttachment(document, attachments, "\nEnter file number to detach: ");
 
             if (attachment is null)
                 return;
 
-            context.AttachmentService.Detach(
-                vertex.Id,
-                attachment.Path);
+            context.AttachmentService.Detach(vertex.Id, attachment.Path);
 
-            editor.WriteMessage(
-                "\nFile detached from vertex.");
+            editor.WriteMessage("\nFile detached from vertex.");
 
-            editor.WriteMessage(
-                $"\nRemoved reference: " +
-                $"{attachment.Path}");
+            editor.WriteMessage($"\nRemoved reference: " + $"{attachment.Path}");
         }
         catch (System.Exception exception)
         {
-            editor.WriteMessage(
-                $"\nCannot detach file: " +
-                $"{exception.Message}");
+            editor.WriteMessage($"\nCannot detach file: " + $"{exception.Message}");
         }
     }
 
-    private static GraphVertex? SelectVertex(
-        Document document,
-        GraphDocumentContext context,
-        string message)
+    private static GraphVertex? SelectVertex(Document document, GraphDocumentContext context, string message)
     {
-        var editor =
-            document.Editor;
+        var editor = document.Editor;
 
         while (true)
         {
-            var result =
-                editor.GetEntity(
-                    new PromptEntityOptions(message));
+            var result = editor.GetEntity(new PromptEntityOptions(message));
 
             if (result.Status != PromptStatus.OK)
                 return null;
 
-            if (!context.Index.TryGetVertexId(
-                    result.ObjectId,
-                    out var vertexId))
+            if (!context.Index.TryGetVertexId(result.ObjectId, out var vertexId))
             {
-                editor.WriteMessage(
-                    "\nSelected object is not a graph vertex.");
+                editor.WriteMessage("\nSelected object is not a graph vertex.");
 
                 continue;
             }
 
-            var vertex =
-                context.Vertices.Get(vertexId);
+            var vertex = context.Vertices.Get(vertexId);
 
             if (vertex is null)
             {
-                editor.WriteMessage(
-                    "\nGraph vertex could not be restored.");
+                editor.WriteMessage("\nGraph vertex could not be restored.");
 
                 continue;
             }
@@ -279,11 +187,9 @@ public sealed class AttachmentCommands
         }
     }
 
-    private static string? GetDrawingPath(
-        Document document)
+    private static string? GetDrawingPath(Document document)
     {
-        var filename =
-            document.Database.Filename;
+        var filename = document.Database.Filename;
 
         if (string.IsNullOrWhiteSpace(filename))
             return null;
@@ -298,41 +204,34 @@ public sealed class AttachmentCommands
         }
     }
 
-    private static void PrintAttachments(
-        Document document,
-        IReadOnlyList<VertexAttachment> attachments)
+    private static void PrintAttachments(Document document, IReadOnlyList<VertexAttachment> attachments)
     {
-        var editor =
-            document.Editor;
+        var editor = document.Editor;
 
         if (attachments.Count == 0)
         {
-            editor.WriteMessage(
-                "\nVertex has no attached files.");
+            editor.WriteMessage("\nVertex has no attached files.");
 
             return;
         }
 
-        editor.WriteMessage(
-            $"\nAttached files: {attachments.Count}");
+        editor.WriteMessage($"\nAttached files: {attachments.Count}");
 
         for (var i = 0; i < attachments.Count; i++)
         {
-            editor.WriteMessage(
-                $"\n  {i + 1}. " +
-                $"{attachments[i].Path}");
+            editor.WriteMessage($"\n  {i + 1}. " + $"{attachments[i].Path}");
         }
     }
 
     private static VertexAttachment? ChooseAttachment(
         Document document,
         IReadOnlyList<VertexAttachment> attachments,
-        string prompt)
+        string prompt
+    )
     {
         if (attachments.Count == 0)
         {
-            document.Editor.WriteMessage(
-                "\nVertex has no attached files.");
+            document.Editor.WriteMessage("\nVertex has no attached files.");
 
             return null;
         }
@@ -340,19 +239,11 @@ public sealed class AttachmentCommands
         if (attachments.Count == 1)
             return attachments[0];
 
-        PrintAttachments(
-            document,
-            attachments);
+        PrintAttachments(document, attachments);
 
-        var options =
-            new PromptIntegerOptions(prompt)
-            {
-                LowerLimit = 1,
-                UpperLimit = attachments.Count
-            };
+        var options = new PromptIntegerOptions(prompt) { LowerLimit = 1, UpperLimit = attachments.Count };
 
-        var result =
-            document.Editor.GetInteger(options);
+        var result = document.Editor.GetInteger(options);
 
         if (result.Status != PromptStatus.OK)
             return null;

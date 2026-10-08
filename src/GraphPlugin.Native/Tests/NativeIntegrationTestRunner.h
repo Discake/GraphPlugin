@@ -6,26 +6,24 @@ using namespace HostMgd::EditorInput;
 
 namespace GraphPlugin::Native::Tests
 {
-    public ref class NativeIntegrationTestRunner sealed
-    {
-    public:
-        explicit NativeIntegrationTestRunner(
-            Document^ document);
+public
+ref class NativeIntegrationTestRunner sealed
+{
+  public:
+    explicit NativeIntegrationTestRunner(Document ^ document);
 
-        void RunAll();
+    void RunAll();
 
-    private:
-        Document^ _document;
-        Editor^ _editor;
+  private:
+    Document ^ _document;
+    Editor ^ _editor;
 
-        void TestVertexMetadataRoundTrip();
+    void TestVertexMetadataRoundTrip();
 
-        void TestVertexWriterPreservesAttachments();
+    void TestVertexWriterPreservesAttachments();
 
-        void TestCascadeDelete();
+    void TestCascadeDelete();
 
-        void Ensure(
-            bool condition,
-            String^ message);
-    };
-}
+    void Ensure(bool condition, String ^ message);
+};
+} // namespace GraphPlugin::Native::Tests

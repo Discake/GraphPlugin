@@ -9,22 +9,17 @@ public sealed class ShortestPathHighlighter
     private readonly Document _document;
     private readonly GraphEntityIndex _index;
 
-    private readonly HashSet<ObjectId> _highlighted =
-        new();
+    private readonly HashSet<ObjectId> _highlighted = new();
 
-    public ShortestPathHighlighter(
-        Document document,
-        GraphEntityIndex index)
+    public ShortestPathHighlighter(Document document, GraphEntityIndex index)
     {
         _document = document;
         _index = index;
     }
 
-    public bool HasHighlight =>
-        _highlighted.Count > 0;
+    public bool HasHighlight => _highlighted.Count > 0;
 
-    public void Show(
-        ShortestPathResult result)
+    public void Show(ShortestPathResult result)
     {
         ArgumentNullException.ThrowIfNull(result);
 
@@ -33,39 +28,30 @@ public sealed class ShortestPathHighlighter
         if (!result.Found)
             return;
 
-        var objectIds =
-            CollectObjectIds(result);
+        var objectIds = CollectObjectIds(result);
 
         if (objectIds.Count == 0)
             return;
 
-        var database =
-            _document.Database;
+        var database = _document.Database;
 
-        using var transaction =
-            database.TransactionManager
-                .StartTransaction();
+        using var transaction = database.TransactionManager.StartTransaction();
 
         foreach (var objectId in objectIds)
         {
-            if (objectId.IsNull ||
-                objectId.IsErased)
+            if (objectId.IsNull || objectId.IsErased)
             {
                 continue;
             }
 
-            if (transaction.GetObject(
-                    objectId,
-                    OpenMode.ForRead)
-                is not Entity entity)
+            if (transaction.GetObject(objectId, OpenMode.ForRead) is not Entity entity)
             {
                 continue;
             }
 
             entity.Highlight();
 
-            _highlighted.Add(
-                objectId);
+            _highlighted.Add(objectId);
         }
 
         transaction.Commit();
@@ -78,25 +64,18 @@ public sealed class ShortestPathHighlighter
         if (_highlighted.Count == 0)
             return;
 
-        var database =
-            _document.Database;
+        var database = _document.Database;
 
-        using var transaction =
-            database.TransactionManager
-                .StartTransaction();
+        using var transaction = database.TransactionManager.StartTransaction();
 
         foreach (var objectId in _highlighted)
         {
-            if (objectId.IsNull ||
-                objectId.IsErased)
+            if (objectId.IsNull || objectId.IsErased)
             {
                 continue;
             }
 
-            if (transaction.GetObject(
-                    objectId,
-                    OpenMode.ForRead)
-                is not Entity entity)
+            if (transaction.GetObject(objectId, OpenMode.ForRead) is not Entity entity)
             {
                 continue;
             }
@@ -111,29 +90,21 @@ public sealed class ShortestPathHighlighter
         _document.Editor.Regen();
     }
 
-    private List<ObjectId> CollectObjectIds(
-        ShortestPathResult result)
+    private List<ObjectId> CollectObjectIds(ShortestPathResult result)
     {
-        var objectIds =
-            new HashSet<ObjectId>();
+        var objectIds = new HashSet<ObjectId>();
 
-        foreach (var vertexId
-                 in result.VertexIds)
+        foreach (var vertexId in result.VertexIds)
         {
-            if (_index.TryGetVertexObjectId(
-                    vertexId,
-                    out var objectId))
+            if (_index.TryGetVertexObjectId(vertexId, out var objectId))
             {
                 objectIds.Add(objectId);
             }
         }
 
-        foreach (var edgeId
-                 in result.EdgeIds)
+        foreach (var edgeId in result.EdgeIds)
         {
-            if (_index.TryGetEdgeObjectId(
-                    edgeId,
-                    out var objectId))
+            if (_index.TryGetEdgeObjectId(edgeId, out var objectId))
             {
                 objectIds.Add(objectId);
             }

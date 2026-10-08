@@ -1,7 +1,6 @@
 using GraphPlugin.Nanocad.Bootstrap;
 using HostMgd.ApplicationServices;
 using Teigha.Runtime;
-
 using NanoApplication = HostMgd.ApplicationServices.Application;
 
 namespace GraphPlugin.Nanocad;
@@ -10,52 +9,38 @@ public sealed class PluginEntry : IExtensionApplication
 {
     public void Initialize()
     {
-        var manager =
-            NanoApplication.DocumentManager;
+        var manager = NanoApplication.DocumentManager;
 
-        manager.DocumentCreated +=
-            OnDocumentCreated;
+        manager.DocumentCreated += OnDocumentCreated;
 
-        manager.DocumentToBeDestroyed +=
-            OnDocumentToBeDestroyed;
+        manager.DocumentToBeDestroyed += OnDocumentToBeDestroyed;
 
-        var document =
-            manager.MdiActiveDocument;
+        var document = manager.MdiActiveDocument;
 
         if (document is not null)
         {
-            PluginServices.InitializeDocument(
-                document);
+            PluginServices.InitializeDocument(document);
         }
     }
 
     public void Terminate()
     {
-        var manager =
-            NanoApplication.DocumentManager;
+        var manager = NanoApplication.DocumentManager;
 
-        manager.DocumentCreated -=
-            OnDocumentCreated;
+        manager.DocumentCreated -= OnDocumentCreated;
 
-        manager.DocumentToBeDestroyed -=
-            OnDocumentToBeDestroyed;
+        manager.DocumentToBeDestroyed -= OnDocumentToBeDestroyed;
 
         PluginServices.Shutdown();
     }
 
-    private static void OnDocumentCreated(
-        object sender,
-        DocumentCollectionEventArgs e)
+    private static void OnDocumentCreated(object sender, DocumentCollectionEventArgs e)
     {
-        PluginServices.InitializeDocument(
-            e.Document);
+        PluginServices.InitializeDocument(e.Document);
     }
 
-    private static void OnDocumentToBeDestroyed(
-        object sender,
-        DocumentCollectionEventArgs e)
+    private static void OnDocumentToBeDestroyed(object sender, DocumentCollectionEventArgs e)
     {
-        PluginServices.RemoveDocument(
-            e.Document);
+        PluginServices.RemoveDocument(e.Document);
     }
 }

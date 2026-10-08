@@ -15,11 +15,9 @@ internal static class CadColorMapper
             GraphColor.White => 7,
             GraphColor.Black => 7,
 
-            _ => 7
+            _ => 7,
         };
 
-        return Color.FromColorIndex(
-            ColorMethod.ByAci,
-            colorIndex);
+        return Color.FromColorIndex(ColorMethod.ByAci, colorIndex);
     }
 }

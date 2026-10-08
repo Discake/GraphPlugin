@@ -21,12 +21,10 @@ public sealed class NanoCadVertexRepository : IVertexRepository
         VertexEntityFactory factory,
         XRecordMetadataStore metadata,
         VertexEntityMapper mapper,
-        GraphEntityIndex index)
+        GraphEntityIndex index
+    )
     {
-        _document =
-            document ??
-            throw new ArgumentNullException(
-                nameof(document));
+        _document = document ?? throw new ArgumentNullException(nameof(document));
 
         _factory = factory;
         _metadata = metadata;
@@ -36,35 +34,22 @@ public sealed class NanoCadVertexRepository : IVertexRepository
 
     public void Add(GraphVertex vertex)
     {
-        var database =
-            _document.Database;
+        var database = _document.Database;
 
-        using var transaction =
-            database.TransactionManager.StartTransaction();
+        using var transaction = database.TransactionManager.StartTransaction();
 
-        var blockTable =
-            (BlockTable)transaction.GetObject(
-                database.BlockTableId,
-                OpenMode.ForRead);
+        var blockTable = (BlockTable)transaction.GetObject(database.BlockTableId, OpenMode.ForRead);
 
-        var modelSpace =
-            (BlockTableRecord)transaction.GetObject(
-                blockTable[BlockTableRecord.ModelSpace],
-                OpenMode.ForWrite);
+        var modelSpace = (BlockTableRecord)
+            transaction.GetObject(blockTable[BlockTableRecord.ModelSpace], OpenMode.ForWrite);
 
-        var entity =
-            _factory.Create(vertex);
+        var entity = _factory.Create(vertex);
 
         modelSpace.AppendEntity(entity);
 
-        transaction.AddNewlyCreatedDBObject(
-            entity,
-            true);
+        transaction.AddNewlyCreatedDBObject(entity, true);
 
-        _metadata.WriteVertex(
-            entity,
-            vertex,
-            transaction);
+        _metadata.WriteVertex(entity, vertex, transaction);
 
         var objectId = entity.ObjectId;
 
@@ -75,35 +60,23 @@ public sealed class NanoCadVertexRepository : IVertexRepository
 
     public GraphVertex? Get(Guid id)
     {
-        if (!_index.TryGetVertexObjectId(
-                id,
-                out var objectId))
+        if (!_index.TryGetVertexObjectId(id, out var objectId))
         {
             return null;
         }
 
-        var database =
-            _document.Database;
+        var database = _document.Database;
 
-        using var transaction =
-            database.TransactionManager.StartTransaction();
+        using var transaction = database.TransactionManager.StartTransaction();
 
-        var entity =
-            transaction.GetObject(
-                objectId,
-                OpenMode.ForRead)
-            as Entity;
+        var entity = transaction.GetObject(objectId, OpenMode.ForRead) as Entity;
 
-        if (entity is null ||
-            entity.IsErased)
+        if (entity is null || entity.IsErased)
         {
             return null;
         }
 
-        var vertex =
-            _mapper.ToDomain(
-                entity,
-                transaction);
+        var vertex = _mapper.ToDomain(entity, transaction);
 
         transaction.Commit();
 
@@ -112,39 +85,25 @@ public sealed class NanoCadVertexRepository : IVertexRepository
 
     public IReadOnlyCollection<GraphVertex> GetAll()
     {
-        var database =
-            _document.Database;
+        var database = _document.Database;
 
-        using var transaction =
-            database.TransactionManager.StartTransaction();
+        using var transaction = database.TransactionManager.StartTransaction();
 
-        var blockTable =
-            (BlockTable)transaction.GetObject(
-                database.BlockTableId,
-                OpenMode.ForRead);
+        var blockTable = (BlockTable)transaction.GetObject(database.BlockTableId, OpenMode.ForRead);
 
-        var modelSpace =
-            (BlockTableRecord)transaction.GetObject(
-                blockTable[BlockTableRecord.ModelSpace],
-                OpenMode.ForRead);
+        var modelSpace = (BlockTableRecord)
+            transaction.GetObject(blockTable[BlockTableRecord.ModelSpace], OpenMode.ForRead);
 
-        var result =
-            new List<GraphVertex>();
+        var result = new List<GraphVertex>();
 
         foreach (ObjectId objectId in modelSpace)
         {
-            var dbObject =
-                transaction.GetObject(
-                    objectId,
-                    OpenMode.ForRead);
+            var dbObject = transaction.GetObject(objectId, OpenMode.ForRead);
 
             if (dbObject is not Entity entity)
                 continue;
 
-            var vertex =
-                _mapper.ToDomain(
-                    entity,
-                    transaction);
+            var vertex = _mapper.ToDomain(entity, transaction);
 
             if (vertex is not null)
                 result.Add(vertex);
@@ -157,25 +116,16 @@ public sealed class NanoCadVertexRepository : IVertexRepository
 
     public void Delete(Guid id)
     {
-        if (!_index.TryGetVertexObjectId(
-                id,
-                out var objectId))
+        if (!_index.TryGetVertexObjectId(id, out var objectId))
         {
             return;
         }
 
         if (!objectId.IsErased)
         {
-            using var transaction =
-                _document.Database
-                    .TransactionManager
-                    .StartTransaction();
+            using var transaction = _document.Database.TransactionManager.StartTransaction();
 
-            var entity =
-                transaction.GetObject(
-                    objectId,
-                    OpenMode.ForWrite)
-                as Entity;
+            var entity = transaction.GetObject(objectId, OpenMode.ForWrite) as Entity;
 
             entity?.Erase();
 

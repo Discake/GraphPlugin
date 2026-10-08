@@ -6,21 +6,15 @@ namespace GraphPlugin.Nanocad.Persistence;
 
 public sealed class VertexAttachmentXRecordStore
 {
-    public const string RecordKey =
-        GraphMetadataKeys.VertexAttachmentsRecord;
+    public const string RecordKey = GraphMetadataKeys.VertexAttachmentsRecord;
 
-    private const int CurrentVersion =
-        GraphMetadataKeys.CurrentVertexAttachmentsVersion;
+    private const int CurrentVersion = GraphMetadataKeys.CurrentVertexAttachmentsVersion;
 
-    public IReadOnlyCollection<VertexAttachment> Read(
-        Entity entity,
-        Transaction transaction)
+    public IReadOnlyCollection<VertexAttachment> Read(Entity entity, Transaction transaction)
     {
-        ArgumentNullException.ThrowIfNull(
-            entity);
+        ArgumentNullException.ThrowIfNull(entity);
 
-        ArgumentNullException.ThrowIfNull(
-            transaction);
+        ArgumentNullException.ThrowIfNull(transaction);
 
         if (entity.ExtensionDictionary.IsNull)
         {
@@ -28,78 +22,55 @@ public sealed class VertexAttachmentXRecordStore
         }
 
         var dictionary =
-            transaction.GetObject(
-                entity.ExtensionDictionary,
-                OpenMode.ForRead)
-            as DBDictionary
-            ?? throw new InvalidOperationException(
-                "Entity extension dictionary could not be opened.");
+            transaction.GetObject(entity.ExtensionDictionary, OpenMode.ForRead) as DBDictionary
+            ?? throw new InvalidOperationException("Entity extension dictionary could not be opened.");
 
-        if (!dictionary.Contains(
-                RecordKey))
+        if (!dictionary.Contains(RecordKey))
         {
             return Array.Empty<VertexAttachment>();
         }
 
-        var xRecordId =
-            dictionary.GetAt(
-                RecordKey);
+        var xRecordId = dictionary.GetAt(RecordKey);
 
         var xRecord =
-            transaction.GetObject(
-                xRecordId,
-                OpenMode.ForRead)
-            as Xrecord
-            ?? throw new InvalidOperationException(
-                $"'{RecordKey}' is not an XRecord.");
+            transaction.GetObject(xRecordId, OpenMode.ForRead) as Xrecord
+            ?? throw new InvalidOperationException($"'{RecordKey}' is not an XRecord.");
 
-        using var data =
-            xRecord.Data;
+        using var data = xRecord.Data;
 
         if (data is null)
         {
             return Array.Empty<VertexAttachment>();
         }
 
-        var values =
-            data.AsArray();
+        var values = data.AsArray();
 
         if (values.Length < 2)
         {
-            throw new InvalidOperationException(
-                $"'{RecordKey}' contains invalid data.");
+            throw new InvalidOperationException($"'{RecordKey}' contains invalid data.");
         }
 
-        var version =
-            ReadInt32(
-                values[0],
-                "Version");
+        var version = ReadInt32(values[0], "Version");
 
         if (version != CurrentVersion)
         {
-            throw new InvalidOperationException(
-                $"Unsupported attachment metadata version: " +
-                $"{version}.");
+            throw new InvalidOperationException($"Unsupported attachment metadata version: " + $"{version}.");
         }
 
-        var count =
-            ReadInt32(
-                values[1],
-                "Count");
+        var count = ReadInt32(values[1], "Count");
 
         if (count < 0)
         {
-            throw new InvalidOperationException(
-                "Attachment count cannot be negative.");
+            throw new InvalidOperationException("Attachment count cannot be negative.");
         }
 
-        if (values.Length !=
-            count + 2)
+        if (values.Length != count + 2)
         {
             throw new InvalidOperationException(
-                $"Attachment XRecord is inconsistent. " +
-                $"Count is {count}, but " +
-                $"{values.Length - 2} paths are stored.");
+                $"Attachment XRecord is inconsistent. "
+                    + $"Count is {count}, but "
+                    + $"{values.Length - 2} paths are stored."
+            );
         }
 
         if (count == 0)
@@ -107,40 +78,25 @@ public sealed class VertexAttachmentXRecordStore
             return Array.Empty<VertexAttachment>();
         }
 
-        var result =
-            new List<VertexAttachment>(
-                count);
+        var result = new List<VertexAttachment>(count);
 
-        for (var i = 0;
-             i < count;
-             i++)
+        for (var i = 0; i < count; i++)
         {
-            var path =
-                ReadString(
-                    values[i + 2],
-                    $"Path[{i}]");
+            var path = ReadString(values[i + 2], $"Path[{i}]");
 
-            result.Add(
-                new VertexAttachment(
-                    path));
+            result.Add(new VertexAttachment(path));
         }
 
         return result;
     }
 
-    public void Write(
-        Entity entity,
-        Transaction transaction,
-        IReadOnlyCollection<VertexAttachment> attachments)
+    public void Write(Entity entity, Transaction transaction, IReadOnlyCollection<VertexAttachment> attachments)
     {
-        ArgumentNullException.ThrowIfNull(
-            entity);
+        ArgumentNullException.ThrowIfNull(entity);
 
-        ArgumentNullException.ThrowIfNull(
-            transaction);
+        ArgumentNullException.ThrowIfNull(transaction);
 
-        ArgumentNullException.ThrowIfNull(
-            attachments);
+        ArgumentNullException.ThrowIfNull(attachments);
 
         //
         // Repository должен передавать entity,
@@ -152,109 +108,64 @@ public sealed class VertexAttachmentXRecordStore
         }
 
         var dictionary =
-            transaction.GetObject(
-                entity.ExtensionDictionary,
-                OpenMode.ForWrite)
-            as DBDictionary
-            ?? throw new InvalidOperationException(
-                "Entity extension dictionary could not be opened.");
+            transaction.GetObject(entity.ExtensionDictionary, OpenMode.ForWrite) as DBDictionary
+            ?? throw new InvalidOperationException("Entity extension dictionary could not be opened.");
 
-        var values =
-            new List<TypedValue>(
-                attachments.Count + 2)
-            {
-                new TypedValue(
-                    (int)DxfCode.Int32,
-                    CurrentVersion),
-
-                new TypedValue(
-                    (int)DxfCode.Int32,
-                    attachments.Count)
-            };
-
-        foreach (var attachment in
-                 attachments)
+        var values = new List<TypedValue>(attachments.Count + 2)
         {
-            values.Add(
-                new TypedValue(
-                    (int)DxfCode.Text,
-                    attachment.Path));
+            new TypedValue((int)DxfCode.Int32, CurrentVersion),
+            new TypedValue((int)DxfCode.Int32, attachments.Count),
+        };
+
+        foreach (var attachment in attachments)
+        {
+            values.Add(new TypedValue((int)DxfCode.Text, attachment.Path));
         }
 
-        using var buffer =
-            new ResultBuffer(
-                values.ToArray());
+        using var buffer = new ResultBuffer(values.ToArray());
 
         Xrecord xRecord;
 
-        if (dictionary.Contains(
-                RecordKey))
+        if (dictionary.Contains(RecordKey))
         {
-            var xRecordId =
-                dictionary.GetAt(
-                    RecordKey);
+            var xRecordId = dictionary.GetAt(RecordKey);
 
             xRecord =
-                transaction.GetObject(
-                    xRecordId,
-                    OpenMode.ForWrite)
-                as Xrecord
-                ?? throw new InvalidOperationException(
-                    $"'{RecordKey}' is not an XRecord.");
+                transaction.GetObject(xRecordId, OpenMode.ForWrite) as Xrecord
+                ?? throw new InvalidOperationException($"'{RecordKey}' is not an XRecord.");
         }
         else
         {
-            xRecord =
-                new Xrecord();
+            xRecord = new Xrecord();
 
-            dictionary.SetAt(
-                RecordKey,
-                xRecord);
+            dictionary.SetAt(RecordKey, xRecord);
 
-            transaction
-                .AddNewlyCreatedDBObject(
-                    xRecord,
-                    true);
+            transaction.AddNewlyCreatedDBObject(xRecord, true);
         }
 
-        xRecord.Data =
-            buffer;
+        xRecord.Data = buffer;
     }
 
-    private static int ReadInt32(
-        TypedValue value,
-        string fieldName)
+    private static int ReadInt32(TypedValue value, string fieldName)
     {
-        if (value.TypeCode !=
-            (int)DxfCode.Int32)
+        if (value.TypeCode != (int)DxfCode.Int32)
         {
-            throw new InvalidOperationException(
-                $"Attachment field '{fieldName}' " +
-                $"has invalid DXF type.");
+            throw new InvalidOperationException($"Attachment field '{fieldName}' " + $"has invalid DXF type.");
         }
 
-        return Convert.ToInt32(
-            value.Value);
+        return Convert.ToInt32(value.Value);
     }
 
-    private static string ReadString(
-        TypedValue value,
-        string fieldName)
+    private static string ReadString(TypedValue value, string fieldName)
     {
-        if (value.TypeCode !=
-            (int)DxfCode.Text)
+        if (value.TypeCode != (int)DxfCode.Text)
         {
-            throw new InvalidOperationException(
-                $"Attachment field '{fieldName}' " +
-                $"has invalid DXF type.");
+            throw new InvalidOperationException($"Attachment field '{fieldName}' " + $"has invalid DXF type.");
         }
 
-        if (value.Value is not string text ||
-            string.IsNullOrWhiteSpace(text))
+        if (value.Value is not string text || string.IsNullOrWhiteSpace(text))
         {
-            throw new InvalidOperationException(
-                $"Attachment field '{fieldName}' " +
-                $"contains an invalid path.");
+            throw new InvalidOperationException($"Attachment field '{fieldName}' " + $"contains an invalid path.");
         }
 
         return text;

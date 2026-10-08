@@ -13,238 +13,155 @@ using namespace GraphPlugin::Native::Services;
 
 namespace
 {
-    void WriteManifest(
-        Database^ database,
-        Transaction^ transaction,
-        Guid vertexId,
-        String^ oldHandle,
-        String^ attachmentPath)
+void WriteManifest(
+    Database ^ database, Transaction ^ transaction, Guid vertexId, String ^ oldHandle, String ^ attachmentPath)
+{
+    DBDictionary ^ nod =
+        dynamic_cast<DBDictionary ^>(transaction->GetObject(database->NamedObjectsDictionaryId, OpenMode::ForWrite));
+
+    if (nod == nullptr)
     {
-        DBDictionary^ nod =
-            dynamic_cast<DBDictionary^>(
-                transaction->GetObject(
-                    database->NamedObjectsDictionaryId,
-                    OpenMode::ForWrite));
-
-        if (nod == nullptr)
-        {
-            throw gcnew InvalidOperationException(
-                "Named Objects Dictionary could not be opened.");
-        }
-
-        array<TypedValue>^ values =
-            gcnew array<TypedValue>(4);
-
-        values[0] = TypedValue(
-            static_cast<int>(DxfCode::Int32),
-            GraphPlugin::Native::Tests::NativeStagedTestSchema::Version);
-
-        values[1] = TypedValue(
-            static_cast<int>(DxfCode::Text),
-            vertexId.ToString("D"));
-
-        values[2] = TypedValue(
-            static_cast<int>(DxfCode::Text),
-            oldHandle);
-
-        values[3] = TypedValue(
-            static_cast<int>(DxfCode::Text),
-            attachmentPath);
-
-        Xrecord^ record = gcnew Xrecord();
-        record->Data = gcnew ResultBuffer(values);
-
-        nod->SetAt(
-            GraphPlugin::Native::Tests::NativeStagedTestSchema::StyleRecord,
-            record);
-
-        transaction->AddNewlyCreatedDBObject(
-            record,
-            true);
+        throw gcnew InvalidOperationException("Named Objects Dictionary could not be opened.");
     }
 
-    Guid ReadVertexId(
-        Database^ database,
-        Transaction^ transaction)
-    {
-        DBDictionary^ nod =
-            dynamic_cast<DBDictionary^>(
-                transaction->GetObject(
-                    database->NamedObjectsDictionaryId,
-                    OpenMode::ForRead));
+    array<TypedValue> ^ values = gcnew array<TypedValue>(4);
 
-        if (nod == nullptr)
-        {
-            throw gcnew InvalidOperationException(
-                "Named Objects Dictionary could not be opened.");
-        }
+    values[0] =
+        TypedValue(static_cast<int>(DxfCode::Int32), GraphPlugin::Native::Tests::NativeStagedTestSchema::Version);
 
-        if (!nod->Contains(
-                GraphPlugin::Native::Tests::NativeStagedTestSchema::StyleRecord))
-        {
-            throw gcnew InvalidOperationException(
-                "Style interop test was not prepared.");
-        }
+    values[1] = TypedValue(static_cast<int>(DxfCode::Text), vertexId.ToString("D"));
 
-        Xrecord^ record =
-            dynamic_cast<Xrecord^>(
-                transaction->GetObject(
-                    nod->GetAt(
-                        GraphPlugin::Native::Tests::NativeStagedTestSchema::StyleRecord),
-                    OpenMode::ForRead));
+    values[2] = TypedValue(static_cast<int>(DxfCode::Text), oldHandle);
 
-        if (record == nullptr || record->Data == nullptr)
-        {
-            throw gcnew InvalidOperationException(
-                "Style interop test manifest is invalid.");
-        }
+    values[3] = TypedValue(static_cast<int>(DxfCode::Text), attachmentPath);
 
-        array<TypedValue>^ values =
-            record->Data->AsArray();
+    Xrecord ^ record = gcnew Xrecord();
+    record->Data = gcnew ResultBuffer(values);
 
-        if (values->Length < 4)
-        {
-            throw gcnew InvalidOperationException(
-                "Style interop test manifest contains too few values.");
-        }
+    nod->SetAt(GraphPlugin::Native::Tests::NativeStagedTestSchema::StyleRecord, record);
 
-        int version = Convert::ToInt32(values[0].Value);
-
-        if (version != GraphPlugin::Native::Tests::NativeStagedTestSchema::Version)
-        {
-            throw gcnew InvalidOperationException(
-                "Unsupported style interop test manifest version.");
-        }
-
-        Guid vertexId;
-
-        if (!Guid::TryParse(
-                safe_cast<String^>(values[1].Value),
-                vertexId))
-        {
-            throw gcnew InvalidOperationException(
-                "Style interop test contains invalid VertexId.");
-        }
-
-        return vertexId;
-    }
+    transaction->AddNewlyCreatedDBObject(record, true);
 }
+
+Guid ReadVertexId(Database ^ database, Transaction ^ transaction)
+{
+    DBDictionary ^ nod =
+        dynamic_cast<DBDictionary ^>(transaction->GetObject(database->NamedObjectsDictionaryId, OpenMode::ForRead));
+
+    if (nod == nullptr)
+    {
+        throw gcnew InvalidOperationException("Named Objects Dictionary could not be opened.");
+    }
+
+    if (!nod->Contains(GraphPlugin::Native::Tests::NativeStagedTestSchema::StyleRecord))
+    {
+        throw gcnew InvalidOperationException("Style interop test was not prepared.");
+    }
+
+    Xrecord ^ record = dynamic_cast<Xrecord ^>(transaction->GetObject(
+        nod->GetAt(GraphPlugin::Native::Tests::NativeStagedTestSchema::StyleRecord), OpenMode::ForRead));
+
+    if (record == nullptr || record->Data == nullptr)
+    {
+        throw gcnew InvalidOperationException("Style interop test manifest is invalid.");
+    }
+
+    array<TypedValue> ^ values = record->Data->AsArray();
+
+    if (values->Length < 4)
+    {
+        throw gcnew InvalidOperationException("Style interop test manifest contains too few values.");
+    }
+
+    int version = Convert::ToInt32(values[0].Value);
+
+    if (version != GraphPlugin::Native::Tests::NativeStagedTestSchema::Version)
+    {
+        throw gcnew InvalidOperationException("Unsupported style interop test manifest version.");
+    }
+
+    Guid vertexId;
+
+    if (!Guid::TryParse(safe_cast<String ^>(values[1].Value), vertexId))
+    {
+        throw gcnew InvalidOperationException("Style interop test contains invalid VertexId.");
+    }
+
+    return vertexId;
+}
+} // namespace
 
 namespace GraphPlugin::Native::Tests
 {
-    void StyleInteropScenario::Prepare(Document^ document)
+void StyleInteropScenario::Prepare(Document ^ document)
+{
+    ArgumentNullException::ThrowIfNull(document);
+
+    Editor ^ editor = document->Editor;
+    Transaction ^ transaction = document->Database->TransactionManager->StartTransaction();
+
+    try
     {
-        ArgumentNullException::ThrowIfNull(document);
+        BlockTableRecord ^ modelSpace =
+            NativeTestDwgHelpers::GetModelSpace(document->Database, transaction, OpenMode::ForWrite);
 
-        Editor^ editor = document->Editor;
-        Transaction^ transaction =
-            document->Database
-            ->TransactionManager
-            ->StartTransaction();
+        Guid vertexId = Guid::NewGuid();
 
-        try
-        {
-            BlockTableRecord^ modelSpace =
-                NativeTestDwgHelpers::GetModelSpace(
-                    document->Database,
-                    transaction,
-                    OpenMode::ForWrite);
+        Circle ^ vertex =
+            NativeTestDwgHelpers::CreateVertex(transaction, modelSpace, vertexId, Point3d(110000.0, 110000.0, 0.0));
 
-            Guid vertexId = Guid::NewGuid();
+        String ^ attachmentPath = "Files\\cpp-style-interop.pdf";
 
-            Circle^ vertex =
-                NativeTestDwgHelpers::CreateVertex(
-                    transaction,
-                    modelSpace,
-                    vertexId,
-                    Point3d(
-                        110000.0,
-                        110000.0,
-                        0.0));
+        NativeTestDwgHelpers::WriteAttachment(vertex, transaction, attachmentPath);
 
-            String^ attachmentPath =
-                "Files\\cpp-style-interop.pdf";
+        WriteManifest(document->Database, transaction, vertexId, vertex->Handle.ToString(), attachmentPath);
 
-            NativeTestDwgHelpers::WriteAttachment(
-                vertex,
-                transaction,
-                attachmentPath);
+        transaction->Commit();
 
-            WriteManifest(
-                document->Database,
-                transaction,
-                vertexId,
-                vertex->Handle.ToString(),
-                attachmentPath);
+        editor->WriteMessage("\n[PREPARED] C++ style interop test.");
 
-            transaction->Commit();
+        editor->WriteMessage("\nVertexId: {0}", vertexId);
 
-            editor->WriteMessage(
-                "\n[PREPARED] C++ style interop test.");
-
-            editor->WriteMessage(
-                "\nVertexId: {0}",
-                vertexId);
-
-            editor->WriteMessage(
-                "\nNext: GRAPHCPP_EXECUTE_STYLE_INTEROP_TEST "
-                "(normally driven by GRAPHTESTS).");
-        }
-        finally
-        {
-            delete transaction;
-        }
+        editor->WriteMessage("\nNext: GRAPHCPP_EXECUTE_STYLE_INTEROP_TEST "
+                             "(normally driven by GRAPHTESTS).");
     }
-
-    void StyleInteropScenario::Execute(Document^ document)
+    finally
     {
-        ArgumentNullException::ThrowIfNull(document);
-
-        Editor^ editor = document->Editor;
-        Transaction^ transaction =
-            document->Database
-            ->TransactionManager
-            ->StartTransaction();
-
-        try
-        {
-            Guid vertexId =
-                ReadVertexId(
-                    document->Database,
-                    transaction);
-
-            ObjectId vertexObjectId =
-                NativeTestDwgHelpers::FindVertex(
-                    document->Database,
-                    transaction,
-                    vertexId);
-
-            if (vertexObjectId.IsNull)
-            {
-                throw gcnew InvalidOperationException(
-                    "Test vertex was not found.");
-            }
-
-            NativeVertexStyleService^ service =
-                gcnew NativeVertexStyleService();
-
-            service->ChangeStyle(
-                document->Database,
-                transaction,
-                vertexObjectId,
-                Persistence::NativeVertexShape::Triangle);
-
-            transaction->Commit();
-
-            editor->WriteMessage(
-                "\n[EXECUTED] Circle -> Triangle.");
-
-            editor->WriteMessage(
-                "\nC# verification is performed by GRAPHTESTS.");
-        }
-        finally
-        {
-            delete transaction;
-        }
+        delete transaction;
     }
 }
+
+void StyleInteropScenario::Execute(Document ^ document)
+{
+    ArgumentNullException::ThrowIfNull(document);
+
+    Editor ^ editor = document->Editor;
+    Transaction ^ transaction = document->Database->TransactionManager->StartTransaction();
+
+    try
+    {
+        Guid vertexId = ReadVertexId(document->Database, transaction);
+
+        ObjectId vertexObjectId = NativeTestDwgHelpers::FindVertex(document->Database, transaction, vertexId);
+
+        if (vertexObjectId.IsNull)
+        {
+            throw gcnew InvalidOperationException("Test vertex was not found.");
+        }
+
+        NativeVertexStyleService ^ service = gcnew NativeVertexStyleService();
+
+        service->ChangeStyle(document->Database, transaction, vertexObjectId, Persistence::NativeVertexShape::Triangle);
+
+        transaction->Commit();
+
+        editor->WriteMessage("\n[EXECUTED] Circle -> Triangle.");
+
+        editor->WriteMessage("\nC# verification is performed by GRAPHTESTS.");
+    }
+    finally
+    {
+        delete transaction;
+    }
+}
+} // namespace GraphPlugin::Native::Tests

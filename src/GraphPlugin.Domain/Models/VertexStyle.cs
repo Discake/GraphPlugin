@@ -6,8 +6,7 @@ public sealed class VertexStyle
     public GraphColor Color { get; set; }
     public double Size { get; set; }
 
-    public static VertexStyle DefaultFor(
-        VertexShape shape)
+    public static VertexStyle DefaultFor(VertexShape shape)
     {
         return new VertexStyle
         {
@@ -15,18 +14,14 @@ public sealed class VertexStyle
 
             Color = shape switch
             {
-                VertexShape.Circle =>
-                    GraphColor.Blue,
+                VertexShape.Circle => GraphColor.Blue,
 
-                VertexShape.Triangle =>
-                    GraphColor.Red,
+                VertexShape.Triangle => GraphColor.Red,
 
-                _ =>
-                    throw new ArgumentOutOfRangeException(
-                        nameof(shape))
+                _ => throw new ArgumentOutOfRangeException(nameof(shape)),
             },
 
-            Size = 10.0
+            Size = 10.0,
         };
     }
 }

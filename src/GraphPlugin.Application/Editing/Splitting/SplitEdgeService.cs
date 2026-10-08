@@ -9,71 +9,35 @@ public sealed class SplitEdgeService
     private readonly IVertexRepository _vertices;
     private readonly IEdgeRepository _edges;
 
-    public SplitEdgeService(
-        IVertexRepository vertices,
-        IEdgeRepository edges)
+    public SplitEdgeService(IVertexRepository vertices, IEdgeRepository edges)
     {
-        _vertices =
-            vertices ??
-            throw new ArgumentNullException(
-                nameof(vertices));
+        _vertices = vertices ?? throw new ArgumentNullException(nameof(vertices));
 
-        _edges =
-            edges ??
-            throw new ArgumentNullException(
-                nameof(edges));
+        _edges = edges ?? throw new ArgumentNullException(nameof(edges));
     }
 
-    public SplitEdgeResult Split(
-        Guid edgeId,
-        Point2 splitPoint,
-        VertexShape shape =
-            VertexShape.Circle)
+    public SplitEdgeResult Split(Guid edgeId, Point2 splitPoint, VertexShape shape = VertexShape.Circle)
     {
-        ValidatePoint(
-            splitPoint);
+        ValidatePoint(splitPoint);
 
         var originalEdge =
-            _edges.Get(edgeId)
-            ?? throw new InvalidOperationException(
-                $"Edge '{edgeId}' does not exist.");
+            _edges.Get(edgeId) ?? throw new InvalidOperationException($"Edge '{edgeId}' does not exist.");
 
         var vertexA =
-            _vertices.Get(
-                originalEdge.VertexAId)
-            ?? throw new InvalidOperationException(
-                $"Vertex '{originalEdge.VertexAId}' does not exist.");
+            _vertices.Get(originalEdge.VertexAId)
+            ?? throw new InvalidOperationException($"Vertex '{originalEdge.VertexAId}' does not exist.");
 
         var vertexB =
-            _vertices.Get(
-                originalEdge.VertexBId)
-            ?? throw new InvalidOperationException(
-                $"Vertex '{originalEdge.VertexBId}' does not exist.");
+            _vertices.Get(originalEdge.VertexBId)
+            ?? throw new InvalidOperationException($"Vertex '{originalEdge.VertexBId}' does not exist.");
 
-        var routeSplit =
-            EdgeRouteGeometry.Split(
-                vertexA.Position,
-                vertexB.Position,
-                originalEdge.Route,
-                splitPoint);
+        var routeSplit = EdgeRouteGeometry.Split(vertexA.Position, vertexB.Position, originalEdge.Route, splitPoint);
 
-        var newVertex =
-            new GraphVertex(
-                Guid.NewGuid(),
-                routeSplit.SplitPoint,
-                VertexStyle.DefaultFor(shape));
+        var newVertex = new GraphVertex(Guid.NewGuid(), routeSplit.SplitPoint, VertexStyle.DefaultFor(shape));
 
-        var edgeA =
-            GraphEdge.Create(
-                vertexA.Id,
-                newVertex.Id,
-                routeSplit.LeftRoute);
+        var edgeA = GraphEdge.Create(vertexA.Id, newVertex.Id, routeSplit.LeftRoute);
 
-        var edgeB =
-            GraphEdge.Create(
-                newVertex.Id,
-                vertexB.Id,
-                routeSplit.RightRoute);
+        var edgeB = GraphEdge.Create(newVertex.Id, vertexB.Id, routeSplit.RightRoute);
 
         var vertexAdded = false;
         var edgeAAdded = false;
@@ -90,14 +54,9 @@ public sealed class SplitEdgeService
             _edges.Add(edgeB);
             edgeBAdded = true;
 
-            _edges.Delete(
-                originalEdge.Id);
+            _edges.Delete(originalEdge.Id);
 
-            return new SplitEdgeResult(
-                originalEdge,
-                newVertex,
-                edgeA,
-                edgeB);
+            return new SplitEdgeResult(originalEdge, newVertex, edgeA, edgeB);
         }
         catch
         {
@@ -114,20 +73,15 @@ public sealed class SplitEdgeService
         }
     }
 
-    private static void ValidatePoint(
-        Point2 point)
+    private static void ValidatePoint(Point2 point)
     {
-        if (!double.IsFinite(point.X) ||
-            !double.IsFinite(point.Y))
+        if (!double.IsFinite(point.X) || !double.IsFinite(point.Y))
         {
-            throw new ArgumentException(
-                "Split point must contain finite coordinates.",
-                nameof(point));
+            throw new ArgumentException("Split point must contain finite coordinates.", nameof(point));
         }
     }
 
-    private void TryDeleteEdge(
-        Guid edgeId)
+    private void TryDeleteEdge(Guid edgeId)
     {
         try
         {
@@ -139,8 +93,7 @@ public sealed class SplitEdgeService
         }
     }
 
-    private void TryDeleteVertex(
-        Guid vertexId)
+    private void TryDeleteVertex(Guid vertexId)
     {
         try
         {

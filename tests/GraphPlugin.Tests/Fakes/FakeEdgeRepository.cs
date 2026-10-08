@@ -21,9 +21,7 @@ public sealed class FakeEdgeRepository : IEdgeRepository
 
     public IReadOnlyCollection<GraphEdge> GetByVertex(Guid vertexId)
     {
-        return _edges.Values
-            .Where(edge => edge.IsIncidentTo(vertexId))
-            .ToArray();
+        return _edges.Values.Where(edge => edge.IsIncidentTo(vertexId)).ToArray();
     }
 
     public void Add(GraphEdge edge)
@@ -33,18 +31,14 @@ public sealed class FakeEdgeRepository : IEdgeRepository
 
     public void Update(GraphEdge edge)
     {
-        ArgumentNullException.ThrowIfNull(
-            edge);
+        ArgumentNullException.ThrowIfNull(edge);
 
-        if (!_edges.ContainsKey(
-                edge.Id))
+        if (!_edges.ContainsKey(edge.Id))
         {
-            throw new InvalidOperationException(
-                $"Edge '{edge.Id}' does not exist.");
+            throw new InvalidOperationException($"Edge '{edge.Id}' does not exist.");
         }
 
-        _edges[edge.Id] =
-            edge;
+        _edges[edge.Id] = edge;
     }
 
     public void Delete(Guid id)

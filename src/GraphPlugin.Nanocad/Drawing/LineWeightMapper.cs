@@ -29,27 +29,19 @@ public static class LineWeightMapper
         140,
         158,
         200,
-        211
+        211,
     };
 
-    public static LineWeight ToCadLineWeight(
-        double millimeters)
+    public static LineWeight ToCadLineWeight(double millimeters)
     {
         if (millimeters < 0)
         {
-            throw new ArgumentOutOfRangeException(
-                nameof(millimeters));
+            throw new ArgumentOutOfRangeException(nameof(millimeters));
         }
 
-        int requested =
-            (int)Math.Round(
-                millimeters * 100.0);
+        int requested = (int)Math.Round(millimeters * 100.0);
 
-        int nearest =
-            SupportedWeights
-                .OrderBy(value =>
-                    Math.Abs(value - requested))
-                .First();
+        int nearest = SupportedWeights.OrderBy(value => Math.Abs(value - requested)).First();
 
         return (LineWeight)nearest;
     }

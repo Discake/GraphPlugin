@@ -35,8 +35,7 @@ public sealed class EdgeServiceTests
 
         var service = new EdgeService(vertices, edges);
 
-        Assert.Throws<InvalidOperationException>(() =>
-            service.CreateEdge(Guid.NewGuid(), vertexB.Id));
+        Assert.Throws<InvalidOperationException>(() => service.CreateEdge(Guid.NewGuid(), vertexB.Id));
 
         Assert.Equal(0, edges.Count);
     }
@@ -51,8 +50,7 @@ public sealed class EdgeServiceTests
 
         var service = new EdgeService(vertices, edges);
 
-        Assert.Throws<InvalidOperationException>(() =>
-            service.CreateEdge(vertexA.Id, Guid.NewGuid()));
+        Assert.Throws<InvalidOperationException>(() => service.CreateEdge(vertexA.Id, Guid.NewGuid()));
 
         Assert.Equal(0, edges.Count);
     }
@@ -67,8 +65,7 @@ public sealed class EdgeServiceTests
 
         var service = new EdgeService(vertices, edges);
 
-        Assert.Throws<ArgumentException>(() =>
-            service.CreateEdge(vertex.Id, vertex.Id));
+        Assert.Throws<ArgumentException>(() => service.CreateEdge(vertex.Id, vertex.Id));
 
         Assert.Equal(0, edges.Count);
     }

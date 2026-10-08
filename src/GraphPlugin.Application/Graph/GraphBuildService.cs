@@ -8,35 +8,20 @@ public sealed class GraphBuildService
     private readonly EdgeService _edgeService;
     private readonly IEdgeRepository _edges;
 
-    public GraphVertex? CurrentVertex
+    public GraphVertex? CurrentVertex { get; private set; }
+
+    public bool IsActive => CurrentVertex is not null;
+
+    public GraphBuildService(EdgeService edgeService, IEdgeRepository edges)
     {
-        get;
-        private set;
+        _edgeService = edgeService ?? throw new ArgumentNullException(nameof(edgeService));
+
+        _edges = edges ?? throw new ArgumentNullException(nameof(edges));
     }
 
-    public bool IsActive =>
-        CurrentVertex is not null;
-
-    public GraphBuildService(
-        EdgeService edgeService,
-        IEdgeRepository edges)
+    public GraphEdge? AdvanceTo(GraphVertex vertex)
     {
-        _edgeService =
-            edgeService ??
-            throw new ArgumentNullException(
-                nameof(edgeService));
-
-        _edges =
-            edges ??
-            throw new ArgumentNullException(
-                nameof(edges));
-    }
-
-    public GraphEdge? AdvanceTo(
-        GraphVertex vertex)
-    {
-        ArgumentNullException.ThrowIfNull(
-            vertex);
+        ArgumentNullException.ThrowIfNull(vertex);
 
         if (CurrentVertex is null)
         {
@@ -47,18 +32,13 @@ public sealed class GraphBuildService
         if (CurrentVertex.Id == vertex.Id)
             return null;
 
-        if (AreConnected(
-                CurrentVertex.Id,
-                vertex.Id))
+        if (AreConnected(CurrentVertex.Id, vertex.Id))
         {
             CurrentVertex = vertex;
             return null;
         }
 
-        var edge =
-            _edgeService.CreateEdge(
-                CurrentVertex.Id,
-                vertex.Id);
+        var edge = _edgeService.CreateEdge(CurrentVertex.Id, vertex.Id);
 
         CurrentVertex = vertex;
 
@@ -70,17 +50,10 @@ public sealed class GraphBuildService
         CurrentVertex = null;
     }
 
-    private bool AreConnected(
-        Guid vertexAId,
-        Guid vertexBId)
+    private bool AreConnected(Guid vertexAId, Guid vertexBId)
     {
-        var incidentEdges =
-            _edges.GetByVertex(
-                vertexAId);
+        var incidentEdges = _edges.GetByVertex(vertexAId);
 
-        return incidentEdges.Any(
-            edge =>
-                edge.IsIncidentTo(
-                    vertexBId));
+        return incidentEdges.Any(edge => edge.IsIncidentTo(vertexBId));
     }
 }

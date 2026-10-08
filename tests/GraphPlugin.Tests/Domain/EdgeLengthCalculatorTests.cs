@@ -10,247 +10,114 @@ public sealed class EdgeLengthCalculatorTests
     [Fact]
     public void Calculate_ReturnsGeometricDistance()
     {
+        var a = GraphVertex.Create(new Point2(0, 0));
 
-        var a =
-            GraphVertex.Create(
-                new Point2(0, 0));
+        var b = GraphVertex.Create(new Point2(3, 4));
 
-        var b =
-            GraphVertex.Create(
-                new Point2(3, 4));
+        var edge = GraphEdge.Create(a.Id, b.Id);
 
-        var edge =
-            GraphEdge.Create(
-                a.Id,
-                b.Id);
+        var calculator = new EdgeLengthCalculator();
 
-        var calculator =
-            new EdgeLengthCalculator();
+        var length = calculator.Calculate(edge, a, b);
 
-        var length =
-            calculator.Calculate(
-                edge,
-                a,
-                b);
-
-        Assert.Equal(
-            5.0,
-            length,
-            6);
+        Assert.Equal(5.0, length, 6);
     }
 
     [Fact]
     public void Calculate_UsesCurrentVertexPositions()
     {
-        var a =
-            GraphVertex.Create(
-                new Point2(0, 0));
+        var a = GraphVertex.Create(new Point2(0, 0));
 
-        var b =
-            GraphVertex.Create(
-                new Point2(3, 4));
+        var b = GraphVertex.Create(new Point2(3, 4));
 
-        var edge =
-            GraphEdge.Create(
-                a.Id,
-                b.Id);
+        var edge = GraphEdge.Create(a.Id, b.Id);
 
-        var calculator =
-            new EdgeLengthCalculator();
+        var calculator = new EdgeLengthCalculator();
 
-        Assert.Equal(
-            5.0,
-            calculator.Calculate(
-                edge,
-                a,
-                b),
-            6);
+        Assert.Equal(5.0, calculator.Calculate(edge, a, b), 6);
 
-        b.MoveTo(
-            new Point2(6, 8));
+        b.MoveTo(new Point2(6, 8));
 
-        Assert.Equal(
-            10.0,
-            calculator.Calculate(
-                edge, a, b),
-            6);
+        Assert.Equal(10.0, calculator.Calculate(edge, a, b), 6);
     }
 
     [Fact]
     public void Calculate_WithCurveSummsLength()
     {
-        var a =
-            GraphVertex.Create(
-                new Point2(0, 0));
+        var a = GraphVertex.Create(new Point2(0, 0));
 
-        var b =
-            GraphVertex.Create(
-                new Point2(10, 0));
+        var b = GraphVertex.Create(new Point2(10, 0));
 
-        var edge =
-            GraphEdge.Create(
-                a.Id,
-                b.Id,
-                new EdgeRoute(new[] 
-                {
-                    new Point2(0, 10),
-                    new Point2(10, 10) 
-                }));
+        var edge = GraphEdge.Create(a.Id, b.Id, new EdgeRoute(new[] { new Point2(0, 10), new Point2(10, 10) }));
 
-        var calculator =
-            new EdgeLengthCalculator();
+        var calculator = new EdgeLengthCalculator();
 
-        Assert.Equal(
-            30.0,
-            calculator.Calculate(
-                edge, a, b),
-            6);
+        Assert.Equal(30.0, calculator.Calculate(edge, a, b), 6);
     }
 
     [Fact]
     public void Calculate_StraightEdge_ReturnsDirectDistance()
     {
-        var a =
-            GraphVertex.Create(
-                new Point2(0, 0));
+        var a = GraphVertex.Create(new Point2(0, 0));
 
-        var b =
-            GraphVertex.Create(
-                new Point2(10, 0));
+        var b = GraphVertex.Create(new Point2(10, 0));
 
-        var edge =
-            GraphEdge.Create(
-                a.Id,
-                b.Id);
+        var edge = GraphEdge.Create(a.Id, b.Id);
 
-        var calculator =
-            new EdgeLengthCalculator();
+        var calculator = new EdgeLengthCalculator();
 
-        var length =
-            calculator.Calculate(
-                edge,
-                a,
-                b);
+        var length = calculator.Calculate(edge, a, b);
 
-        Assert.Equal(
-            10,
-            length,
-            6);
+        Assert.Equal(10, length, 6);
     }
 
     [Fact]
     public void Calculate_EdgeWithOneBend_ReturnsPolylineLength()
     {
-        var a =
-            GraphVertex.Create(
-                new Point2(0, 0));
+        var a = GraphVertex.Create(new Point2(0, 0));
 
-        var b =
-            GraphVertex.Create(
-                new Point2(10, 10));
+        var b = GraphVertex.Create(new Point2(10, 10));
 
-        var edge =
-            GraphEdge.Create(
-                a.Id,
-                b.Id,
-                new EdgeRoute(
-                    new[]
-                    {
-                    new Point2(0, 10)
-                    }));
+        var edge = GraphEdge.Create(a.Id, b.Id, new EdgeRoute(new[] { new Point2(0, 10) }));
 
-        var calculator =
-            new EdgeLengthCalculator();
+        var calculator = new EdgeLengthCalculator();
 
-        var length =
-            calculator.Calculate(
-                edge,
-                a,
-                b);
+        var length = calculator.Calculate(edge, a, b);
 
-        Assert.Equal(
-            20,
-            length,
-            6);
+        Assert.Equal(20, length, 6);
     }
 
     [Fact]
     public void Calculate_EdgeWithSeveralBends_ReturnsSumOfSegments()
     {
-        var a =
-            GraphVertex.Create(
-                new Point2(0, 0));
+        var a = GraphVertex.Create(new Point2(0, 0));
 
-        var b =
-            GraphVertex.Create(
-                new Point2(10, 0));
+        var b = GraphVertex.Create(new Point2(10, 0));
 
-        var edge =
-            GraphEdge.Create(
-                a.Id,
-                b.Id,
-                new EdgeRoute(
-                    new[]
-                    {
-                    new Point2(0, 10),
-                    new Point2(10, 10)
-                    }));
+        var edge = GraphEdge.Create(a.Id, b.Id, new EdgeRoute(new[] { new Point2(0, 10), new Point2(10, 10) }));
 
-        var calculator =
-            new EdgeLengthCalculator();
+        var calculator = new EdgeLengthCalculator();
 
-        var length =
-            calculator.Calculate(
-                edge,
-                a,
-                b);
+        var length = calculator.Calculate(edge, a, b);
 
-        Assert.Equal(
-            30,
-            length,
-            6);
+        Assert.Equal(30, length, 6);
     }
 
     [Fact]
     public void Calculate_ReversedEndpoints_ReturnsSameLength()
     {
-        var a =
-            GraphVertex.Create(
-                new Point2(0, 0));
+        var a = GraphVertex.Create(new Point2(0, 0));
 
-        var b =
-            GraphVertex.Create(
-                new Point2(10, 0));
+        var b = GraphVertex.Create(new Point2(10, 0));
 
-        var edge =
-            GraphEdge.Create(
-                a.Id,
-                b.Id,
-                new EdgeRoute(
-                    new[]
-                    {
-                    new Point2(0, 10),
-                    new Point2(10, 10)
-                    }));
+        var edge = GraphEdge.Create(a.Id, b.Id, new EdgeRoute(new[] { new Point2(0, 10), new Point2(10, 10) }));
 
-        var calculator =
-            new EdgeLengthCalculator();
+        var calculator = new EdgeLengthCalculator();
 
-        var forward =
-            calculator.Calculate(
-                edge,
-                a,
-                b);
+        var forward = calculator.Calculate(edge, a, b);
 
-        var backward =
-            calculator.Calculate(
-                edge,
-                b,
-                a);
+        var backward = calculator.Calculate(edge, b, a);
 
-        Assert.Equal(
-            forward,
-            backward,
-            6);
+        Assert.Equal(forward, backward, 6);
     }
 }

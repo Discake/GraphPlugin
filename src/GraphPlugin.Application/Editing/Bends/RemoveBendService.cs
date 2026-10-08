@@ -7,62 +7,39 @@ public sealed class RemoveBendService
 {
     private readonly IEdgeRepository _edges;
 
-    public RemoveBendService(
-        IEdgeRepository edges)
+    public RemoveBendService(IEdgeRepository edges)
     {
-        _edges =
-            edges ??
-            throw new ArgumentNullException(
-                nameof(edges));
+        _edges = edges ?? throw new ArgumentNullException(nameof(edges));
     }
 
-    public RemoveBendResult Remove(
-        Guid edgeId,
-        int bendIndex)
+    public RemoveBendResult Remove(Guid edgeId, int bendIndex)
     {
-        var edge =
-            _edges.Get(edgeId)
-            ?? throw new InvalidOperationException(
-                $"Edge '{edgeId}' does not exist.");
+        var edge = _edges.Get(edgeId) ?? throw new InvalidOperationException($"Edge '{edgeId}' does not exist.");
 
-        if (bendIndex < 0 ||
-            bendIndex >= edge.Route.Count)
+        if (bendIndex < 0 || bendIndex >= edge.Route.Count)
         {
-            throw new ArgumentOutOfRangeException(
-                nameof(bendIndex));
+            throw new ArgumentOutOfRangeException(nameof(bendIndex));
         }
 
-        var removedPoint =
-            edge.Route
-                .IntermediatePoints[
-                    bendIndex];
+        var removedPoint = edge.Route.IntermediatePoints[bendIndex];
 
-        var originalRoute =
-            edge.Route;
+        var originalRoute = edge.Route;
 
-        var updatedRoute =
-            originalRoute.RemovePoint(
-                bendIndex);
+        var updatedRoute = originalRoute.RemovePoint(bendIndex);
 
-        edge.ChangeRoute(
-            updatedRoute);
+        edge.ChangeRoute(updatedRoute);
 
         try
         {
-            _edges.Update(
-                edge);
+            _edges.Update(edge);
         }
         catch
         {
-            edge.ChangeRoute(
-                originalRoute);
+            edge.ChangeRoute(originalRoute);
 
             throw;
         }
 
-        return new RemoveBendResult(
-            edge,
-            bendIndex,
-            removedPoint);
+        return new RemoveBendResult(edge, bendIndex, removedPoint);
     }
 }

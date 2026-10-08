@@ -6,21 +6,13 @@ public sealed class GraphSettings
 
     public GraphSettings(EdgeStyle edgeStyle)
     {
-        EdgeStyle =
-            edgeStyle ??
-            throw new ArgumentNullException(
-                nameof(edgeStyle));
+        EdgeStyle = edgeStyle ?? throw new ArgumentNullException(nameof(edgeStyle));
     }
 
-    public static GraphSettings Default =>
-        new(EdgeStyle.Default);
+    public static GraphSettings Default => new(EdgeStyle.Default);
 
-    public void ChangeEdgeStyle(
-        EdgeStyle style)
+    public void ChangeEdgeStyle(EdgeStyle style)
     {
-        EdgeStyle =
-            style ??
-            throw new ArgumentNullException(
-                nameof(style));
+        EdgeStyle = style ?? throw new ArgumentNullException(nameof(style));
     }
 }

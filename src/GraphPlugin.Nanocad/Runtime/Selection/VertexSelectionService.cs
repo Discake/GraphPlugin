@@ -1,10 +1,7 @@
 ﻿using GraphPlugin.Domain.Models;
 using GraphPlugin.Nanocad.Persistence;
-
-using NanoApplication =
-    HostMgd.ApplicationServices.Application;
-
 using Teigha.DatabaseServices;
+using NanoApplication = HostMgd.ApplicationServices.Application;
 
 namespace GraphPlugin.Nanocad.Runtime;
 
@@ -12,37 +9,25 @@ public sealed class VertexSelectionService
 {
     private readonly VertexEntityMapper _mapper;
 
-    public VertexSelectionService(
-        VertexEntityMapper mapper)
+    public VertexSelectionService(VertexEntityMapper mapper)
     {
         _mapper = mapper;
     }
 
-    public GraphVertex? ReadVertex(
-        ObjectId objectId)
+    public GraphVertex? ReadVertex(ObjectId objectId)
     {
-        var document =
-            NanoApplication.DocumentManager.MdiActiveDocument;
+        var document = NanoApplication.DocumentManager.MdiActiveDocument;
 
-        var database =
-            document.Database;
+        var database = document.Database;
 
-        using var transaction =
-            database.TransactionManager.StartTransaction();
+        using var transaction = database.TransactionManager.StartTransaction();
 
-        var entity =
-            transaction.GetObject(
-                objectId,
-                OpenMode.ForRead)
-            as Entity;
+        var entity = transaction.GetObject(objectId, OpenMode.ForRead) as Entity;
 
         if (entity is null)
             return null;
 
-        var vertex =
-            _mapper.ToDomain(
-                entity,
-                transaction);
+        var vertex = _mapper.ToDomain(entity, transaction);
 
         transaction.Commit();
 

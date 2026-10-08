@@ -3,8 +3,4 @@ using GraphPlugin.Domain.Models;
 
 namespace GraphPlugin.Application.Editing.Bends;
 
-public sealed record MoveBendResult(
-    GraphEdge Edge,
-    int BendIndex,
-    Point2 OldPosition,
-    Point2 NewPosition);
+public sealed record MoveBendResult(GraphEdge Edge, int BendIndex, Point2 OldPosition, Point2 NewPosition);

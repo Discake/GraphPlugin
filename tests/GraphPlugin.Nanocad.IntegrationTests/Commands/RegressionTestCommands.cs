@@ -4,18 +4,15 @@ using GraphPlugin.Nanocad.Runtime;
 using HostMgd.ApplicationServices;
 using Teigha.DatabaseServices;
 using Teigha.Runtime;
-
 using NanoApplication = HostMgd.ApplicationServices.Application;
 
 namespace GraphPlugin.Nanocad.IntegrationTests.Commands;
 
 public sealed class RegressionTestCommands
 {
-    private const string ContinueCommand =
-        "GRAPH_TEST_CONTINUE_INTERNAL";
+    private const string ContinueCommand = "GRAPH_TEST_CONTINUE_INTERNAL";
 
-    private const string MutateCommand =
-        "GRAPH_TEST_MUTATE_INTERNAL";
+    private const string MutateCommand = "GRAPH_TEST_MUTATE_INTERNAL";
 
     private static CurrentDocumentTestSession? _session;
     private static Document? _persistencePreparedDocument;
@@ -34,7 +31,7 @@ public sealed class RegressionTestCommands
         AfterNativeBasic,
         NativeStyleVerify,
         NativeDeleteAfterErase,
-        NativeDeleteVerify
+        NativeDeleteVerify,
     }
 
     private sealed class CurrentDocumentTestSession
@@ -63,52 +60,36 @@ public sealed class RegressionTestCommands
 
         try
         {
-            if (HasPreparedPersistenceSuite(
-                    document,
-                    context))
+            if (HasPreparedPersistenceSuite(document, context))
             {
                 editor.WriteMessage(
-                    "\n[FAIL] Persistence regression is prepared in this DWG." +
-                    "\nFinish GRAPHTESTS_PERSISTENCE before running GRAPHTESTS.");
+                    "\n[FAIL] Persistence regression is prepared in this DWG."
+                        + "\nFinish GRAPHTESTS_PERSISTENCE before running GRAPHTESTS."
+                );
                 return;
             }
 
-            AbortPreviousCurrentSession(
-                document,
-                context);
+            AbortPreviousCurrentSession(document, context);
 
-            CleanupCurrentDocumentArtifacts(
-                document,
-                context);
+            CleanupCurrentDocumentArtifacts(document, context);
 
-            var session =
-                new CurrentDocumentTestSession(
-                    document);
+            var session = new CurrentDocumentTestSession(document);
 
             _session = session;
 
             editor.WriteMessage(
-                "\n=== GraphPlugin current-document regression ===" +
-                "\nRunning core C# integration tests...");
+                "\n=== GraphPlugin current-document regression ===" + "\nRunning core C# integration tests..."
+            );
 
-            var coreRunner =
-                new GraphIntegrationTestRunner(
-                    document,
-                    context);
+            var coreRunner = new GraphIntegrationTestRunner(document, context);
 
-            AddResults(
-                session,
-                "Core",
-                coreRunner.RunAll());
+            AddResults(session, "Core", coreRunner.RunAll());
 
-            PrepareEdgeScenario(
-                document,
-                session);
+            PrepareEdgeScenario(document, session);
         }
         catch (System.Exception exception)
         {
-            editor.WriteMessage(
-                $"\n[FAIL] Could not start regression suite:\n{exception}");
+            editor.WriteMessage($"\n[FAIL] Could not start regression suite:\n{exception}");
 
             _session = null;
         }
@@ -117,9 +98,7 @@ public sealed class RegressionTestCommands
     // Verification/coordination commands must not create their own undo marker.
     // Otherwise UNDO 1 would undo this harness command instead of the preceding
     // destructive test command.
-    [CommandMethod(
-        ContinueCommand,
-        CommandFlags.NoUndoMarker)]
+    [CommandMethod(ContinueCommand, CommandFlags.NoUndoMarker)]
     public void ContinueCurrentDocumentTests()
     {
         var document = GetActiveDocument();
@@ -175,21 +154,14 @@ public sealed class RegressionTestCommands
                     break;
 
                 default:
-                    throw new InvalidOperationException(
-                        $"Stage {session.Stage} requires a mutating command.");
+                    throw new InvalidOperationException($"Stage {session.Stage} requires a mutating command.");
             }
         }
         catch (System.Exception exception)
         {
-            AddFailure(
-                session,
-                "Harness",
-                session.Stage.ToString(),
-                exception);
+            AddFailure(session, "Harness", session.Stage.ToString(), exception);
 
-            FinishCurrentDocumentSuite(
-                document,
-                session);
+            FinishCurrentDocumentSuite(document, session);
         }
     }
 
@@ -223,21 +195,14 @@ public sealed class RegressionTestCommands
                     break;
 
                 default:
-                    throw new InvalidOperationException(
-                        $"Stage {session.Stage} is not a mutating regression stage.");
+                    throw new InvalidOperationException($"Stage {session.Stage} is not a mutating regression stage.");
             }
         }
         catch (System.Exception exception)
         {
-            AddFailure(
-                session,
-                "Harness",
-                session.Stage.ToString(),
-                exception);
+            AddFailure(session, "Harness", session.Stage.ToString(), exception);
 
-            FinishCurrentDocumentSuite(
-                document,
-                session);
+            FinishCurrentDocumentSuite(document, session);
         }
     }
 
@@ -254,468 +219,275 @@ public sealed class RegressionTestCommands
         if (_session is not null)
         {
             editor.WriteMessage(
-                "\n[FAIL] Current-document regression is still running." +
-                "\nWait until GRAPHTESTS finishes.");
+                "\n[FAIL] Current-document regression is still running." + "\nWait until GRAPHTESTS finishes."
+            );
             return;
         }
 
-        var graphStore =
-            new PersistenceTestManifestStore();
+        var graphStore = new PersistenceTestManifestStore();
 
-        var graphPrepared =
-            graphStore.Exists(
-                document.Database);
+        var graphPrepared = graphStore.Exists(document.Database);
 
-        var attachmentRunner =
-            new AttachmentPersistenceScenarioRunner(
-                document,
-                context);
+        var attachmentRunner = new AttachmentPersistenceScenarioRunner(document, context);
 
-        var attachmentPrepared =
-            attachmentRunner.IsPrepared();
+        var attachmentPrepared = attachmentRunner.IsPrepared();
 
-        if (!graphPrepared &&
-            !attachmentPrepared)
+        if (!graphPrepared && !attachmentPrepared)
         {
-            PreparePersistenceSuite(
-                document,
-                context,
-                attachmentRunner);
+            PreparePersistenceSuite(document, context, attachmentRunner);
             return;
         }
 
-        if (graphPrepared !=
-            attachmentPrepared)
+        if (graphPrepared != attachmentPrepared)
         {
             editor.WriteMessage(
-                "\n[FAIL] Persistence regression state is incomplete." +
-                $"\nGraph manifest: {(graphPrepared ? "present" : "missing")}." +
-                $"\nAttachment manifest: {(attachmentPrepared ? "present" : "missing")}." +
-                "\nThe partial test state will be cleaned. Run GRAPHTESTS_PERSISTENCE again.");
+                "\n[FAIL] Persistence regression state is incomplete."
+                    + $"\nGraph manifest: {(graphPrepared ? "present" : "missing")}."
+                    + $"\nAttachment manifest: {(attachmentPrepared ? "present" : "missing")}."
+                    + "\nThe partial test state will be cleaned. Run GRAPHTESTS_PERSISTENCE again."
+            );
 
-            CleanupPersistenceSuite(
-                document,
-                context);
+            CleanupPersistenceSuite(document, context);
 
             _persistencePreparedDocument = null;
             return;
         }
 
-        if (ReferenceEquals(
-                _persistencePreparedDocument,
-                document))
+        if (ReferenceEquals(_persistencePreparedDocument, document))
         {
             editor.WriteMessage(
-                "\n[WAIT] Persistence regression is prepared, but this is still " +
-                "the same nanoCAD Document instance." +
-                "\nSAVE the DWG, CLOSE it, OPEN it again, then run " +
-                "GRAPHTESTS_PERSISTENCE once more.");
+                "\n[WAIT] Persistence regression is prepared, but this is still "
+                    + "the same nanoCAD Document instance."
+                    + "\nSAVE the DWG, CLOSE it, OPEN it again, then run "
+                    + "GRAPHTESTS_PERSISTENCE once more."
+            );
             return;
         }
 
-        VerifyPersistenceSuite(
-            document,
-            context,
-            attachmentRunner);
+        VerifyPersistenceSuite(document, context, attachmentRunner);
     }
 
-    private static CurrentDocumentTestSession? RequireCurrentSession(
-        Document document)
+    private static CurrentDocumentTestSession? RequireCurrentSession(Document document)
     {
         var session = _session;
 
-        if (session is not null &&
-            ReferenceEquals(
-                session.Document,
-                document))
+        if (session is not null && ReferenceEquals(session.Document, document))
         {
             return session;
         }
 
-        document.Editor.WriteMessage(
-            "\n[FAIL] No active GraphPlugin regression session for this document.");
+        document.Editor.WriteMessage("\n[FAIL] No active GraphPlugin regression session for this document.");
 
         return null;
     }
 
-    private static void PrepareEdgeScenario(
-        Document document,
-        CurrentDocumentTestSession session)
+    private static void PrepareEdgeScenario(Document document, CurrentDocumentTestSession session)
     {
-        var runner =
-            new GraphUndoIntegrationTestRunner(
-                document,
-                PluginServices.CurrentContext);
+        var runner = new GraphUndoIntegrationTestRunner(document, PluginServices.CurrentContext);
 
         try
         {
             runner.PrepareEdge();
 
-            AddPass(
-                session,
-                "Edge ERASE/UNDO",
-                "Prepare");
+            AddPass(session, "Edge ERASE/UNDO", "Prepare");
 
-            session.Stage =
-                CurrentDocumentTestStage.EdgeErase;
+            session.Stage = CurrentDocumentTestStage.EdgeErase;
 
             QueueMutation(document);
         }
         catch (System.Exception exception)
         {
-            AddFailure(
-                session,
-                "Edge ERASE/UNDO",
-                "Prepare",
-                exception);
+            AddFailure(session, "Edge ERASE/UNDO", "Prepare", exception);
 
-            SafeClearUndoScenario(
-                document,
-                session,
-                "Edge ERASE/UNDO");
+            SafeClearUndoScenario(document, session, "Edge ERASE/UNDO");
 
-            PrepareVertexScenario(
-                document,
-                session);
+            PrepareVertexScenario(document, session);
         }
     }
 
-    private static void RunEdgeErase(
-        Document document,
-        CurrentDocumentTestSession session)
+    private static void RunEdgeErase(Document document, CurrentDocumentTestSession session)
     {
         try
         {
-            ErasePreparedUndoTarget(
-                document,
-                UndoTestScenario.Edge);
+            ErasePreparedUndoTarget(document, UndoTestScenario.Edge);
 
-            AddPass(
-                session,
-                "Edge ERASE/UNDO",
-                "Erase prepared edge");
+            AddPass(session, "Edge ERASE/UNDO", "Erase prepared edge");
 
-            session.Stage =
-                CurrentDocumentTestStage.EdgeVerifyErased;
+            session.Stage = CurrentDocumentTestStage.EdgeVerifyErased;
 
             QueueContinue(document);
         }
         catch (System.Exception exception)
         {
-            AddFailure(
-                session,
-                "Edge ERASE/UNDO",
-                "Erase prepared edge",
-                exception);
+            AddFailure(session, "Edge ERASE/UNDO", "Erase prepared edge", exception);
 
-            SafeClearUndoScenario(
-                document,
-                session,
-                "Edge ERASE/UNDO");
+            SafeClearUndoScenario(document, session, "Edge ERASE/UNDO");
 
-            PrepareVertexScenario(
-                document,
-                session);
+            PrepareVertexScenario(document, session);
         }
     }
 
-    private static void RunEdgeErasedVerification(
-        Document document,
-        CurrentDocumentTestSession session)
+    private static void RunEdgeErasedVerification(Document document, CurrentDocumentTestSession session)
     {
-        var runner =
-            new GraphUndoIntegrationTestRunner(
-                document,
-                PluginServices.CurrentContext);
+        var runner = new GraphUndoIntegrationTestRunner(document, PluginServices.CurrentContext);
 
-        TryAddResults(
-            session,
-            "Edge erased",
-            runner.VerifyEdgeErased);
+        TryAddResults(session, "Edge erased", runner.VerifyEdgeErased);
 
-        session.Stage =
-            CurrentDocumentTestStage.EdgeVerifyUndo;
+        session.Stage = CurrentDocumentTestStage.EdgeVerifyUndo;
 
         QueueUndoAndContinue(document);
     }
 
-    private static void RunEdgeUndoVerification(
-        Document document,
-        CurrentDocumentTestSession session)
+    private static void RunEdgeUndoVerification(Document document, CurrentDocumentTestSession session)
     {
-        var runner =
-            new GraphUndoIntegrationTestRunner(
-                document,
-                PluginServices.CurrentContext);
+        var runner = new GraphUndoIntegrationTestRunner(document, PluginServices.CurrentContext);
 
-        TryAddResults(
-            session,
-            "Edge UNDO",
-            runner.VerifyEdgeUndo);
+        TryAddResults(session, "Edge UNDO", runner.VerifyEdgeUndo);
 
-        SafeClearUndoScenario(
-            document,
-            session,
-            "Edge ERASE/UNDO");
+        SafeClearUndoScenario(document, session, "Edge ERASE/UNDO");
 
-        PrepareVertexScenario(
-            document,
-            session);
+        PrepareVertexScenario(document, session);
     }
 
-    private static void PrepareVertexScenario(
-        Document document,
-        CurrentDocumentTestSession session)
+    private static void PrepareVertexScenario(Document document, CurrentDocumentTestSession session)
     {
-        var runner =
-            new GraphUndoIntegrationTestRunner(
-                document,
-                PluginServices.CurrentContext);
+        var runner = new GraphUndoIntegrationTestRunner(document, PluginServices.CurrentContext);
 
         try
         {
             runner.PrepareVertex();
 
-            AddPass(
-                session,
-                "Vertex cascade ERASE/UNDO",
-                "Prepare");
+            AddPass(session, "Vertex cascade ERASE/UNDO", "Prepare");
 
-            session.Stage =
-                CurrentDocumentTestStage.VertexErase;
+            session.Stage = CurrentDocumentTestStage.VertexErase;
 
             QueueMutation(document);
         }
         catch (System.Exception exception)
         {
-            AddFailure(
-                session,
-                "Vertex cascade ERASE/UNDO",
-                "Prepare",
-                exception);
+            AddFailure(session, "Vertex cascade ERASE/UNDO", "Prepare", exception);
 
-            SafeClearUndoScenario(
-                document,
-                session,
-                "Vertex cascade ERASE/UNDO");
+            SafeClearUndoScenario(document, session, "Vertex cascade ERASE/UNDO");
 
-            PrepareAttachmentScenario(
-                document,
-                session);
+            PrepareAttachmentScenario(document, session);
         }
     }
 
-    private static void RunVertexErase(
-        Document document,
-        CurrentDocumentTestSession session)
+    private static void RunVertexErase(Document document, CurrentDocumentTestSession session)
     {
         try
         {
-            ErasePreparedUndoTarget(
-                document,
-                UndoTestScenario.Vertex);
+            ErasePreparedUndoTarget(document, UndoTestScenario.Vertex);
 
-            AddPass(
-                session,
-                "Vertex cascade ERASE/UNDO",
-                "Erase middle vertex");
+            AddPass(session, "Vertex cascade ERASE/UNDO", "Erase middle vertex");
 
-            session.Stage =
-                CurrentDocumentTestStage.VertexVerifyErased;
+            session.Stage = CurrentDocumentTestStage.VertexVerifyErased;
 
             QueueContinue(document);
         }
         catch (System.Exception exception)
         {
-            AddFailure(
-                session,
-                "Vertex cascade ERASE/UNDO",
-                "Erase middle vertex",
-                exception);
+            AddFailure(session, "Vertex cascade ERASE/UNDO", "Erase middle vertex", exception);
 
-            SafeClearUndoScenario(
-                document,
-                session,
-                "Vertex cascade ERASE/UNDO");
+            SafeClearUndoScenario(document, session, "Vertex cascade ERASE/UNDO");
 
-            PrepareAttachmentScenario(
-                document,
-                session);
+            PrepareAttachmentScenario(document, session);
         }
     }
 
-    private static void RunVertexErasedVerification(
-        Document document,
-        CurrentDocumentTestSession session)
+    private static void RunVertexErasedVerification(Document document, CurrentDocumentTestSession session)
     {
-        var runner =
-            new GraphUndoIntegrationTestRunner(
-                document,
-                PluginServices.CurrentContext);
+        var runner = new GraphUndoIntegrationTestRunner(document, PluginServices.CurrentContext);
 
-        TryAddResults(
-            session,
-            "Vertex cascade erased",
-            runner.VerifyVertexErased);
+        TryAddResults(session, "Vertex cascade erased", runner.VerifyVertexErased);
 
-        session.Stage =
-            CurrentDocumentTestStage.VertexVerifyUndo;
+        session.Stage = CurrentDocumentTestStage.VertexVerifyUndo;
 
         QueueUndoAndContinue(document);
     }
 
-    private static void RunVertexUndoVerification(
-        Document document,
-        CurrentDocumentTestSession session)
+    private static void RunVertexUndoVerification(Document document, CurrentDocumentTestSession session)
     {
-        var runner =
-            new GraphUndoIntegrationTestRunner(
-                document,
-                PluginServices.CurrentContext);
+        var runner = new GraphUndoIntegrationTestRunner(document, PluginServices.CurrentContext);
 
-        TryAddResults(
-            session,
-            "Vertex cascade UNDO",
-            runner.VerifyVertexUndo);
+        TryAddResults(session, "Vertex cascade UNDO", runner.VerifyVertexUndo);
 
-        SafeClearUndoScenario(
-            document,
-            session,
-            "Vertex cascade ERASE/UNDO");
+        SafeClearUndoScenario(document, session, "Vertex cascade ERASE/UNDO");
 
-        PrepareAttachmentScenario(
-            document,
-            session);
+        PrepareAttachmentScenario(document, session);
     }
 
-    private static void PrepareAttachmentScenario(
-        Document document,
-        CurrentDocumentTestSession session)
+    private static void PrepareAttachmentScenario(Document document, CurrentDocumentTestSession session)
     {
-        var runner =
-            new AttachmentUndoScenarioRunner(
-                document,
-                PluginServices.CurrentContext);
+        var runner = new AttachmentUndoScenarioRunner(document, PluginServices.CurrentContext);
 
         try
         {
             runner.Prepare();
 
-            AddPass(
-                session,
-                "Attachment ERASE/UNDO",
-                "Prepare");
+            AddPass(session, "Attachment ERASE/UNDO", "Prepare");
 
-            session.Stage =
-                CurrentDocumentTestStage.AttachmentErase;
+            session.Stage = CurrentDocumentTestStage.AttachmentErase;
 
             QueueMutation(document);
         }
         catch (System.Exception exception)
         {
-            AddFailure(
-                session,
-                "Attachment ERASE/UNDO",
-                "Prepare",
-                exception);
+            AddFailure(session, "Attachment ERASE/UNDO", "Prepare", exception);
 
-            SafeClearAttachmentUndo(
-                document,
-                session);
+            SafeClearAttachmentUndo(document, session);
 
-            StartNativeSuiteOrFinish(
-                document,
-                session);
+            StartNativeSuiteOrFinish(document, session);
         }
     }
 
-    private static void RunAttachmentErase(
-        Document document,
-        CurrentDocumentTestSession session)
+    private static void RunAttachmentErase(Document document, CurrentDocumentTestSession session)
     {
-        var runner =
-            new AttachmentUndoScenarioRunner(
-                document,
-                PluginServices.CurrentContext);
+        var runner = new AttachmentUndoScenarioRunner(document, PluginServices.CurrentContext);
 
         try
         {
             runner.ErasePreparedVertex();
 
-            AddPass(
-                session,
-                "Attachment ERASE/UNDO",
-                "Erase prepared vertex");
+            AddPass(session, "Attachment ERASE/UNDO", "Erase prepared vertex");
 
-            session.Stage =
-                CurrentDocumentTestStage.AttachmentVerifyErased;
+            session.Stage = CurrentDocumentTestStage.AttachmentVerifyErased;
 
             QueueContinue(document);
         }
         catch (System.Exception exception)
         {
-            AddFailure(
-                session,
-                "Attachment ERASE/UNDO",
-                "Erase prepared vertex",
-                exception);
+            AddFailure(session, "Attachment ERASE/UNDO", "Erase prepared vertex", exception);
 
-            SafeClearAttachmentUndo(
-                document,
-                session);
+            SafeClearAttachmentUndo(document, session);
 
-            StartNativeSuiteOrFinish(
-                document,
-                session);
+            StartNativeSuiteOrFinish(document, session);
         }
     }
 
-    private static void RunAttachmentErasedVerification(
-        Document document,
-        CurrentDocumentTestSession session)
+    private static void RunAttachmentErasedVerification(Document document, CurrentDocumentTestSession session)
     {
-        var runner =
-            new AttachmentUndoScenarioRunner(
-                document,
-                PluginServices.CurrentContext);
+        var runner = new AttachmentUndoScenarioRunner(document, PluginServices.CurrentContext);
 
-        TryAddResults(
-            session,
-            "Attachment erased",
-            runner.VerifyErased);
+        TryAddResults(session, "Attachment erased", runner.VerifyErased);
 
-        session.Stage =
-            CurrentDocumentTestStage.AttachmentVerifyUndo;
+        session.Stage = CurrentDocumentTestStage.AttachmentVerifyUndo;
 
         QueueUndoAndContinue(document);
     }
 
-    private static void RunAttachmentUndoVerification(
-        Document document,
-        CurrentDocumentTestSession session)
+    private static void RunAttachmentUndoVerification(Document document, CurrentDocumentTestSession session)
     {
-        var runner =
-            new AttachmentUndoScenarioRunner(
-                document,
-                PluginServices.CurrentContext);
+        var runner = new AttachmentUndoScenarioRunner(document, PluginServices.CurrentContext);
 
-        TryAddResults(
-            session,
-            "Attachment UNDO",
-            runner.VerifyUndo);
+        TryAddResults(session, "Attachment UNDO", runner.VerifyUndo);
 
-        SafeClearAttachmentUndo(
-            document,
-            session);
+        SafeClearAttachmentUndo(document, session);
 
-        StartNativeSuiteOrFinish(
-            document,
-            session);
+        StartNativeSuiteOrFinish(document, session);
     }
 
-    private static void StartNativeSuiteOrFinish(
-        Document document,
-        CurrentDocumentTestSession session)
+    private static void StartNativeSuiteOrFinish(Document document, CurrentDocumentTestSession session)
     {
         if (!IsNativePluginLoaded())
         {
@@ -723,89 +495,57 @@ public sealed class RegressionTestCommands
                 session,
                 "Native",
                 "Plugin load",
-                new InvalidOperationException(
-                    "GraphPlugin.Native.dll is not loaded. C++ tests were not run."));
+                new InvalidOperationException("GraphPlugin.Native.dll is not loaded. C++ tests were not run.")
+            );
 
-            FinishCurrentDocumentSuite(
-                document,
-                session);
+            FinishCurrentDocumentSuite(document, session);
             return;
         }
 
-        session.Stage =
-            CurrentDocumentTestStage.AfterNativeBasic;
+        session.Stage = CurrentDocumentTestStage.AfterNativeBasic;
 
-        document.Editor.WriteMessage(
-            "\n[RUN] Native C++ integration tests...");
+        document.Editor.WriteMessage("\n[RUN] Native C++ integration tests...");
 
-        Queue(
-            document,
-            $"GRAPHCPPRUNTESTS {ContinueCommand}");
+        Queue(document, $"GRAPHCPPRUNTESTS {ContinueCommand}");
     }
 
-    private static void StartNativeStyleInterop(
-        Document document,
-        CurrentDocumentTestSession session)
+    private static void StartNativeStyleInterop(Document document, CurrentDocumentTestSession session)
     {
         document.Editor.WriteMessage(
-            "\n[INFO] GRAPHCPPRUNTESTS writes its own C++ summary above." +
-            "\n[RUN] C++ -> C# style interop...");
+            "\n[INFO] GRAPHCPPRUNTESTS writes its own C++ summary above." + "\n[RUN] C++ -> C# style interop..."
+        );
 
-        session.Stage =
-            CurrentDocumentTestStage.NativeStyleVerify;
+        session.Stage = CurrentDocumentTestStage.NativeStyleVerify;
 
         Queue(
             document,
-            "GRAPHCPP_PREPARE_STYLE_INTEROP_TEST " +
-            "GRAPHCPP_EXECUTE_STYLE_INTEROP_TEST " +
-            ContinueCommand);
+            "GRAPHCPP_PREPARE_STYLE_INTEROP_TEST " + "GRAPHCPP_EXECUTE_STYLE_INTEROP_TEST " + ContinueCommand
+        );
     }
 
-    private static void VerifyNativeStyleInterop(
-        Document document,
-        CurrentDocumentTestSession session)
+    private static void VerifyNativeStyleInterop(Document document, CurrentDocumentTestSession session)
     {
         try
         {
-            new GraphIntegrationTestRunner(
-                    document,
-                    PluginServices.CurrentContext)
-                .VerifyCppStyleInteropTest();
+            new GraphIntegrationTestRunner(document, PluginServices.CurrentContext).VerifyCppStyleInteropTest();
 
-            AddPass(
-                session,
-                "Native interop",
-                "C++ style replacement -> C# verification");
+            AddPass(session, "Native interop", "C++ style replacement -> C# verification");
         }
         catch (System.Exception exception)
         {
-            AddFailure(
-                session,
-                "Native interop",
-                "C++ style replacement -> C# verification",
-                exception);
+            AddFailure(session, "Native interop", "C++ style replacement -> C# verification", exception);
         }
 
-        session.Stage =
-            CurrentDocumentTestStage.NativeDeleteAfterErase;
+        session.Stage = CurrentDocumentTestStage.NativeDeleteAfterErase;
 
-        document.Editor.WriteMessage(
-            "\n[RUN] C++ cascade delete -> nanoCAD UNDO -> C# restore...");
+        document.Editor.WriteMessage("\n[RUN] C++ cascade delete -> nanoCAD UNDO -> C# restore...");
 
-        Queue(
-            document,
-            "GRAPHCPP_PREPARE_DELETE_UNDO_TEST " +
-            "GRAPHCPP_EXECUTE_DELETE_UNDO_TEST " +
-            ContinueCommand);
+        Queue(document, "GRAPHCPP_PREPARE_DELETE_UNDO_TEST " + "GRAPHCPP_EXECUTE_DELETE_UNDO_TEST " + ContinueCommand);
     }
 
-    private static void ContinueNativeDeleteUndo(
-        Document document,
-        CurrentDocumentTestSession session)
+    private static void ContinueNativeDeleteUndo(Document document, CurrentDocumentTestSession session)
     {
-        var manifest =
-            ReadCppDeleteUndoManifest(
-                document.Database);
+        var manifest = ReadCppDeleteUndoManifest(document.Database);
 
         if (manifest is null)
         {
@@ -813,67 +553,46 @@ public sealed class RegressionTestCommands
                 session,
                 "Native interop",
                 "C++ cascade delete",
-                new InvalidOperationException(
-                    "C++ delete/undo manifest was not created."));
+                new InvalidOperationException("C++ delete/undo manifest was not created.")
+            );
 
-            FinishCurrentDocumentSuite(
-                document,
-                session);
+            FinishCurrentDocumentSuite(document, session);
             return;
         }
 
         var context = PluginServices.CurrentContext;
 
-        if (context.Vertices.Get(
-                manifest.VertexAId) is not null)
+        if (context.Vertices.Get(manifest.VertexAId) is not null)
         {
             AddFailure(
                 session,
                 "Native interop",
                 "C++ cascade delete",
-                new InvalidOperationException(
-                    "C++ delete command did not remove Vertex A."));
+                new InvalidOperationException("C++ delete command did not remove Vertex A.")
+            );
 
-            CleanupNativeInteropArtifacts(
-                document,
-                context);
+            CleanupNativeInteropArtifacts(document, context);
 
-            FinishCurrentDocumentSuite(
-                document,
-                session);
+            FinishCurrentDocumentSuite(document, session);
             return;
         }
 
-        AddPass(
-            session,
-            "Native interop",
-            "C++ cascade delete");
+        AddPass(session, "Native interop", "C++ cascade delete");
 
-        session.Stage =
-            CurrentDocumentTestStage.NativeDeleteVerify;
+        session.Stage = CurrentDocumentTestStage.NativeDeleteVerify;
 
         QueueUndoAndContinue(document);
     }
 
-    private static void VerifyNativeDeleteUndo(
-        Document document,
-        CurrentDocumentTestSession session)
+    private static void VerifyNativeDeleteUndo(Document document, CurrentDocumentTestSession session)
     {
-        new GraphIntegrationTestRunner(
-                document,
-                PluginServices.CurrentContext)
-            .VerifyCppDeleteUndoTest();
+        new GraphIntegrationTestRunner(document, PluginServices.CurrentContext).VerifyCppDeleteUndoTest();
 
-        var manifest =
-            ReadCppDeleteUndoManifest(
-                document.Database);
+        var manifest = ReadCppDeleteUndoManifest(document.Database);
 
         if (manifest is null)
         {
-            AddPass(
-                session,
-                "Native interop",
-                "C++ delete -> UNDO -> C# restore");
+            AddPass(session, "Native interop", "C++ delete -> UNDO -> C# restore");
         }
         else
         {
@@ -882,53 +601,47 @@ public sealed class RegressionTestCommands
                 "Native interop",
                 "C++ delete -> UNDO -> C# restore",
                 new InvalidOperationException(
-                    "C++ delete/undo manifest remains after verification. " +
-                    "See the preceding C++/C# test output for details."));
+                    "C++ delete/undo manifest remains after verification. "
+                        + "See the preceding C++/C# test output for details."
+                )
+            );
         }
 
-        CleanupNativeInteropArtifacts(
-            document,
-            PluginServices.CurrentContext);
+        CleanupNativeInteropArtifacts(document, PluginServices.CurrentContext);
 
-        FinishCurrentDocumentSuite(
-            document,
-            session);
+        FinishCurrentDocumentSuite(document, session);
     }
 
     private static void PreparePersistenceSuite(
         Document document,
         GraphDocumentContext context,
-        AttachmentPersistenceScenarioRunner attachmentRunner)
+        AttachmentPersistenceScenarioRunner attachmentRunner
+    )
     {
         var editor = document.Editor;
-        var graphRunner =
-            new GraphPersistenceScenarioRunner(
-                document,
-                context);
+        var graphRunner = new GraphPersistenceScenarioRunner(document, context);
 
         try
         {
-            var graphManifest =
-                graphRunner.Prepare();
+            var graphManifest = graphRunner.Prepare();
 
             try
             {
-                var attachmentManifest =
-                    attachmentRunner.Prepare();
+                var attachmentManifest = attachmentRunner.Prepare();
 
-                _persistencePreparedDocument =
-                    document;
+                _persistencePreparedDocument = document;
 
                 editor.WriteMessage(
-                    "\n=== GraphPlugin persistence regression prepared ===" +
-                    $"\nGraph TestId: {graphManifest.TestId}" +
-                    $"\nAttachment VertexId: {attachmentManifest.VertexId}" +
-                    "\n" +
-                    "\nNext:" +
-                    "\n1. SAVE the DWG" +
-                    "\n2. CLOSE the DWG" +
-                    "\n3. OPEN the same DWG" +
-                    "\n4. Run GRAPHTESTS_PERSISTENCE again");
+                    "\n=== GraphPlugin persistence regression prepared ==="
+                        + $"\nGraph TestId: {graphManifest.TestId}"
+                        + $"\nAttachment VertexId: {attachmentManifest.VertexId}"
+                        + "\n"
+                        + "\nNext:"
+                        + "\n1. SAVE the DWG"
+                        + "\n2. CLOSE the DWG"
+                        + "\n3. OPEN the same DWG"
+                        + "\n4. Run GRAPHTESTS_PERSISTENCE again"
+                );
             }
             catch
             {
@@ -947,51 +660,36 @@ public sealed class RegressionTestCommands
                 // Keep the original prepare exception.
             }
 
-            editor.WriteMessage(
-                $"\n[FAIL] Persistence prepare:\n{exception}");
+            editor.WriteMessage($"\n[FAIL] Persistence prepare:\n{exception}");
         }
     }
 
     private static void VerifyPersistenceSuite(
         Document document,
         GraphDocumentContext context,
-        AttachmentPersistenceScenarioRunner attachmentRunner)
+        AttachmentPersistenceScenarioRunner attachmentRunner
+    )
     {
-        var results =
-            new List<IntegrationTestResult>();
+        var results = new List<IntegrationTestResult>();
 
-        var graphRunner =
-            new GraphPersistenceScenarioRunner(
-                document,
-                context);
+        var graphRunner = new GraphPersistenceScenarioRunner(document, context);
 
-        TryAddResults(
-            results,
-            "DWG graph",
-            graphRunner.Verify);
+        TryAddResults(results, "DWG graph", graphRunner.Verify);
 
-        TryAddResults(
-            results,
-            "DWG attachments",
-            attachmentRunner.Verify);
+        TryAddResults(results, "DWG attachments", attachmentRunner.Verify);
 
-        IntegrationTestCommandOutput.WriteResults(
-            document.Editor,
-            "GraphPlugin persistence regression",
-            results);
+        IntegrationTestCommandOutput.WriteResults(document.Editor, "GraphPlugin persistence regression", results);
 
         try
         {
             graphRunner.Clear();
             attachmentRunner.Clear();
 
-            document.Editor.WriteMessage(
-                "\nPersistence test objects were removed from the current document.");
+            document.Editor.WriteMessage("\nPersistence test objects were removed from the current document.");
         }
         catch (System.Exception exception)
         {
-            document.Editor.WriteMessage(
-                $"\n[WARN] Persistence cleanup failed: {exception.Message}");
+            document.Editor.WriteMessage($"\n[WARN] Persistence cleanup failed: {exception.Message}");
         }
         finally
         {
@@ -999,13 +697,9 @@ public sealed class RegressionTestCommands
         }
     }
 
-    private static void FinishCurrentDocumentSuite(
-        Document document,
-        CurrentDocumentTestSession session)
+    private static void FinishCurrentDocumentSuite(Document document, CurrentDocumentTestSession session)
     {
-        if (!ReferenceEquals(
-                _session,
-                session))
+        if (!ReferenceEquals(_session, session))
         {
             return;
         }
@@ -1013,70 +707,49 @@ public sealed class RegressionTestCommands
         IntegrationTestCommandOutput.WriteResults(
             document.Editor,
             "GraphPlugin current-document regression",
-            session.Results);
+            session.Results
+        );
 
         if (IsNativePluginLoaded())
         {
             document.Editor.WriteMessage(
-                "\nNote: GRAPHCPPRUNTESTS has its own detailed summary above; " +
-                "its internal count is not duplicated in the C# total.");
+                "\nNote: GRAPHCPPRUNTESTS has its own detailed summary above; "
+                    + "its internal count is not duplicated in the C# total."
+            );
         }
 
         _session = null;
     }
 
-    private static void AbortPreviousCurrentSession(
-        Document document,
-        GraphDocumentContext context)
+    private static void AbortPreviousCurrentSession(Document document, GraphDocumentContext context)
     {
         var previous = _session;
         _session = null;
 
-        if (previous is null ||
-            !ReferenceEquals(
-                previous.Document,
-                document))
+        if (previous is null || !ReferenceEquals(previous.Document, document))
         {
             return;
         }
 
-        CleanupCurrentDocumentArtifacts(
-            document,
-            context);
+        CleanupCurrentDocumentArtifacts(document, context);
 
-        document.Editor.WriteMessage(
-            "\n[INFO] Previous incomplete regression session was reset.");
+        document.Editor.WriteMessage("\n[INFO] Previous incomplete regression session was reset.");
     }
 
-    private static void CleanupCurrentDocumentArtifacts(
-        Document document,
-        GraphDocumentContext context)
+    private static void CleanupCurrentDocumentArtifacts(Document document, GraphDocumentContext context)
     {
-        new GraphUndoIntegrationTestRunner(
-                document,
-                context)
-            .Clear();
+        new GraphUndoIntegrationTestRunner(document, context).Clear();
 
-        new AttachmentUndoScenarioRunner(
-                document,
-                context)
-            .Clear();
+        new AttachmentUndoScenarioRunner(document, context).Clear();
 
-        CleanupNativeInteropArtifacts(
-            document,
-            context);
+        CleanupNativeInteropArtifacts(document, context);
     }
 
-    private static void CleanupPersistenceSuite(
-        Document document,
-        GraphDocumentContext context)
+    private static void CleanupPersistenceSuite(Document document, GraphDocumentContext context)
     {
         try
         {
-            new GraphPersistenceScenarioRunner(
-                    document,
-                    context)
-                .Clear();
+            new GraphPersistenceScenarioRunner(document, context).Clear();
         }
         catch
         {
@@ -1085,10 +758,7 @@ public sealed class RegressionTestCommands
 
         try
         {
-            new AttachmentPersistenceScenarioRunner(
-                    document,
-                    context)
-                .Clear();
+            new AttachmentPersistenceScenarioRunner(document, context).Clear();
         }
         catch
         {
@@ -1096,64 +766,41 @@ public sealed class RegressionTestCommands
         }
     }
 
-    private static void SafeClearUndoScenario(
-        Document document,
-        CurrentDocumentTestSession session,
-        string section)
+    private static void SafeClearUndoScenario(Document document, CurrentDocumentTestSession session, string section)
     {
         try
         {
-            new GraphUndoIntegrationTestRunner(
-                    document,
-                    PluginServices.CurrentContext)
-                .Clear();
+            new GraphUndoIntegrationTestRunner(document, PluginServices.CurrentContext).Clear();
         }
         catch (System.Exception exception)
         {
-            AddFailure(
-                session,
-                section,
-                "Cleanup",
-                exception);
+            AddFailure(session, section, "Cleanup", exception);
         }
     }
 
-    private static void SafeClearAttachmentUndo(
-        Document document,
-        CurrentDocumentTestSession session)
+    private static void SafeClearAttachmentUndo(Document document, CurrentDocumentTestSession session)
     {
         try
         {
-            new AttachmentUndoScenarioRunner(
-                    document,
-                    PluginServices.CurrentContext)
-                .Clear();
+            new AttachmentUndoScenarioRunner(document, PluginServices.CurrentContext).Clear();
         }
         catch (System.Exception exception)
         {
-            AddFailure(
-                session,
-                "Attachment ERASE/UNDO",
-                "Cleanup",
-                exception);
+            AddFailure(session, "Attachment ERASE/UNDO", "Cleanup", exception);
         }
     }
 
-    private static void ErasePreparedUndoTarget(
-        Document document,
-        UndoTestScenario scenario)
+    private static void ErasePreparedUndoTarget(Document document, UndoTestScenario scenario)
     {
         var manifest =
-            new UndoTestManifestStore()
-                .Load(document.Database)
-            ?? throw new InvalidOperationException(
-                "Undo integration test manifest was not found.");
+            new UndoTestManifestStore().Load(document.Database)
+            ?? throw new InvalidOperationException("Undo integration test manifest was not found.");
 
         if (manifest.Scenario != scenario)
         {
             throw new InvalidOperationException(
-                $"Prepared undo scenario is {manifest.Scenario}, " +
-                $"but {scenario} was expected.");
+                $"Prepared undo scenario is {manifest.Scenario}, " + $"but {scenario} was expected."
+            );
         }
 
         var context = PluginServices.CurrentContext;
@@ -1163,92 +810,60 @@ public sealed class RegressionTestCommands
 
         if (scenario == UndoTestScenario.Edge)
         {
-            if (!context.Index.TryGetEdgeObjectId(
-                    manifest.EdgeABId,
-                    out objectId))
+            if (!context.Index.TryGetEdgeObjectId(manifest.EdgeABId, out objectId))
             {
-                throw new InvalidOperationException(
-                    "Prepared edge is missing from GraphEntityIndex.");
+                throw new InvalidOperationException("Prepared edge is missing from GraphEntityIndex.");
             }
 
             description = "prepared edge";
         }
         else
         {
-            if (!context.Index.TryGetVertexObjectId(
-                    manifest.VertexBId,
-                    out objectId))
+            if (!context.Index.TryGetVertexObjectId(manifest.VertexBId, out objectId))
             {
-                throw new InvalidOperationException(
-                    "Prepared middle vertex is missing from GraphEntityIndex.");
+                throw new InvalidOperationException("Prepared middle vertex is missing from GraphEntityIndex.");
             }
 
             description = "prepared middle vertex";
         }
 
-        if (objectId.IsNull ||
-            objectId.IsErased)
+        if (objectId.IsNull || objectId.IsErased)
         {
-            throw new InvalidOperationException(
-                $"The {description} is already erased or invalid.");
+            throw new InvalidOperationException($"The {description} is already erased or invalid.");
         }
 
-        using var transaction =
-            document.Database
-                .TransactionManager
-                .StartTransaction();
+        using var transaction = document.Database.TransactionManager.StartTransaction();
 
         var entity =
-            transaction.GetObject(
-                objectId,
-                OpenMode.ForWrite) as Entity
-            ?? throw new InvalidOperationException(
-                $"The {description} ObjectId is not an Entity.");
+            transaction.GetObject(objectId, OpenMode.ForWrite) as Entity
+            ?? throw new InvalidOperationException($"The {description} ObjectId is not an Entity.");
 
         entity.Erase();
         transaction.Commit();
     }
 
-    private static bool HasPreparedPersistenceSuite(
-        Document document,
-        GraphDocumentContext context)
+    private static bool HasPreparedPersistenceSuite(Document document, GraphDocumentContext context)
     {
-        var graphPrepared =
-            new PersistenceTestManifestStore()
-                .Exists(document.Database);
+        var graphPrepared = new PersistenceTestManifestStore().Exists(document.Database);
 
-        var attachmentPrepared =
-            new AttachmentPersistenceScenarioRunner(
-                    document,
-                    context)
-                .IsPrepared();
+        var attachmentPrepared = new AttachmentPersistenceScenarioRunner(document, context).IsPrepared();
 
-        return graphPrepared ||
-               attachmentPrepared;
+        return graphPrepared || attachmentPrepared;
     }
 
-    private static void CleanupNativeInteropArtifacts(
-        Document document,
-        GraphDocumentContext context)
+    private static void CleanupNativeInteropArtifacts(Document document, GraphDocumentContext context)
     {
-        var styleStore =
-            new CppStyleInteropManifestStore();
+        var styleStore = new CppStyleInteropManifestStore();
 
         try
         {
             CppStyleInteropManifest? manifest = null;
 
-            using (var transaction =
-                   document.Database
-                       .TransactionManager
-                       .StartTransaction())
+            using (var transaction = document.Database.TransactionManager.StartTransaction())
             {
                 try
                 {
-                    manifest =
-                        styleStore.ReadStyleManifest(
-                            document.Database,
-                            transaction);
+                    manifest = styleStore.ReadStyleManifest(document.Database, transaction);
                 }
                 catch (IntegrationTestException)
                 {
@@ -1256,70 +871,44 @@ public sealed class RegressionTestCommands
                 }
             }
 
-            if (manifest is not null &&
-                context.Vertices.Get(
-                    manifest.VertexId) is not null)
+            if (manifest is not null && context.Vertices.Get(manifest.VertexId) is not null)
             {
-                context.Graph.DeleteVertex(
-                    manifest.VertexId);
+                context.Graph.DeleteVertex(manifest.VertexId);
             }
         }
         finally
         {
-            styleStore.Delete(
-                document.Database);
+            styleStore.Delete(document.Database);
         }
 
-        var deleteStore =
-            new CppDeleteUndoTestManifestStore();
+        var deleteStore = new CppDeleteUndoTestManifestStore();
 
-        var deleteManifest =
-            ReadCppDeleteUndoManifest(
-                document.Database);
+        var deleteManifest = ReadCppDeleteUndoManifest(document.Database);
 
         if (deleteManifest is not null)
         {
-            DeleteVertexIfExists(
-                context,
-                deleteManifest.VertexAId);
+            DeleteVertexIfExists(context, deleteManifest.VertexAId);
 
-            DeleteVertexIfExists(
-                context,
-                deleteManifest.VertexBId);
+            DeleteVertexIfExists(context, deleteManifest.VertexBId);
 
-            DeleteVertexIfExists(
-                context,
-                deleteManifest.VertexCId);
+            DeleteVertexIfExists(context, deleteManifest.VertexCId);
         }
 
-        using var deleteTransaction =
-            document.Database
-                .TransactionManager
-                .StartTransaction();
+        using var deleteTransaction = document.Database.TransactionManager.StartTransaction();
 
-        deleteStore.Delete(
-            document.Database,
-            deleteTransaction);
+        deleteStore.Delete(document.Database, deleteTransaction);
 
         deleteTransaction.Commit();
     }
 
-    private static CppDeleteUndoTestManifest? ReadCppDeleteUndoManifest(
-        Database database)
+    private static CppDeleteUndoTestManifest? ReadCppDeleteUndoManifest(Database database)
     {
-        using var transaction =
-            database.TransactionManager
-                .StartTransaction();
+        using var transaction = database.TransactionManager.StartTransaction();
 
-        return new CppDeleteUndoTestManifestStore()
-            .Read(
-                database,
-                transaction);
+        return new CppDeleteUndoTestManifestStore().Read(database, transaction);
     }
 
-    private static void DeleteVertexIfExists(
-        GraphDocumentContext context,
-        Guid vertexId)
+    private static void DeleteVertexIfExists(GraphDocumentContext context, Guid vertexId)
     {
         if (context.Vertices.Get(vertexId) is not null)
         {
@@ -1328,175 +917,120 @@ public sealed class RegressionTestCommands
     }
 
     private static bool IsNativePluginLoaded() =>
-        AppDomain.CurrentDomain
-            .GetAssemblies()
-            .Any(
-                assembly =>
-                    string.Equals(
-                        assembly.GetName().Name,
-                        "GraphPlugin.Native",
-                        StringComparison.OrdinalIgnoreCase));
+        AppDomain
+            .CurrentDomain.GetAssemblies()
+            .Any(assembly =>
+                string.Equals(assembly.GetName().Name, "GraphPlugin.Native", StringComparison.OrdinalIgnoreCase)
+            );
 
-    private static Document? GetActiveDocument() =>
-        NanoApplication
-            .DocumentManager
-            .MdiActiveDocument;
+    private static Document? GetActiveDocument() => NanoApplication.DocumentManager.MdiActiveDocument;
 
-    private static void QueueMutation(
-        Document document)
+    private static void QueueMutation(Document document)
     {
-        Queue(
-            document,
-            MutateCommand);
+        Queue(document, MutateCommand);
     }
 
-    private static void QueueContinue(
-        Document document)
+    private static void QueueContinue(Document document)
     {
-        Queue(
-            document,
-            ContinueCommand);
+        Queue(document, ContinueCommand);
     }
 
-    private static void QueueUndoAndContinue(
-        Document document)
+    private static void QueueUndoAndContinue(Document document)
     {
-        Queue(
-            document,
-            $"UNDO 1 {ContinueCommand}");
+        Queue(document, $"UNDO 1 {ContinueCommand}");
     }
 
-    private static void Queue(
-        Document document,
-        string commands)
+    private static void Queue(Document document, string commands)
     {
-        document.SendStringToExecute(
-            commands.TrimEnd() + " ",
-            true,
-            false,
-            false);
+        document.SendStringToExecute(commands.TrimEnd() + " ", true, false, false);
     }
 
     private static void TryAddResults(
         CurrentDocumentTestSession session,
         string section,
-        Func<IReadOnlyList<IntegrationTestResult>> action)
+        Func<IReadOnlyList<IntegrationTestResult>> action
+    )
     {
         try
         {
-            AddResults(
-                session,
-                section,
-                action());
+            AddResults(session, section, action());
         }
         catch (System.Exception exception)
         {
-            AddFailure(
-                session,
-                section,
-                "Verification",
-                exception);
+            AddFailure(session, section, "Verification", exception);
         }
     }
 
     private static void TryAddResults(
         ICollection<IntegrationTestResult> target,
         string section,
-        Func<IReadOnlyList<IntegrationTestResult>> action)
+        Func<IReadOnlyList<IntegrationTestResult>> action
+    )
     {
         try
         {
-            AddResults(
-                target,
-                section,
-                action());
+            AddResults(target, section, action());
         }
         catch (System.Exception exception)
         {
-            target.Add(
-                new IntegrationTestResult(
-                    $"[{section}] Verification",
-                    false,
-                    exception.Message));
+            target.Add(new IntegrationTestResult($"[{section}] Verification", false, exception.Message));
         }
     }
 
-    private static void AddPass(
-        CurrentDocumentTestSession session,
-        string section,
-        string name)
+    private static void AddPass(CurrentDocumentTestSession session, string section, string name)
     {
-        session.Results.Add(
-            new IntegrationTestResult(
-                $"[{section}] {name}",
-                true));
+        session.Results.Add(new IntegrationTestResult($"[{section}] {name}", true));
     }
 
     private static void AddFailure(
         CurrentDocumentTestSession session,
         string section,
         string name,
-        System.Exception exception)
+        System.Exception exception
+    )
     {
-        session.Results.Add(
-            new IntegrationTestResult(
-                $"[{section}] {name}",
-                false,
-                exception.Message));
+        session.Results.Add(new IntegrationTestResult($"[{section}] {name}", false, exception.Message));
     }
 
     private static void AddResults(
         CurrentDocumentTestSession session,
         string section,
-        IReadOnlyList<IntegrationTestResult> results)
+        IReadOnlyList<IntegrationTestResult> results
+    )
     {
-        AddResults(
-            session.Results,
-            section,
-            results);
+        AddResults(session.Results, section, results);
     }
 
     private static void AddResults(
         ICollection<IntegrationTestResult> target,
         string section,
-        IReadOnlyList<IntegrationTestResult> results)
+        IReadOnlyList<IntegrationTestResult> results
+    )
     {
         foreach (var result in results)
         {
             var name = result.Name;
             var error = result.Error;
 
-            if (name.StartsWith(
-                    "[PASS] ",
-                    StringComparison.Ordinal))
+            if (name.StartsWith("[PASS] ", StringComparison.Ordinal))
             {
                 name = name[7..];
             }
-            else if (name.StartsWith(
-                         "[FAIL] ",
-                         StringComparison.Ordinal))
+            else if (name.StartsWith("[FAIL] ", StringComparison.Ordinal))
             {
                 name = name[7..];
 
-                var separator =
-                    name.IndexOf(
-                        Environment.NewLine,
-                        StringComparison.Ordinal);
+                var separator = name.IndexOf(Environment.NewLine, StringComparison.Ordinal);
 
                 if (separator >= 0)
                 {
-                    error ??=
-                        name[(separator + Environment.NewLine.Length)..];
+                    error ??= name[(separator + Environment.NewLine.Length)..];
 
                     name = name[..separator];
                 }
             }
 
-            target.Add(
-                new IntegrationTestResult(
-                    $"[{section}] {name}",
-                    result.Passed,
-                    error));
+            target.Add(new IntegrationTestResult($"[{section}] {name}", result.Passed, error));
         }
     }
 }

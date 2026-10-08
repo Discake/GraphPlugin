@@ -6,4 +6,5 @@ public sealed record CppDeleteUndoTestManifest(
     Guid VertexCId,
     Guid EdgeABId,
     Guid EdgeACId,
-    Guid EdgeBCId);
+    Guid EdgeBCId
+);

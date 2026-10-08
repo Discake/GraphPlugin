@@ -8,9 +8,7 @@ public sealed record VertexAttachment
     {
         if (string.IsNullOrWhiteSpace(path))
         {
-            throw new ArgumentException(
-                "Attachment path cannot be empty.",
-                nameof(path));
+            throw new ArgumentException("Attachment path cannot be empty.", nameof(path));
         }
 
         Path = path;

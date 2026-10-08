@@ -9,96 +9,58 @@ public sealed class MoveBendService
     private readonly IVertexRepository _vertices;
     private readonly IEdgeRepository _edges;
 
-    public MoveBendService(
-        IVertexRepository vertices,
-        IEdgeRepository edges)
+    public MoveBendService(IVertexRepository vertices, IEdgeRepository edges)
     {
-        _vertices =
-            vertices ??
-            throw new ArgumentNullException(
-                nameof(vertices));
+        _vertices = vertices ?? throw new ArgumentNullException(nameof(vertices));
 
-        _edges =
-            edges ??
-            throw new ArgumentNullException(
-                nameof(edges));
+        _edges = edges ?? throw new ArgumentNullException(nameof(edges));
     }
 
     public MoveBendResult Move(
         Guid edgeId,
         int bendIndex,
         Point2 newPosition,
-        double tolerance =
-            EdgeRouteGeometry.DefaultTolerance)
+        double tolerance = EdgeRouteGeometry.DefaultTolerance
+    )
     {
-        ValidatePoint(
-            newPosition);
+        ValidatePoint(newPosition);
 
-        ValidateTolerance(
-            tolerance);
+        ValidateTolerance(tolerance);
 
-        var edge =
-            _edges.Get(edgeId)
-            ?? throw new InvalidOperationException(
-                $"Edge '{edgeId}' does not exist.");
+        var edge = _edges.Get(edgeId) ?? throw new InvalidOperationException($"Edge '{edgeId}' does not exist.");
 
-        ValidateBendIndex(
-            edge,
-            bendIndex);
+        ValidateBendIndex(edge, bendIndex);
 
         var vertexA =
-            _vertices.Get(
-                edge.VertexAId)
-            ?? throw new InvalidOperationException(
-                $"Vertex '{edge.VertexAId}' does not exist.");
+            _vertices.Get(edge.VertexAId)
+            ?? throw new InvalidOperationException($"Vertex '{edge.VertexAId}' does not exist.");
 
         var vertexB =
-            _vertices.Get(
-                edge.VertexBId)
-            ?? throw new InvalidOperationException(
-                $"Vertex '{edge.VertexBId}' does not exist.");
+            _vertices.Get(edge.VertexBId)
+            ?? throw new InvalidOperationException($"Vertex '{edge.VertexBId}' does not exist.");
 
-        var oldPosition =
-            edge.Route
-                .IntermediatePoints[bendIndex];
+        var oldPosition = edge.Route.IntermediatePoints[bendIndex];
 
-        EnsureNoDegenerateSegment(
-            edge,
-            vertexA,
-            vertexB,
-            bendIndex,
-            newPosition,
-            tolerance);
+        EnsureNoDegenerateSegment(edge, vertexA, vertexB, bendIndex, newPosition, tolerance);
 
-        var originalRoute =
-            edge.Route;
+        var originalRoute = edge.Route;
 
-        var updatedRoute =
-            originalRoute.MovePoint(
-                bendIndex,
-                newPosition);
+        var updatedRoute = originalRoute.MovePoint(bendIndex, newPosition);
 
-        edge.ChangeRoute(
-            updatedRoute);
+        edge.ChangeRoute(updatedRoute);
 
         try
         {
-            _edges.Update(
-                edge);
+            _edges.Update(edge);
         }
         catch
         {
-            edge.ChangeRoute(
-                originalRoute);
+            edge.ChangeRoute(originalRoute);
 
             throw;
         }
 
-        return new MoveBendResult(
-            edge,
-            bendIndex,
-            oldPosition,
-            newPosition);
+        return new MoveBendResult(edge, bendIndex, oldPosition, newPosition);
     }
 
     private static void EnsureNoDegenerateSegment(
@@ -107,86 +69,50 @@ public sealed class MoveBendService
         GraphVertex vertexB,
         int bendIndex,
         Point2 newPosition,
-        double tolerance)
+        double tolerance
+    )
     {
-        var previous =
-            bendIndex == 0
-                ? vertexA.Position
-                : edge.Route
-                    .IntermediatePoints[
-                        bendIndex - 1];
+        var previous = bendIndex == 0 ? vertexA.Position : edge.Route.IntermediatePoints[bendIndex - 1];
 
-        var next =
-            bendIndex ==
-            edge.Route.Count - 1
-                ? vertexB.Position
-                : edge.Route
-                    .IntermediatePoints[
-                        bendIndex + 1];
+        var next = bendIndex == edge.Route.Count - 1 ? vertexB.Position : edge.Route.IntermediatePoints[bendIndex + 1];
 
-        if (AreEqual(
-                newPosition,
-                previous,
-                tolerance))
+        if (AreEqual(newPosition, previous, tolerance))
         {
-            throw new ArgumentException(
-                "Bend cannot coincide with the previous route point.",
-                nameof(newPosition));
+            throw new ArgumentException("Bend cannot coincide with the previous route point.", nameof(newPosition));
         }
 
-        if (AreEqual(
-                newPosition,
-                next,
-                tolerance))
+        if (AreEqual(newPosition, next, tolerance))
         {
-            throw new ArgumentException(
-                "Bend cannot coincide with the next route point.",
-                nameof(newPosition));
+            throw new ArgumentException("Bend cannot coincide with the next route point.", nameof(newPosition));
         }
     }
 
-    private static void ValidateBendIndex(
-        GraphEdge edge,
-        int bendIndex)
+    private static void ValidateBendIndex(GraphEdge edge, int bendIndex)
     {
-        if (bendIndex < 0 ||
-            bendIndex >= edge.Route.Count)
+        if (bendIndex < 0 || bendIndex >= edge.Route.Count)
         {
-            throw new ArgumentOutOfRangeException(
-                nameof(bendIndex));
+            throw new ArgumentOutOfRangeException(nameof(bendIndex));
         }
     }
 
-    private static bool AreEqual(
-        Point2 a,
-        Point2 b,
-        double tolerance)
+    private static bool AreEqual(Point2 a, Point2 b, double tolerance)
     {
-        return
-            a.DistanceTo(b) <=
-            tolerance;
+        return a.DistanceTo(b) <= tolerance;
     }
 
-    private static void ValidatePoint(
-        Point2 point)
+    private static void ValidatePoint(Point2 point)
     {
-        if (!double.IsFinite(point.X) ||
-            !double.IsFinite(point.Y))
+        if (!double.IsFinite(point.X) || !double.IsFinite(point.Y))
         {
-            throw new ArgumentException(
-                "Bend position must contain finite coordinates.",
-                nameof(point));
+            throw new ArgumentException("Bend position must contain finite coordinates.", nameof(point));
         }
     }
 
-    private static void ValidateTolerance(
-        double tolerance)
+    private static void ValidateTolerance(double tolerance)
     {
-        if (!double.IsFinite(tolerance) ||
-            tolerance <= 0)
+        if (!double.IsFinite(tolerance) || tolerance <= 0)
         {
-            throw new ArgumentOutOfRangeException(
-                nameof(tolerance));
+            throw new ArgumentOutOfRangeException(nameof(tolerance));
         }
     }
 }

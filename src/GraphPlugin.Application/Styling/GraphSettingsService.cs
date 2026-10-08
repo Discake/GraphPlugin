@@ -9,9 +9,7 @@ public sealed class GraphSettingsService
     private readonly IGraphSettingsRepository _settings;
     private readonly IEdgeStyleApplier _edgeStyleApplier;
 
-    public GraphSettingsService(
-        IGraphSettingsRepository settings,
-        IEdgeStyleApplier edgeStyleApplier)
+    public GraphSettingsService(IGraphSettingsRepository settings, IEdgeStyleApplier edgeStyleApplier)
     {
         _settings = settings;
         _edgeStyleApplier = edgeStyleApplier;
@@ -22,11 +20,9 @@ public sealed class GraphSettingsService
         return _settings.Load();
     }
 
-    public void ChangeEdgeStyle(
-        EdgeStyle style)
+    public void ChangeEdgeStyle(EdgeStyle style)
     {
-        var settings =
-            _settings.Load();
+        var settings = _settings.Load();
 
         settings.ChangeEdgeStyle(style);
 

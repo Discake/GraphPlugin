@@ -13,100 +13,71 @@ public sealed class VertexCommands
     [CommandMethod("GRAPHNODE")]
     public void CreateVertex()
     {
-        var context =
-            PluginServices.CurrentContext;
+        var context = PluginServices.CurrentContext;
 
-        var editor =
-            context.Document.Editor;
+        var editor = context.Document.Editor;
 
-        var options =
-            new PromptKeywordOptions(
-                "\nТип вершины");
+        var options = new PromptKeywordOptions("\nТип вершины");
 
         options.Keywords.Add("Circle");
         options.Keywords.Add("Triangle");
         options.Keywords.Default = "Circle";
 
-        var shapeResult =
-            editor.GetKeywords(options);
+        var shapeResult = editor.GetKeywords(options);
 
         if (shapeResult.Status != PromptStatus.OK)
             return;
 
-        var shape =
-            shapeResult.StringResult == "Triangle"
-                ? VertexShape.Triangle
-                : VertexShape.Circle;
+        var shape = shapeResult.StringResult == "Triangle" ? VertexShape.Triangle : VertexShape.Circle;
 
-        var pointResult =
-            editor.GetPoint(
-                "\nУкажите положение вершины графа: ");
+        var pointResult = editor.GetPoint("\nУкажите положение вершины графа: ");
 
         if (pointResult.Status != PromptStatus.OK)
             return;
 
-        var point =
-            pointResult.Value;
+        var point = pointResult.Value;
 
-        context.VertexService.CreateVertex(
-            new Point2(
-                point.X,
-                point.Y),
-            shape);
+        context.VertexService.CreateVertex(new Point2(point.X, point.Y), shape);
     }
 
     [CommandMethod("GRAPHINFO")]
     public void GraphInfo()
     {
-        var context =
-            PluginServices.CurrentContext;
+        var context = PluginServices.CurrentContext;
 
-        var document =
-            context.Document;
+        var document = context.Document;
 
-        var editor =
-            document.Editor;
+        var editor = document.Editor;
 
-        var selection =
-            editor.GetEntity(
-                "\nВыберите объект графа: ");
+        var selection = editor.GetEntity("\nВыберите объект графа: ");
 
         if (selection.Status != PromptStatus.OK)
             return;
 
-        using var transaction =
-            document.Database.TransactionManager
-                .StartTransaction();
+        using var transaction = document.Database.TransactionManager.StartTransaction();
 
-        var entity =
-            transaction.GetObject(
-                selection.ObjectId,
-                OpenMode.ForRead) as Entity;
+        var entity = transaction.GetObject(selection.ObjectId, OpenMode.ForRead) as Entity;
 
         if (entity is null)
             return;
 
-        var metadata =
-            new XRecordMetadataStore();
+        var metadata = new XRecordMetadataStore();
 
-        var vertex =
-            metadata.ReadVertex(
-                entity,
-                transaction);
+        var vertex = metadata.ReadVertex(entity, transaction);
 
         if (vertex is null)
         {
-            editor.WriteMessage(
-                "\nОбъект не является вершиной GraphPlugin.");
+            editor.WriteMessage("\nОбъект не является вершиной GraphPlugin.");
 
             return;
         }
 
         editor.WriteMessage(
-            $"\nGraph vertex:" +
-            $"\n  Id: {vertex.Id}" +
-            $"\n  Version: {vertex.Version}" +
-            $"\n  Shape: {vertex.Shape}");
+            $"\nGraph vertex:"
+                + $"\n  Id: {vertex.Id}"
+                + $"\n  Version: {vertex.Version}"
+                + $"\n  Shape: {vertex.Shape}"
+        );
 
         transaction.Commit();
     }
@@ -114,26 +85,23 @@ public sealed class VertexCommands
     [CommandMethod("GRAPHVERTICES")]
     public void ListVertices()
     {
-        var context =
-            PluginServices.CurrentContext;
+        var context = PluginServices.CurrentContext;
 
-        var editor =
-            context.Document.Editor;
+        var editor = context.Document.Editor;
 
-        var vertices =
-            context.Vertices.GetAll();
+        var vertices = context.Vertices.GetAll();
 
-        editor.WriteMessage(
-            $"\nНайдено вершин: {vertices.Count}");
+        editor.WriteMessage($"\nНайдено вершин: {vertices.Count}");
 
         foreach (var vertex in vertices)
         {
             editor.WriteMessage(
-                $"\n" +
-                $"  {vertex.Id}" +
-                $" | X={vertex.Position.X:F2}" +
-                $" | Y={vertex.Position.Y:F2}" +
-                $" | {vertex.Style.Shape}");
+                $"\n"
+                    + $"  {vertex.Id}"
+                    + $" | X={vertex.Position.X:F2}"
+                    + $" | Y={vertex.Position.Y:F2}"
+                    + $" | {vertex.Style.Shape}"
+            );
         }
     }
 }

@@ -6,34 +6,24 @@ public sealed class EdgeRoute
 {
     private readonly Point2[] _intermediatePoints;
 
-    public IReadOnlyList<Point2> IntermediatePoints =>
-        Array.AsReadOnly(_intermediatePoints);
+    public IReadOnlyList<Point2> IntermediatePoints => Array.AsReadOnly(_intermediatePoints);
 
-    public int Count =>
-        _intermediatePoints.Length;
+    public int Count => _intermediatePoints.Length;
 
-    public bool IsStraight =>
-        _intermediatePoints.Length == 0;
+    public bool IsStraight => _intermediatePoints.Length == 0;
 
-    public static EdgeRoute Straight { get; } =
-        new();
+    public static EdgeRoute Straight { get; } = new();
 
-    public EdgeRoute(
-        IEnumerable<Point2>? intermediatePoints = null)
+    public EdgeRoute(IEnumerable<Point2>? intermediatePoints = null)
     {
-        _intermediatePoints =
-            intermediatePoints?
-                .ToArray()
-            ?? Array.Empty<Point2>();
+        _intermediatePoints = intermediatePoints?.ToArray() ?? Array.Empty<Point2>();
     }
 
     /// <summary>
     /// Возвращает полный маршрут:
     /// A -> P1 -> P2 -> ... -> B.
     /// </summary>
-    public IEnumerable<Point2> EnumeratePath(
-        Point2 start,
-        Point2 end)
+    public IEnumerable<Point2> EnumeratePath(Point2 start, Point2 end)
     {
         yield return start;
 
@@ -56,66 +46,47 @@ public sealed class EdgeRoute
     /// 1 = P1-P2
     /// 2 = P2-B
     /// </summary>
-    public EdgeRoute InsertAtSegment(
-        int segmentIndex,
-        Point2 point)
+    public EdgeRoute InsertAtSegment(int segmentIndex, Point2 point)
     {
-        if (segmentIndex < 0 ||
-            segmentIndex > _intermediatePoints.Length)
+        if (segmentIndex < 0 || segmentIndex > _intermediatePoints.Length)
         {
-            throw new ArgumentOutOfRangeException(
-                nameof(segmentIndex));
+            throw new ArgumentOutOfRangeException(nameof(segmentIndex));
         }
 
-        var points =
-            _intermediatePoints.ToList();
+        var points = _intermediatePoints.ToList();
 
-        points.Insert(
-            segmentIndex,
-            point);
+        points.Insert(segmentIndex, point);
 
         return new EdgeRoute(points);
     }
 
-    public EdgeRoute MovePoint(
-        int pointIndex,
-        Point2 newPosition)
+    public EdgeRoute MovePoint(int pointIndex, Point2 newPosition)
     {
-        ValidatePointIndex(
-            pointIndex);
+        ValidatePointIndex(pointIndex);
 
-        var points =
-            _intermediatePoints.ToArray();
+        var points = _intermediatePoints.ToArray();
 
-        points[pointIndex] =
-            newPosition;
+        points[pointIndex] = newPosition;
 
         return new EdgeRoute(points);
     }
 
-    public EdgeRoute RemovePoint(
-        int pointIndex)
+    public EdgeRoute RemovePoint(int pointIndex)
     {
-        ValidatePointIndex(
-            pointIndex);
+        ValidatePointIndex(pointIndex);
 
-        var points =
-            _intermediatePoints.ToList();
+        var points = _intermediatePoints.ToList();
 
-        points.RemoveAt(
-            pointIndex);
+        points.RemoveAt(pointIndex);
 
         return new EdgeRoute(points);
     }
 
-    private void ValidatePointIndex(
-        int pointIndex)
+    private void ValidatePointIndex(int pointIndex)
     {
-        if (pointIndex < 0 ||
-            pointIndex >= _intermediatePoints.Length)
+        if (pointIndex < 0 || pointIndex >= _intermediatePoints.Length)
         {
-            throw new ArgumentOutOfRangeException(
-                nameof(pointIndex));
+            throw new ArgumentOutOfRangeException(nameof(pointIndex));
         }
     }
 }

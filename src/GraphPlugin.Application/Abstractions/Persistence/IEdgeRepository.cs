@@ -8,8 +8,7 @@ public interface IEdgeRepository
 
     IReadOnlyCollection<GraphEdge> GetAll();
 
-    IReadOnlyCollection<GraphEdge> GetByVertex(
-        Guid vertexId);
+    IReadOnlyCollection<GraphEdge> GetByVertex(Guid vertexId);
 
     void Add(GraphEdge edge);
 

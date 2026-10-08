@@ -14,8 +14,7 @@ public sealed class VertexServiceTests
         var edges = new FakeEdgeRepository();
         var service = new VertexService(vertices, edges);
 
-        var vertex = service.CreateVertex(
-            new Point2(100, 200));
+        var vertex = service.CreateVertex(new Point2(100, 200));
 
         Assert.Equal(1, vertices.Count);
         Assert.Same(vertex, vertices.Get(vertex.Id));
@@ -28,12 +27,9 @@ public sealed class VertexServiceTests
         var edges = new FakeEdgeRepository();
         var service = new VertexService(vertices, edges);
 
-        var vertex = service.CreateVertex(
-            new Point2(0, 0));
+        var vertex = service.CreateVertex(new Point2(0, 0));
 
-        Assert.Equal(
-            VertexShape.Circle,
-            vertex.Style.Shape);
+        Assert.Equal(VertexShape.Circle, vertex.Style.Shape);
     }
 
     [Fact]
@@ -43,13 +39,9 @@ public sealed class VertexServiceTests
         var edges = new FakeEdgeRepository();
         var service = new VertexService(vertices, edges);
 
-        var vertex = service.CreateVertex(
-            new Point2(0, 0),
-            VertexShape.Circle);
+        var vertex = service.CreateVertex(new Point2(0, 0), VertexShape.Circle);
 
-        Assert.Equal(
-            GraphColor.Blue,
-            vertex.Style.Color);
+        Assert.Equal(GraphColor.Blue, vertex.Style.Color);
     }
 
     [Fact]
@@ -59,13 +51,9 @@ public sealed class VertexServiceTests
         var edges = new FakeEdgeRepository();
         var service = new VertexService(vertices, edges);
 
-        var vertex = service.CreateVertex(
-            new Point2(0, 0),
-            VertexShape.Triangle);
+        var vertex = service.CreateVertex(new Point2(0, 0), VertexShape.Triangle);
 
-        Assert.Equal(
-            GraphColor.Red,
-            vertex.Style.Color);
+        Assert.Equal(GraphColor.Red, vertex.Style.Color);
     }
 
     [Fact]

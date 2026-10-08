@@ -13,70 +13,51 @@ public sealed class ShortestPathCommands
     [CommandMethod("GRAPHCLEARPATH")]
     public void ClearShortestPath()
     {
-        var context =
-            PluginServices.CurrentContext;
+        var context = PluginServices.CurrentContext;
 
-        var document =
-            context.Document;
+        var document = context.Document;
 
         if (!context.PathHighlighter.HasHighlight)
         {
-            document.Editor.WriteMessage(
-                "\nПодсвеченного пути нет.");
+            document.Editor.WriteMessage("\nПодсвеченного пути нет.");
 
             return;
         }
 
         context.PathHighlighter.Clear();
 
-        document.Editor.WriteMessage(
-            "\nПодсветка кратчайшего пути снята.");
+        document.Editor.WriteMessage("\nПодсветка кратчайшего пути снята.");
     }
 
     [CommandMethod("GRAPHSHORTESTPATH")]
     public void FindShortestPath()
     {
-        var context =
-            PluginServices.CurrentContext;
+        var context = PluginServices.CurrentContext;
 
-        var document =
-            context.Document;
+        var document = context.Document;
 
-        var editor =
-            document.Editor;
+        var editor = document.Editor;
 
         context.PathHighlighter.Clear();
 
-        editor.SetImpliedSelection(
-            Array.Empty<ObjectId>());
+        editor.SetImpliedSelection(Array.Empty<ObjectId>());
 
-        editor.WriteMessage(
-            "\nПоиск кратчайшего пути.");
+        editor.WriteMessage("\nПоиск кратчайшего пути.");
 
-        var startVertex =
-            SelectPathVertex(
-                editor,
-                context,
-                "\nВыберите начальную вершину: ");
+        var startVertex = SelectPathVertex(editor, context, "\nВыберите начальную вершину: ");
 
         if (startVertex is null)
         {
-            editor.WriteMessage(
-                "\nПоиск отменён.");
+            editor.WriteMessage("\nПоиск отменён.");
 
             return;
         }
 
-        var endVertex =
-            SelectPathVertex(
-                editor,
-                context,
-                "\nВыберите конечную вершину: ");
+        var endVertex = SelectPathVertex(editor, context, "\nВыберите конечную вершину: ");
 
         if (endVertex is null)
         {
-            editor.WriteMessage(
-                "\nПоиск отменён.");
+            editor.WriteMessage("\nПоиск отменён.");
 
             return;
         }
@@ -85,47 +66,37 @@ public sealed class ShortestPathCommands
 
         try
         {
-            result =
-                context.ShortestPath.Find(
-                    startVertex.Id,
-                    endVertex.Id);
+            result = context.ShortestPath.Find(startVertex.Id, endVertex.Id);
         }
         catch (System.Exception exception)
         {
-            editor.WriteMessage(
-                $"\nНе удалось найти путь: " +
-                exception.Message);
+            editor.WriteMessage($"\nНе удалось найти путь: " + exception.Message);
 
             return;
         }
 
         if (!result.Found)
         {
-            editor.WriteMessage(
-                "\nПуть между выбранными вершинами не найден.");
+            editor.WriteMessage("\nПуть между выбранными вершинами не найден.");
 
             return;
         }
 
-        context.PathHighlighter.Show(
-            result);
+        context.PathHighlighter.Show(result);
 
         editor.WriteMessage(
-            $"\nКратчайший путь найден." +
-            $"\nДлина: {result.TotalLength:0.###}" +
-            $" ед. чертежа" +
-            $"\nКоличество рёбер: {result.EdgeIds.Count}");
+            $"\nКратчайший путь найден."
+                + $"\nДлина: {result.TotalLength:0.###}"
+                + $" ед. чертежа"
+                + $"\nКоличество рёбер: {result.EdgeIds.Count}"
+        );
     }
 
-    private static GraphVertex? SelectPathVertex(
-        Editor editor,
-        GraphDocumentContext context,
-        string prompt)
+    private static GraphVertex? SelectPathVertex(Editor editor, GraphDocumentContext context, string prompt)
     {
         while (true)
         {
-            var result =
-                editor.GetEntity(prompt);
+            var result = editor.GetEntity(prompt);
 
             if (result.Status == PromptStatus.Cancel)
                 return null;
@@ -133,16 +104,12 @@ public sealed class ShortestPathCommands
             if (result.Status != PromptStatus.OK)
                 return null;
 
-            var vertex =
-                context.VertexSelection.ReadVertex(
-                    result.ObjectId);
+            var vertex = context.VertexSelection.ReadVertex(result.ObjectId);
 
             if (vertex is not null)
                 return vertex;
 
-            editor.WriteMessage(
-                "\nВыбранный объект не является " +
-                "вершиной GraphPlugin.");
+            editor.WriteMessage("\nВыбранный объект не является " + "вершиной GraphPlugin.");
         }
     }
 }

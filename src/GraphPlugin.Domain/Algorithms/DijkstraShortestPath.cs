@@ -6,79 +6,56 @@ public sealed class DijkstraShortestPath
 {
     private readonly EdgeLengthCalculator _lengthCalculator;
 
-    public DijkstraShortestPath(
-        EdgeLengthCalculator lengthCalculator)
+    public DijkstraShortestPath(EdgeLengthCalculator lengthCalculator)
     {
-        _lengthCalculator =
-            lengthCalculator ??
-            throw new ArgumentNullException(
-                nameof(lengthCalculator));
+        _lengthCalculator = lengthCalculator ?? throw new ArgumentNullException(nameof(lengthCalculator));
     }
 
     public ShortestPathResult Find(
         IReadOnlyCollection<GraphVertex> vertices,
         IReadOnlyCollection<GraphEdge> edges,
         Guid startVertexId,
-        Guid endVertexId)
+        Guid endVertexId
+    )
     {
         ArgumentNullException.ThrowIfNull(vertices);
         ArgumentNullException.ThrowIfNull(edges);
 
-        var verticesById =
-            BuildVertexIndex(vertices);
+        var verticesById = BuildVertexIndex(vertices);
 
         if (!verticesById.ContainsKey(startVertexId))
         {
-            throw new ArgumentException(
-                $"Start vertex {startVertexId} does not exist.",
-                nameof(startVertexId));
+            throw new ArgumentException($"Start vertex {startVertexId} does not exist.", nameof(startVertexId));
         }
 
         if (!verticesById.ContainsKey(endVertexId))
         {
-            throw new ArgumentException(
-                $"End vertex {endVertexId} does not exist.",
-                nameof(endVertexId));
+            throw new ArgumentException($"End vertex {endVertexId} does not exist.", nameof(endVertexId));
         }
 
-        var adjacency =
-            BuildAdjacency(
-                verticesById,
-                edges);
+        var adjacency = BuildAdjacency(verticesById, edges);
 
         if (startVertexId == endVertexId)
         {
-            return ShortestPathResult.Create(
-                new[] { startVertexId },
-                Array.Empty<Guid>(),
-                0);
+            return ShortestPathResult.Create(new[] { startVertexId }, Array.Empty<Guid>(), 0);
         }
 
-        var distances =
-            verticesById.Keys.ToDictionary(
-                vertexId => vertexId,
-                _ => double.PositiveInfinity);
+        var distances = verticesById.Keys.ToDictionary(vertexId => vertexId, _ => double.PositiveInfinity);
 
-        var previousVertex =
-            new Dictionary<Guid, Guid>();
+        var previousVertex = new Dictionary<Guid, Guid>();
 
-        var previousEdge =
-            new Dictionary<Guid, Guid>();
+        var previousEdge = new Dictionary<Guid, Guid>();
 
-        var queue =
-            new PriorityQueue<Guid, double>();
+        var queue = new PriorityQueue<Guid, double>();
 
         distances[startVertexId] = 0;
         queue.Enqueue(startVertexId, 0);
 
         while (queue.Count > 0)
         {
-            queue.TryDequeue(
-                out var currentVertexId,
-                out var queuedDistance);
+            queue.TryDequeue(out var currentVertexId, out var queuedDistance);
 
-            if (queuedDistance >
-                distances[currentVertexId])
+            if (queuedDistance > distances[currentVertexId])
             {
                 continue;
             }
@@ -86,94 +63,66 @@ public sealed class DijkstraShortestPath
             if (currentVertexId == endVertexId)
                 break;
 
-            foreach (var edge in
-                     adjacency[currentVertexId])
+            foreach (var edge in adjacency[currentVertexId])
             {
-                var neighbourId =
-                    edge.GetOtherVertexId(
-                        currentVertexId);
+                var neighbourId = edge.GetOtherVertexId(currentVertexId);
 
-                var edgeLength =
-                    _lengthCalculator.Calculate(
-                        edge,
-                        verticesById[edge.VertexAId],
-                        verticesById[edge.VertexBId]);
+                var edgeLength = _lengthCalculator.Calculate(
+                    edge,
+                    verticesById[edge.VertexAId],
+                    verticesById[edge.VertexBId]
+                );
 
-                var candidateDistance =
-                    distances[currentVertexId] +
-                    edgeLength;
+                var candidateDistance = distances[currentVertexId] + edgeLength;
 
-                if (candidateDistance >=
-                    distances[neighbourId])
+                if (candidateDistance >= distances[neighbourId])
                 {
                     continue;
                 }
 
-                distances[neighbourId] =
-                    candidateDistance;
+                distances[neighbourId] = candidateDistance;
 
-                previousVertex[neighbourId] =
-                    currentVertexId;
+                previousVertex[neighbourId] = currentVertexId;
 
-                previousEdge[neighbourId] =
-                    edge.Id;
+                previousEdge[neighbourId] = edge.Id;
 
-                queue.Enqueue(
-                    neighbourId,
-                    candidateDistance);
+                queue.Enqueue(neighbourId, candidateDistance);
             }
         }
 
-        if (double.IsPositiveInfinity(
-                distances[endVertexId]))
+        if (double.IsPositiveInfinity(distances[endVertexId]))
         {
             return ShortestPathResult.NoPath();
         }
 
-        return BuildResult(
-            startVertexId,
-            endVertexId,
-            distances[endVertexId],
-            previousVertex,
-            previousEdge);
+        return BuildResult(startVertexId, endVertexId, distances[endVertexId], previousVertex, previousEdge);
     }
 
-    private static Dictionary<Guid, GraphVertex>
-        BuildVertexIndex(
-            IReadOnlyCollection<GraphVertex> vertices)
+    private static Dictionary<Guid, GraphVertex> BuildVertexIndex(IReadOnlyCollection<GraphVertex> vertices)
     {
-        var result =
-            new Dictionary<Guid, GraphVertex>(
-                vertices.Count);
+        var result = new Dictionary<Guid, GraphVertex>(vertices.Count);
 
         foreach (var vertex in vertices)
         {
             ArgumentNullException.ThrowIfNull(vertex);
 
-            if (!result.TryAdd(
-                    vertex.Id,
-                    vertex))
+            if (!result.TryAdd(vertex.Id, vertex))
             {
-                throw new InvalidOperationException(
-                    $"Vertex {vertex.Id} already exists.");
+                throw new InvalidOperationException($"Vertex {vertex.Id} already exists.");
             }
         }
 
         return result;
     }
 
-    private static Dictionary<Guid, List<GraphEdge>>
-        BuildAdjacency(
-            IReadOnlyDictionary<Guid, GraphVertex> vertices,
-            IReadOnlyCollection<GraphEdge> edges)
+    private static Dictionary<Guid, List<GraphEdge>> BuildAdjacency(
+        IReadOnlyDictionary<Guid, GraphVertex> vertices,
+        IReadOnlyCollection<GraphEdge> edges
+    )
     {
-        var adjacency =
-            vertices.Keys.ToDictionary(
-                vertexId => vertexId,
-                _ => new List<GraphEdge>());
+        var adjacency = vertices.Keys.ToDictionary(vertexId => vertexId, _ => new List<GraphEdge>());
 
-        var edgeIds =
-            new HashSet<Guid>();
+        var edgeIds = new HashSet<Guid>();
 
         foreach (var edge in edges)
         {
@@ -181,22 +130,17 @@ public sealed class DijkstraShortestPath
 
             if (!edgeIds.Add(edge.Id))
             {
-                throw new InvalidOperationException(
-                    $"Edge {edge.Id} already exists.");
+                throw new InvalidOperationException($"Edge {edge.Id} already exists.");
             }
 
-            if (!vertices.ContainsKey(
-                    edge.VertexAId))
+            if (!vertices.ContainsKey(edge.VertexAId))
             {
-                throw new InvalidOperationException(
-                    $"Vertex {edge.VertexAId} does not exist.");
+                throw new InvalidOperationException($"Vertex {edge.VertexAId} does not exist.");
             }
 
-            if (!vertices.ContainsKey(
-                    edge.VertexBId))
+            if (!vertices.ContainsKey(edge.VertexBId))
             {
-                throw new InvalidOperationException(
-                    $"Vertex {edge.VertexBId} does not exist.");
+                throw new InvalidOperationException($"Vertex {edge.VertexBId} does not exist.");
             }
 
             adjacency[edge.VertexAId].Add(edge);
@@ -211,31 +155,25 @@ public sealed class DijkstraShortestPath
         Guid endVertexId,
         double totalLength,
         IReadOnlyDictionary<Guid, Guid> previousVertex,
-        IReadOnlyDictionary<Guid, Guid> previousEdge)
+        IReadOnlyDictionary<Guid, Guid> previousEdge
+    )
     {
-        var vertexIds =
-            new List<Guid>();
+        var vertexIds = new List<Guid>();
 
-        var edgeIds =
-            new List<Guid>();
+        var edgeIds = new List<Guid>();
 
-        var current =
-            endVertexId;
+        var current = endVertexId;
 
         vertexIds.Add(current);
 
         while (current != startVertexId)
         {
-            if (!previousVertex.TryGetValue(
-                    current,
-                    out var previous))
+            if (!previousVertex.TryGetValue(current, out var previous))
             {
                 return ShortestPathResult.NoPath();
             }
 
-            if (!previousEdge.TryGetValue(
-                    current,
-                    out var edgeId))
+            if (!previousEdge.TryGetValue(current, out var edgeId))
             {
                 return ShortestPathResult.NoPath();
             }
@@ -248,9 +186,6 @@ public sealed class DijkstraShortestPath
         vertexIds.Reverse();
         edgeIds.Reverse();
 
-        return ShortestPathResult.Create(
-            vertexIds,
-            edgeIds,
-            totalLength);
+        return ShortestPathResult.Create(vertexIds, edgeIds, totalLength);
     }
 }

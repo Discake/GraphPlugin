@@ -8,23 +8,15 @@ public sealed class EdgeStyle
 
     public double LineWeightMm { get; }
 
-    public EdgeStyle(
-        GraphColor color,
-        EdgeLineType lineType,
-        double lineWeightMm)
+    public EdgeStyle(GraphColor color, EdgeLineType lineType, double lineWeightMm)
     {
         if (lineWeightMm <= 0)
-            throw new ArgumentOutOfRangeException(
-                nameof(lineWeightMm));
+            throw new ArgumentOutOfRangeException(nameof(lineWeightMm));
 
         Color = color;
         LineType = lineType;
         LineWeightMm = lineWeightMm;
     }
 
-    public static EdgeStyle Default =>
-        new(
-            GraphColor.White,
-            EdgeLineType.Continuous,
-            0.25);
+    public static EdgeStyle Default => new(GraphColor.White, EdgeLineType.Continuous, 0.25);
 }

@@ -14,7 +14,8 @@ public sealed class ShortestPathResult
         bool found,
         IReadOnlyList<Guid> vertexIds,
         IReadOnlyList<Guid> edgeIds,
-        double totalLength)
+        double totalLength
+    )
     {
         Found = found;
         VertexIds = vertexIds;
@@ -24,22 +25,15 @@ public sealed class ShortestPathResult
 
     public static ShortestPathResult NoPath()
     {
-        return new ShortestPathResult(
-            false,
-            Array.Empty<Guid>(),
-            Array.Empty<Guid>(),
-            double.PositiveInfinity);
+        return new ShortestPathResult(false, Array.Empty<Guid>(), Array.Empty<Guid>(), double.PositiveInfinity);
     }
 
     public static ShortestPathResult Create(
         IReadOnlyList<Guid> vertexIds,
         IReadOnlyList<Guid> edgeIds,
-        double totalLength)
+        double totalLength
+    )
     {
-        return new ShortestPathResult(
-            true,
-            vertexIds,
-            edgeIds,
-            totalLength);
+        return new ShortestPathResult(true, vertexIds, edgeIds, totalLength);
     }
 }

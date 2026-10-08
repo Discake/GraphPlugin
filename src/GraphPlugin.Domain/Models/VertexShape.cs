@@ -3,5 +3,5 @@
 public enum VertexShape
 {
     Circle = 0,
-    Triangle = 1
+    Triangle = 1,
 }

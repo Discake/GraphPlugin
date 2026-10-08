@@ -9,35 +9,17 @@ public sealed class ShortestPathService
     private readonly IEdgeRepository _edges;
     private readonly DijkstraShortestPath _shortestPath;
 
-    public ShortestPathService(
-        IVertexRepository vertices,
-        IEdgeRepository edges,
-        DijkstraShortestPath shortestPath)
+    public ShortestPathService(IVertexRepository vertices, IEdgeRepository edges, DijkstraShortestPath shortestPath)
     {
-        _vertices =
-            vertices ??
-            throw new ArgumentNullException(
-                nameof(vertices));
+        _vertices = vertices ?? throw new ArgumentNullException(nameof(vertices));
 
-        _edges =
-            edges ??
-            throw new ArgumentNullException(
-                nameof(edges));
+        _edges = edges ?? throw new ArgumentNullException(nameof(edges));
 
-        _shortestPath =
-            shortestPath ??
-            throw new ArgumentNullException(
-                nameof(shortestPath));
+        _shortestPath = shortestPath ?? throw new ArgumentNullException(nameof(shortestPath));
     }
 
-    public ShortestPathResult Find(
-        Guid startVertexId,
-        Guid endVertexId)
+    public ShortestPathResult Find(Guid startVertexId, Guid endVertexId)
     {
-        return _shortestPath.Find(
-            _vertices.GetAll(),
-            _edges.GetAll(),
-            startVertexId,
-            endVertexId);
+        return _shortestPath.Find(_vertices.GetAll(), _edges.GetAll(), startVertexId, endVertexId);
     }
 }

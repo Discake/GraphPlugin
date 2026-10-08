@@ -6,20 +6,16 @@ namespace GraphPlugin.Tests.Domain;
 
 public sealed class DijkstraShortestPathTests
 {
-    private static DijkstraShortestPath CreateAlgorithm() =>
-        new(new EdgeLengthCalculator());
+    private static DijkstraShortestPath CreateAlgorithm() => new(new EdgeLengthCalculator());
 
     private static ShortestPathResult Find(
         IEnumerable<GraphVertex> vertices,
         IEnumerable<GraphEdge> edges,
         Guid startVertexId,
-        Guid endVertexId)
+        Guid endVertexId
+    )
     {
-        return CreateAlgorithm().Find(
-            vertices.ToArray(),
-            edges.ToArray(),
-            startVertexId,
-            endVertexId);
+        return CreateAlgorithm().Find(vertices.ToArray(), edges.ToArray(), startVertexId, endVertexId);
     }
 
     [Fact]
@@ -29,11 +25,7 @@ public sealed class DijkstraShortestPathTests
         var b = GraphVertex.Create(new Point2(10, 0));
         var edge = GraphEdge.Create(a.Id, b.Id);
 
-        var result = Find(
-            new[] { a, b },
-            new[] { edge },
-            a.Id,
-            b.Id);
+        var result = Find(new[] { a, b }, new[] { edge }, a.Id, b.Id);
 
         Assert.True(result.Found);
         Assert.Equal(new[] { a.Id, b.Id }, result.VertexIds);
@@ -54,11 +46,7 @@ public sealed class DijkstraShortestPathTests
         var ac = GraphEdge.Create(a.Id, c.Id);
         var cd = GraphEdge.Create(c.Id, d.Id);
 
-        var result = Find(
-            new[] { a, b, c, d },
-            new[] { ab, bd, ac, cd },
-            a.Id,
-            d.Id);
+        var result = Find(new[] { a, b, c, d }, new[] { ab, bd, ac, cd }, a.Id, d.Id);
 
         Assert.True(result.Found);
         Assert.Equal(new[] { a.Id, b.Id, d.Id }, result.VertexIds);
@@ -77,11 +65,7 @@ public sealed class DijkstraShortestPathTests
         var ab = GraphEdge.Create(a.Id, b.Id);
         var cd = GraphEdge.Create(c.Id, d.Id);
 
-        var result = Find(
-            new[] { a, b, c, d },
-            new[] { ab, cd },
-            a.Id,
-            d.Id);
+        var result = Find(new[] { a, b, c, d }, new[] { ab, cd }, a.Id, d.Id);
 
         Assert.False(result.Found);
         Assert.Empty(result.VertexIds);
@@ -94,11 +78,7 @@ public sealed class DijkstraShortestPathTests
     {
         var vertex = GraphVertex.Create(new Point2(5, 10));
 
-        var result = Find(
-            new[] { vertex },
-            Array.Empty<GraphEdge>(),
-            vertex.Id,
-            vertex.Id);
+        var result = Find(new[] { vertex }, Array.Empty<GraphEdge>(), vertex.Id, vertex.Id);
 
         Assert.True(result.Found);
         Assert.Equal(new[] { vertex.Id }, result.VertexIds);
@@ -116,11 +96,7 @@ public sealed class DijkstraShortestPathTests
         var ab = GraphEdge.Create(a.Id, b.Id);
         var bc = GraphEdge.Create(b.Id, c.Id);
 
-        var result = Find(
-            new[] { a, b, c },
-            new[] { ab, bc },
-            c.Id,
-            a.Id);
+        var result = Find(new[] { a, b, c }, new[] { ab, bc }, c.Id, a.Id);
 
         Assert.True(result.Found);
         Assert.Equal(new[] { c.Id, b.Id, a.Id }, result.VertexIds);
@@ -141,11 +117,7 @@ public sealed class DijkstraShortestPathTests
         var ay = GraphEdge.Create(a.Id, y.Id);
         var yb = GraphEdge.Create(y.Id, b.Id);
 
-        var result = Find(
-            new[] { a, x, y, b },
-            new[] { ax, xb, ay, yb },
-            a.Id,
-            b.Id);
+        var result = Find(new[] { a, x, y, b }, new[] { ax, xb, ay, yb }, a.Id, b.Id);
 
         Assert.True(result.Found);
         Assert.Equal(new[] { a.Id, y.Id, b.Id }, result.VertexIds);
@@ -188,21 +160,13 @@ public sealed class DijkstraShortestPathTests
         var longDirect = GraphEdge.Create(
             a.Id,
             b.Id,
-            new EdgeRoute(
-                new[]
-                {
-                    new Point2(0, 100),
-                    new Point2(100, 100)
-                }));
+            new EdgeRoute(new[] { new Point2(0, 100), new Point2(100, 100) })
+        );
 
         var ac = GraphEdge.Create(a.Id, c.Id);
         var cb = GraphEdge.Create(c.Id, b.Id);
 
-        var result = Find(
-            new[] { a, b, c },
-            new[] { longDirect, ac, cb },
-            a.Id,
-            b.Id);
+        var result = Find(new[] { a, b, c }, new[] { longDirect, ac, cb }, a.Id, b.Id);
 
         Assert.True(result.Found);
         Assert.Equal(new[] { a.Id, c.Id, b.Id }, result.VertexIds);
@@ -215,11 +179,8 @@ public sealed class DijkstraShortestPathTests
         var vertex = GraphVertex.Create(new Point2(0, 0));
 
         Assert.Throws<ArgumentException>(() =>
-            Find(
-                new[] { vertex },
-                Array.Empty<GraphEdge>(),
-                Guid.NewGuid(),
-                vertex.Id));
+            Find(new[] { vertex }, Array.Empty<GraphEdge>(), Guid.NewGuid(), vertex.Id)
+        );
     }
 
     [Fact]
@@ -228,11 +189,8 @@ public sealed class DijkstraShortestPathTests
         var vertex = GraphVertex.Create(new Point2(0, 0));
 
         Assert.Throws<ArgumentException>(() =>
-            Find(
-                new[] { vertex },
-                Array.Empty<GraphEdge>(),
-                vertex.Id,
-                Guid.NewGuid()));
+            Find(new[] { vertex }, Array.Empty<GraphEdge>(), vertex.Id, Guid.NewGuid())
+        );
     }
 
     [Fact]
@@ -242,11 +200,6 @@ public sealed class DijkstraShortestPathTests
         var b = GraphVertex.Create(new Point2(10, 0));
         var edge = GraphEdge.Create(a.Id, b.Id);
 
-        Assert.Throws<InvalidOperationException>(() =>
-            Find(
-                new[] { a },
-                new[] { edge },
-                a.Id,
-                a.Id));
+        Assert.Throws<InvalidOperationException>(() => Find(new[] { a }, new[] { edge }, a.Id, a.Id));
     }
 }

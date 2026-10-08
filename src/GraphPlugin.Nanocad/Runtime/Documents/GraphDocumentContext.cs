@@ -24,8 +24,7 @@ public sealed class GraphDocumentContext
 
     public EdgeService EdgeService { get; }
 
-    internal VertexService Graph =>
-        VertexService;
+    internal VertexService Graph => VertexService;
 
     public GraphBuildService GraphBuild { get; }
 
@@ -84,7 +83,8 @@ public sealed class GraphDocumentContext
         EdgePickGeometry edgePickGeometry,
         EdgeGeometrySynchronizer edgeGeometrySynchronizer,
         IVertexAttachmentRepository attachments,
-        VertexAttachmentService attachmentService)
+        VertexAttachmentService attachmentService
+    )
     {
         Document = document;
         Index = index;

@@ -3,8 +3,7 @@ using GraphPlugin.Domain.Models;
 
 namespace GraphPlugin.Tests.Fakes;
 
-public sealed class FakeEdgeStyleApplier
-    : IEdgeStyleApplier
+public sealed class FakeEdgeStyleApplier : IEdgeStyleApplier
 {
     public EdgeStyle? LastAppliedStyle { get; private set; }
 

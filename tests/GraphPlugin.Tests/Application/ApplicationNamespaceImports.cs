@@ -7,7 +7,5 @@ global using GraphPlugin.Application.Styling;
 
 namespace GraphPlugin.Application.Services
 {
-    internal static class TestNamespaceMarker
-    {
-    }
+    internal static class TestNamespaceMarker { }
 }

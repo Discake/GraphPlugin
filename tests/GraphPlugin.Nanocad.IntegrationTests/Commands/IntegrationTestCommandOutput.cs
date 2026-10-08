@@ -5,32 +5,24 @@ namespace GraphPlugin.Nanocad.IntegrationTests.Commands;
 
 internal static class IntegrationTestCommandOutput
 {
-    public static void WriteResults(
-        Editor editor,
-        string title,
-        IReadOnlyList<IntegrationTestResult> results)
+    public static void WriteResults(Editor editor, string title, IReadOnlyList<IntegrationTestResult> results)
     {
-        editor.WriteMessage(
-            $"\n=== {title} ===");
+        editor.WriteMessage($"\n=== {title} ===");
 
         foreach (var result in results)
         {
-            editor.WriteMessage(
-                result.Passed
-                    ? $"\n[PASS] {result.Name}"
-                    : $"\n[FAIL] {result.Name}: {result.Error}");
+            editor.WriteMessage(result.Passed ? $"\n[PASS] {result.Name}" : $"\n[FAIL] {result.Name}: {result.Error}");
         }
 
-        var passed =
-            results.Count(x => x.Passed);
+        var passed = results.Count(x => x.Passed);
 
-        var failed =
-            results.Count - passed;
+        var failed = results.Count - passed;
 
         editor.WriteMessage(
-            $"\n------------------------------" +
-            $"\nPassed: {passed}" +
-            $"\nFailed: {failed}" +
-            $"\nTotal:  {results.Count}");
+            $"\n------------------------------"
+                + $"\nPassed: {passed}"
+                + $"\nFailed: {failed}"
+                + $"\nTotal:  {results.Count}"
+        );
     }
 }

@@ -10,8 +10,7 @@ public sealed class GraphEntityIndex
     private readonly Dictionary<ObjectId, Guid> _vertexIds = new();
     private readonly Dictionary<ObjectId, Guid> _edgeIds = new();
 
-    private readonly Dictionary<Guid, (Guid VertexAId, Guid VertexBId)>
-        _edgeVertices = new();
+    private readonly Dictionary<Guid, (Guid VertexAId, Guid VertexBId)> _edgeVertices = new();
 
     private readonly Dictionary<Guid, HashSet<Guid>> _edgesByVertex = new();
 
@@ -23,154 +22,103 @@ public sealed class GraphEntityIndex
     {
         if (objectId.IsNull)
         {
-            throw new ArgumentException(
-                "Vertex ObjectId cannot be null.",
-                nameof(objectId));
+            throw new ArgumentException("Vertex ObjectId cannot be null.", nameof(objectId));
         }
 
-        if (_vertices.TryGetValue(
-                id,
-                out var existingObjectId))
+        if (_vertices.TryGetValue(id, out var existingObjectId))
         {
-            if (existingObjectId == objectId &&
-                _vertexIds.TryGetValue(
-                    objectId,
-                    out var existingVertexId) &&
-                existingVertexId == id)
+            if (
+                existingObjectId == objectId
+                && _vertexIds.TryGetValue(objectId, out var existingVertexId)
+                && existingVertexId == id
+            )
             {
                 return;
             }
 
             throw new InvalidOperationException(
-                $"Vertex '{id}' is already registered " +
-                $"with object '{existingObjectId}'.");
+                $"Vertex '{id}' is already registered " + $"with object '{existingObjectId}'."
+            );
         }
 
-        if (_vertexIds.TryGetValue(
-                objectId,
-                out var mappedVertexId))
+        if (_vertexIds.TryGetValue(objectId, out var mappedVertexId))
         {
             throw new InvalidOperationException(
-                $"Object '{objectId}' is already registered " +
-                $"as vertex '{mappedVertexId}'.");
+                $"Object '{objectId}' is already registered " + $"as vertex '{mappedVertexId}'."
+            );
         }
 
-        _vertices.Add(
-            id,
-            objectId);
+        _vertices.Add(id, objectId);
 
-        _vertexIds.Add(
-            objectId,
-            id);
+        _vertexIds.Add(objectId, id);
     }
 
-    public void AddEdge(
-        Guid edgeId,
-        ObjectId objectId,
-        Guid vertexAId,
-        Guid vertexBId)
+    public void AddEdge(Guid edgeId, ObjectId objectId, Guid vertexAId, Guid vertexBId)
     {
         if (objectId.IsNull)
         {
-            throw new ArgumentException(
-                "Edge ObjectId cannot be null.",
-                nameof(objectId));
+            throw new ArgumentException("Edge ObjectId cannot be null.", nameof(objectId));
         }
 
-        if (_edges.TryGetValue(
-                edgeId,
-                out var existingObjectId))
+        if (_edges.TryGetValue(edgeId, out var existingObjectId))
         {
-            if (existingObjectId == objectId &&
-                _edgeIds.TryGetValue(
-                    objectId,
-                    out var existingEdgeId) &&
-                existingEdgeId == edgeId &&
-                _edgeVertices.TryGetValue(
-                    edgeId,
-                    out var existingVertices) &&
-                existingVertices ==
-                    (vertexAId, vertexBId))
+            if (
+                existingObjectId == objectId
+                && _edgeIds.TryGetValue(objectId, out var existingEdgeId)
+                && existingEdgeId == edgeId
+                && _edgeVertices.TryGetValue(edgeId, out var existingVertices)
+                && existingVertices == (vertexAId, vertexBId)
+            )
             {
                 return;
             }
 
             throw new InvalidOperationException(
-                $"Edge '{edgeId}' is already registered " +
-                $"with object '{existingObjectId}'.");
+                $"Edge '{edgeId}' is already registered " + $"with object '{existingObjectId}'."
+            );
         }
 
-        if (_edgeIds.TryGetValue(
-                objectId,
-                out var mappedEdgeId))
+        if (_edgeIds.TryGetValue(objectId, out var mappedEdgeId))
         {
             throw new InvalidOperationException(
-                $"Object '{objectId}' is already registered " +
-                $"as edge '{mappedEdgeId}'.");
+                $"Object '{objectId}' is already registered " + $"as edge '{mappedEdgeId}'."
+            );
         }
 
-        _edges.Add(
-            edgeId,
-            objectId);
+        _edges.Add(edgeId, objectId);
 
-        _edgeIds.Add(
-            objectId,
-            edgeId);
+        _edgeIds.Add(objectId, edgeId);
 
-        _edgeVertices.Add(
-            edgeId,
-            (vertexAId, vertexBId));
+        _edgeVertices.Add(edgeId, (vertexAId, vertexBId));
 
-        AddIncidentEdge(
-            vertexAId,
-            edgeId);
+        AddIncidentEdge(vertexAId, edgeId);
 
-        AddIncidentEdge(
-            vertexBId,
-            edgeId);
+        AddIncidentEdge(vertexBId, edgeId);
     }
 
-    public bool TryGetVertexObjectId(
-        Guid id,
-        out ObjectId objectId)
+    public bool TryGetVertexObjectId(Guid id, out ObjectId objectId)
     {
-        return _vertices.TryGetValue(
-            id,
-            out objectId);
+        return _vertices.TryGetValue(id, out objectId);
     }
 
-    public bool TryGetEdgeObjectId(
-        Guid id,
-        out ObjectId objectId)
+    public bool TryGetEdgeObjectId(Guid id, out ObjectId objectId)
     {
-        return _edges.TryGetValue(
-            id,
-            out objectId);
+        return _edges.TryGetValue(id, out objectId);
     }
 
-    public bool TryGetVertexId(
-        ObjectId objectId,
-        out Guid id)
+    public bool TryGetVertexId(ObjectId objectId, out Guid id)
     {
-        return _vertexIds.TryGetValue(
-            objectId,
-            out id);
+        return _vertexIds.TryGetValue(objectId, out id);
     }
 
-    public bool TryGetEdgeId(
-        ObjectId objectId,
-        out Guid id)
+    public bool TryGetEdgeId(ObjectId objectId, out Guid id)
     {
-        return _edgeIds.TryGetValue(
-            objectId,
-            out id);
+        return _edgeIds.TryGetValue(objectId, out id);
     }
 
     public void RemoveVertex(Guid vertexId)
     {
-        if (_vertices.Remove(
-                vertexId,
-                out var objectId))
+        if (_vertices.Remove(vertexId, out var objectId))
         {
             _vertexIds.Remove(objectId);
         }
@@ -178,54 +126,38 @@ public sealed class GraphEntityIndex
         _edgesByVertex.Remove(vertexId);
     }
 
-    public void RemoveEdge(
-        Guid edgeId)
+    public void RemoveEdge(Guid edgeId)
     {
-        if (_edgeVertices.TryGetValue(
-                edgeId,
-                out var vertices))
+        if (_edgeVertices.TryGetValue(edgeId, out var vertices))
         {
-            if (_edgesByVertex.TryGetValue(
-                    vertices.VertexAId,
-                    out var edgesA))
+            if (_edgesByVertex.TryGetValue(vertices.VertexAId, out var edgesA))
             {
-                edgesA.Remove(
-                    edgeId);
+                edgesA.Remove(edgeId);
 
                 if (edgesA.Count == 0)
                 {
-                    _edgesByVertex.Remove(
-                        vertices.VertexAId);
+                    _edgesByVertex.Remove(vertices.VertexAId);
                 }
             }
 
-            if (_edgesByVertex.TryGetValue(
-                    vertices.VertexBId,
-                    out var edgesB))
+            if (_edgesByVertex.TryGetValue(vertices.VertexBId, out var edgesB))
             {
-                edgesB.Remove(
-                    edgeId);
+                edgesB.Remove(edgeId);
 
                 if (edgesB.Count == 0)
                 {
-                    _edgesByVertex.Remove(
-                        vertices.VertexBId);
+                    _edgesByVertex.Remove(vertices.VertexBId);
                 }
             }
 
-            _edgeVertices.Remove(
-                edgeId);
+            _edgeVertices.Remove(edgeId);
         }
 
-        if (_edges.TryGetValue(
-                edgeId,
-                out var objectId))
+        if (_edges.TryGetValue(edgeId, out var objectId))
         {
-            _edgeIds.Remove(
-                objectId);
+            _edgeIds.Remove(objectId);
 
-            _edges.Remove(
-                edgeId);
+            _edges.Remove(edgeId);
         }
     }
 
@@ -241,52 +173,38 @@ public sealed class GraphEntityIndex
         _edgesByVertex.Clear();
     }
 
-    public void ReplaceVertexObject(
-        Guid vertexId,
-        ObjectId newObjectId)
+    public void ReplaceVertexObject(Guid vertexId, ObjectId newObjectId)
     {
         if (newObjectId.IsNull)
         {
-            throw new ArgumentException(
-                "New ObjectId cannot be null.",
-                nameof(newObjectId));
+            throw new ArgumentException("New ObjectId cannot be null.", nameof(newObjectId));
         }
 
-        if (_vertices.TryGetValue(
-                vertexId,
-                out var oldObjectId))
+        if (_vertices.TryGetValue(vertexId, out var oldObjectId))
         {
             if (oldObjectId == newObjectId)
             {
                 return;
             }
 
-            _vertexIds.Remove(
-                oldObjectId);
+            _vertexIds.Remove(oldObjectId);
         }
 
-        if (_vertexIds.TryGetValue(
-                newObjectId,
-                out var existingVertexId) &&
-            existingVertexId != vertexId)
+        if (_vertexIds.TryGetValue(newObjectId, out var existingVertexId) && existingVertexId != vertexId)
         {
             throw new InvalidOperationException(
-                $"Object {newObjectId} is already " +
-                $"registered as vertex {existingVertexId}.");
+                $"Object {newObjectId} is already " + $"registered as vertex {existingVertexId}."
+            );
         }
 
-        _vertices[vertexId] =
-            newObjectId;
+        _vertices[vertexId] = newObjectId;
 
-        _vertexIds[newObjectId] =
-            vertexId;
+        _vertexIds[newObjectId] = vertexId;
     }
 
     public IReadOnlyCollection<Guid> GetIncidentEdgeIds(Guid vertexId)
     {
-        if (!_edgesByVertex.TryGetValue(
-                vertexId,
-                out var edges))
+        if (!_edgesByVertex.TryGetValue(vertexId, out var edges))
         {
             return Array.Empty<Guid>();
         }
@@ -309,19 +227,13 @@ public sealed class GraphEntityIndex
         return _edges.Values.ToArray();
     }
 
-    private void AddIncidentEdge(
-        Guid vertexId,
-        Guid edgeId)
+    private void AddIncidentEdge(Guid vertexId, Guid edgeId)
     {
-        if (!_edgesByVertex.TryGetValue(
-                vertexId,
-                out var edges))
+        if (!_edgesByVertex.TryGetValue(vertexId, out var edges))
         {
-            edges =
-                new HashSet<Guid>();
+            edges = new HashSet<Guid>();
 
-            _edgesByVertex[vertexId] =
-                edges;
+            _edgesByVertex[vertexId] = edges;
         }
 
         edges.Add(edgeId);

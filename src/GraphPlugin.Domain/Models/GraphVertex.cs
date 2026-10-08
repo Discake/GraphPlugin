@@ -10,29 +10,19 @@ public sealed class GraphVertex
 
     public VertexStyle Style { get; private set; }
 
-    public GraphVertex(
-        Guid id,
-        Point2 position,
-        VertexStyle style)
+    public GraphVertex(Guid id, Point2 position, VertexStyle style)
     {
         if (id == Guid.Empty)
-            throw new ArgumentException(
-                "Vertex id cannot be empty.",
-                nameof(id));
+            throw new ArgumentException("Vertex id cannot be empty.", nameof(id));
 
         Id = id;
         Position = position;
         Style = style ?? throw new ArgumentNullException(nameof(style));
     }
 
-    public static GraphVertex Create(
-        Point2 position,
-        VertexStyle? style = null)
+    public static GraphVertex Create(Point2 position, VertexStyle? style = null)
     {
-        return new GraphVertex(
-            Guid.NewGuid(),
-            position,
-            style ?? new VertexStyle());
+        return new GraphVertex(Guid.NewGuid(), position, style ?? new VertexStyle());
     }
 
     public void MoveTo(Point2 position)

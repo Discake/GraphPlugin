@@ -2,17 +2,17 @@
 
 namespace GraphPlugin::Native::Commands
 {
-    public ref class GraphCommands
-    {
-    public:
-        static void GraphCppInfo();
+ref class GraphCommands
+{
+  public:
+    static void GraphCppInfo();
 
-        static void GraphCppVertex();
+    static void GraphCppVertex();
 
-        static void GraphCppVertexInfo();
+    static void GraphCppVertexInfo();
 
-        static void GraphCppVertexStyle();
+    static void GraphCppVertexStyle();
 
-        static void GraphCppDeleteVertex();
-    };
-}
+    static void GraphCppDeleteVertex();
+};
+} // namespace GraphPlugin::Native::Commands

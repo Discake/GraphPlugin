@@ -6,5 +6,5 @@ public enum GraphColor
     Red,
     Green,
     White,
-    Black
+    Black,
 }

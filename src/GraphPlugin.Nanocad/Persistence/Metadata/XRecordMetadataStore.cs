@@ -1,15 +1,11 @@
 ﻿using GraphPlugin.Domain.Models;
-
 using Teigha.DatabaseServices;
 
 namespace GraphPlugin.Nanocad.Persistence.Metadata;
 
 public sealed class XRecordMetadataStore
 {
-    public void WriteVertex(
-        Entity entity,
-        GraphVertex vertex,
-        Transaction transaction)
+    public void WriteVertex(Entity entity, GraphVertex vertex, Transaction transaction)
     {
         ArgumentNullException.ThrowIfNull(entity);
         ArgumentNullException.ThrowIfNull(vertex);
@@ -17,252 +13,142 @@ public sealed class XRecordMetadataStore
 
         EnsureExtensionDictionary(entity);
 
-        var dictionary =
-            (DBDictionary)transaction.GetObject(
-                entity.ExtensionDictionary,
-                OpenMode.ForWrite);
+        var dictionary = (DBDictionary)transaction.GetObject(entity.ExtensionDictionary, OpenMode.ForWrite);
 
         var data = new ResultBuffer(
-            new TypedValue(
-                (int)DxfCode.Int32,
-                GraphMetadataKeys.CurrentVertexVersion),
-
-            new TypedValue(
-                (int)DxfCode.Text,
-                vertex.Id.ToString("D")),
-
-            new TypedValue(
-                (int)DxfCode.Int32,
-                (int)vertex.Style.Shape),
-
-            new TypedValue(
-                (int)DxfCode.Int32,
-                (int)vertex.Style.Color),
-
-            new TypedValue(
-                (int)DxfCode.Real,
-                vertex.Style.Size)
+            new TypedValue((int)DxfCode.Int32, GraphMetadataKeys.CurrentVertexVersion),
+            new TypedValue((int)DxfCode.Text, vertex.Id.ToString("D")),
+            new TypedValue((int)DxfCode.Int32, (int)vertex.Style.Shape),
+            new TypedValue((int)DxfCode.Int32, (int)vertex.Style.Color),
+            new TypedValue((int)DxfCode.Real, vertex.Style.Size)
         );
 
-        var xrecord = new Xrecord
-        {
-            Data = data
-        };
+        var xrecord = new Xrecord { Data = data };
 
-        dictionary.SetAt(
-            GraphMetadataKeys.VertexRecord,
-            xrecord);
+        dictionary.SetAt(GraphMetadataKeys.VertexRecord, xrecord);
 
-        transaction.AddNewlyCreatedDBObject(
-            xrecord,
-            true);
+        transaction.AddNewlyCreatedDBObject(xrecord, true);
     }
 
-    public VertexMetadata? ReadVertex(
-        Entity entity,
-        Transaction transaction)
+    public VertexMetadata? ReadVertex(Entity entity, Transaction transaction)
     {
         if (entity.ExtensionDictionary.IsNull)
             return null;
 
-        var dictionary =
-            (DBDictionary)transaction.GetObject(
-                entity.ExtensionDictionary,
-                OpenMode.ForRead);
+        var dictionary = (DBDictionary)transaction.GetObject(entity.ExtensionDictionary, OpenMode.ForRead);
 
-        if (!dictionary.Contains(
-                GraphMetadataKeys.VertexRecord))
+        if (!dictionary.Contains(GraphMetadataKeys.VertexRecord))
         {
             return null;
         }
 
-        var recordId =
-            dictionary.GetAt(
-                GraphMetadataKeys.VertexRecord);
+        var recordId = dictionary.GetAt(GraphMetadataKeys.VertexRecord);
 
-        var xrecord =
-            (Xrecord)transaction.GetObject(
-                recordId,
-                OpenMode.ForRead);
+        var xrecord = (Xrecord)transaction.GetObject(recordId, OpenMode.ForRead);
 
         if (xrecord.Data is null)
             return null;
 
-        var values =
-            xrecord.Data.AsArray();
+        var values = xrecord.Data.AsArray();
 
         if (values.Length < 5)
             return null;
 
-        int version =
-            Convert.ToInt32(values[0].Value);
+        int version = Convert.ToInt32(values[0].Value);
 
-        EnsureSupportedVersion(
-            GraphMetadataKeys.VertexRecord,
-            version,
-            GraphMetadataKeys.CurrentVertexVersion);
+        EnsureSupportedVersion(GraphMetadataKeys.VertexRecord, version, GraphMetadataKeys.CurrentVertexVersion);
 
-        if (!Guid.TryParse(
-                values[1].Value?.ToString(),
-                out Guid id))
+        if (!Guid.TryParse(values[1].Value?.ToString(), out Guid id))
         {
             return null;
         }
 
-        var shape =
-            (VertexShape)Convert.ToInt32(
-                values[2].Value);
+        var shape = (VertexShape)Convert.ToInt32(values[2].Value);
 
-        var color =
-            (GraphColor)Convert.ToInt32(
-                values[3].Value);
+        var color = (GraphColor)Convert.ToInt32(values[3].Value);
 
-        double size =
-            Convert.ToDouble(
-                values[4].Value);
+        double size = Convert.ToDouble(values[4].Value);
 
-        return new VertexMetadata(
-            version,
-            id,
-            shape,
-            color,
-            size);
+        return new VertexMetadata(version, id, shape, color, size);
     }
 
-    public void WriteEdge(
-        Entity entity,
-        GraphEdge edge,
-        Transaction transaction)
+    public void WriteEdge(Entity entity, GraphEdge edge, Transaction transaction)
     {
         EnsureExtensionDictionary(entity);
 
-        var dictionary =
-            (DBDictionary)transaction.GetObject(
-                entity.ExtensionDictionary,
-                OpenMode.ForWrite);
+        var dictionary = (DBDictionary)transaction.GetObject(entity.ExtensionDictionary, OpenMode.ForWrite);
 
-        var data =
-            new ResultBuffer(
-                new TypedValue(
-                    (int)DxfCode.Int32,
-                    GraphMetadataKeys.CurrentEdgeVersion),
+        var data = new ResultBuffer(
+            new TypedValue((int)DxfCode.Int32, GraphMetadataKeys.CurrentEdgeVersion),
+            new TypedValue((int)DxfCode.Text, edge.Id.ToString("D")),
+            new TypedValue((int)DxfCode.Text, edge.VertexAId.ToString("D")),
+            new TypedValue((int)DxfCode.Text, edge.VertexBId.ToString("D"))
+        );
 
-                new TypedValue(
-                    (int)DxfCode.Text,
-                    edge.Id.ToString("D")),
+        var xrecord = new Xrecord { Data = data };
 
-                new TypedValue(
-                    (int)DxfCode.Text,
-                    edge.VertexAId.ToString("D")),
+        dictionary.SetAt(GraphMetadataKeys.EdgeRecord, xrecord);
 
-                new TypedValue(
-                    (int)DxfCode.Text,
-                    edge.VertexBId.ToString("D"))
-            );
-
-        var xrecord =
-            new Xrecord
-            {
-                Data = data
-            };
-
-        dictionary.SetAt(
-            GraphMetadataKeys.EdgeRecord,
-            xrecord);
-
-        transaction.AddNewlyCreatedDBObject(
-            xrecord,
-            true);
+        transaction.AddNewlyCreatedDBObject(xrecord, true);
     }
 
-    public EdgeMetadata? ReadEdge(
-        Entity entity,
-        Transaction transaction)
+    public EdgeMetadata? ReadEdge(Entity entity, Transaction transaction)
     {
         if (entity.ExtensionDictionary.IsNull)
             return null;
 
-        var dictionary =
-            (DBDictionary)transaction.GetObject(
-                entity.ExtensionDictionary,
-                OpenMode.ForRead);
+        var dictionary = (DBDictionary)transaction.GetObject(entity.ExtensionDictionary, OpenMode.ForRead);
 
-        if (!dictionary.Contains(
-                GraphMetadataKeys.EdgeRecord))
+        if (!dictionary.Contains(GraphMetadataKeys.EdgeRecord))
         {
             return null;
         }
 
-        var recordId =
-            dictionary.GetAt(
-                GraphMetadataKeys.EdgeRecord);
+        var recordId = dictionary.GetAt(GraphMetadataKeys.EdgeRecord);
 
-        var xrecord =
-            (Xrecord)transaction.GetObject(
-                recordId,
-                OpenMode.ForRead);
+        var xrecord = (Xrecord)transaction.GetObject(recordId, OpenMode.ForRead);
 
         if (xrecord.Data is null)
             return null;
 
-        var values =
-            xrecord.Data.AsArray();
+        var values = xrecord.Data.AsArray();
 
         if (values.Length < 4)
             return null;
 
-        int version =
-            Convert.ToInt32(values[0].Value);
+        int version = Convert.ToInt32(values[0].Value);
 
-        EnsureSupportedVersion(
-            GraphMetadataKeys.EdgeRecord,
-            version,
-            GraphMetadataKeys.CurrentEdgeVersion);
+        EnsureSupportedVersion(GraphMetadataKeys.EdgeRecord, version, GraphMetadataKeys.CurrentEdgeVersion);
 
-        if (!Guid.TryParse(
-                values[1].Value?.ToString(),
-                out var id))
+        if (!Guid.TryParse(values[1].Value?.ToString(), out var id))
         {
             return null;
         }
 
-        if (!Guid.TryParse(
-                values[2].Value?.ToString(),
-                out var vertexAId))
+        if (!Guid.TryParse(values[2].Value?.ToString(), out var vertexAId))
         {
             return null;
         }
 
-        if (!Guid.TryParse(
-                values[3].Value?.ToString(),
-                out var vertexBId))
+        if (!Guid.TryParse(values[3].Value?.ToString(), out var vertexBId))
         {
             return null;
         }
 
-        return new EdgeMetadata(
-            version,
-            id,
-            vertexAId,
-            vertexBId);
+        return new EdgeMetadata(version, id, vertexAId, vertexBId);
     }
 
-    private static void EnsureSupportedVersion(
-        string recordName,
-        int actualVersion,
-        int supportedVersion)
+    private static void EnsureSupportedVersion(string recordName, int actualVersion, int supportedVersion)
     {
         if (actualVersion == supportedVersion)
             return;
 
         throw new InvalidOperationException(
-            $"Unsupported {recordName} version: " +
-            $"{actualVersion}. Supported version: " +
-            $"{supportedVersion}.");
+            $"Unsupported {recordName} version: " + $"{actualVersion}. Supported version: " + $"{supportedVersion}."
+        );
     }
 
-    private static void EnsureExtensionDictionary(
-        Entity entity)
+    private static void EnsureExtensionDictionary(Entity entity)
     {
         if (entity.ExtensionDictionary.IsNull)
         {

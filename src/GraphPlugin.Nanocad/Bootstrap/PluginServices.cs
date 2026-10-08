@@ -1,6 +1,5 @@
 using GraphPlugin.Nanocad.Runtime;
 using HostMgd.ApplicationServices;
-
 using NanoApplication = HostMgd.ApplicationServices.Application;
 
 namespace GraphPlugin.Nanocad.Bootstrap;
@@ -13,10 +12,7 @@ public static class PluginServices
     {
         get
         {
-            var document =
-                NanoApplication
-                    .DocumentManager
-                    .MdiActiveDocument;
+            var document = NanoApplication.DocumentManager.MdiActiveDocument;
 
             return Contexts.GetOrCreate(document);
         }

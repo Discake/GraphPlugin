@@ -9,7 +9,5 @@ global using ShortestPathApplicationService = GraphPlugin.Application.Routing.Sh
 
 namespace GraphPlugin.Application.Services
 {
-    internal static class IntegrationNamespaceMarker
-    {
-    }
+    internal static class IntegrationNamespaceMarker { }
 }
