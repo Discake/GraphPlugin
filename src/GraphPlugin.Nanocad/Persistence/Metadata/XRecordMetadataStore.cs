@@ -2,7 +2,7 @@
 
 using Teigha.DatabaseServices;
 
-namespace GraphPlugin.NanoCad.Persistence.Metadata;
+namespace GraphPlugin.Nanocad.Persistence.Metadata;
 
 public sealed class XRecordMetadataStore
 {
