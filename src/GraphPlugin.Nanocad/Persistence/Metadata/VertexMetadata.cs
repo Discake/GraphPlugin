@@ -1,5 +1,6 @@
 ﻿using GraphPlugin.Domain.Models;
-using GraphPlugin.NanoCad.Persistence.Metadata;
+
+namespace GraphPlugin.Nanocad.Persistence.Metadata;
 
 public sealed record VertexMetadata(
     int Version,
