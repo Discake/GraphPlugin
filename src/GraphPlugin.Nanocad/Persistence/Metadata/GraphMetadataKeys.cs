@@ -1,4 +1,4 @@
-﻿namespace GraphPlugin.NanoCad.Persistence.Metadata;
+﻿namespace GraphPlugin.Nanocad.Persistence.Metadata;
 
 internal static class GraphMetadataKeys
 {
