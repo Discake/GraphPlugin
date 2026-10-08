@@ -2,15 +2,12 @@
 using GraphPlugin.Domain.Algorithms;
 using GraphPlugin.Domain.Geometry;
 using GraphPlugin.Domain.Models;
-using GraphPlugin.Nanocad.Runtime;
-using GraphPlugin.NanoCad.Drawing;
-using GraphPlugin.NanoCad.Persistence;
-
+using GraphPlugin.Nanocad.Drawing;
+using GraphPlugin.Nanocad.Persistence;
 using HostMgd.ApplicationServices;
-
 using Teigha.DatabaseServices;
 
-namespace GraphPlugin.NanoCad.Runtime;
+namespace GraphPlugin.Nanocad.Runtime;
 
 internal sealed class GraphPersistenceScenarioRunner
 {
