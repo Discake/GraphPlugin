@@ -1,5 +1,10 @@
 using GraphPlugin.Application.Abstractions.Persistence;
-using GraphPlugin.Application.Services;
+using GraphPlugin.Application.Attachments;
+using GraphPlugin.Application.Editing.Bends;
+using GraphPlugin.Application.Editing.Splitting;
+using GraphPlugin.Application.Graph;
+using GraphPlugin.Application.Routing;
+using GraphPlugin.Application.Styling;
 using GraphPlugin.Nanocad.Drawing;
 using HostMgd.ApplicationServices;
 
@@ -19,13 +24,11 @@ public sealed class GraphDocumentContext
 
     public EdgeService EdgeService { get; }
 
-    public GraphService Graph { get; }
-
     public GraphBuildService GraphBuild { get; }
 
     public SplitEdgeService SplitEdge { get; }
 
-    public ShortestPathApplicationService ShortestPath { get; }
+    public ShortestPathService ShortestPath { get; }
 
     public GraphBuildStepExecutor BuildStepExecutor { get; }
 
@@ -62,10 +65,9 @@ public sealed class GraphDocumentContext
         IEdgeRepository edges,
         VertexService vertexService,
         EdgeService edgeService,
-        GraphService graph,
         GraphBuildService graphBuild,
         SplitEdgeService splitEdge,
-        ShortestPathApplicationService shortestPath,
+        ShortestPathService shortestPath,
         GraphBuildStepExecutor buildStepExecutor,
         VertexSelectionService vertexSelection,
         EdgeSelectionService edgeSelection,
@@ -87,7 +89,6 @@ public sealed class GraphDocumentContext
         Edges = edges;
         VertexService = vertexService;
         EdgeService = edgeService;
-        Graph = graph;
         GraphBuild = graphBuild;
         SplitEdge = splitEdge;
         ShortestPath = shortestPath;
