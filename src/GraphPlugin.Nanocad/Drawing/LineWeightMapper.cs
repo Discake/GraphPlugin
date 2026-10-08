@@ -1,6 +1,6 @@
 ﻿using Teigha.DatabaseServices;
 
-namespace GraphPlugin.NanoCad.Drawing;
+namespace GraphPlugin.Nanocad.Drawing;
 
 public static class LineWeightMapper
 {
