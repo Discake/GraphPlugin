@@ -10,4 +10,6 @@ public enum GraphControlAction
     AddBend,
     ShortestPath,
     ClearShortestPath,
+    AttachFile,
+    DetachFile,
 }

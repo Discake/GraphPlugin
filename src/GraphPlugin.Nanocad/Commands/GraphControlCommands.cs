@@ -1,4 +1,4 @@
-using System.Windows.Forms;
+using GraphPlugin.Domain.Models;
 using GraphPlugin.Nanocad.Bootstrap;
 using GraphPlugin.Nanocad.UI.GraphControl;
 using Teigha.Runtime;
@@ -7,63 +7,81 @@ namespace GraphPlugin.Nanocad.Commands;
 
 public sealed class GraphControlCommands
 {
+    private static GraphControlForm? _form;
+
     [CommandMethod("GRAPHCONTROL")]
     public void ShowControlCenter()
     {
-        while (true)
+        if (_form is { IsDisposed: false })
         {
-            var context = PluginServices.CurrentContext;
-            var settings = context.Settings.GetSettings();
+            if (!_form.Visible)
+                _form.Show();
 
-            using var form = new GraphControlForm(
-                context.Vertices.GetAll().Count,
-                context.Edges.GetAll().Count,
-                settings.EdgeStyle,
-                context.Settings.ChangeEdgeStyle
-            );
+            _form.Activate();
+            _form.BringToFront();
 
-            if (form.ShowDialog() != DialogResult.OK)
-                return;
-
-            ExecuteAction(form.SelectedAction);
+            return;
         }
+
+        var context = PluginServices.CurrentContext;
+        var settings = context.Settings.GetSettings();
+
+        var form = new GraphControlForm(
+            settings.EdgeStyle,
+            ApplyEdgeStyle,
+            QueueAction,
+            GetStatistics
+        );
+
+        form.FormClosed += (_, _) =>
+        {
+            if (ReferenceEquals(_form, form))
+                _form = null;
+        };
+
+        _form = form;
+        form.Show();
     }
 
-    private static void ExecuteAction(GraphControlAction action)
+    private static void QueueAction(GraphControlAction action)
     {
-        switch (action)
+        var command = action switch
         {
-            case GraphControlAction.CreateVertex:
-                new VertexCommands().CreateVertex();
-                break;
+            GraphControlAction.CreateVertex => "GRAPHNODE",
+            GraphControlAction.CreateEdge => "GRAPHEDGE",
+            GraphControlAction.BuildGraph => "GRAPHBUILD",
+            GraphControlAction.SplitEdge => "GRAPHSPLITEDGE",
+            GraphControlAction.AddBend => "GRAPHADDBEND",
+            GraphControlAction.ShortestPath => "GRAPHSHORTESTPATH",
+            GraphControlAction.ClearShortestPath => "GRAPHCLEARPATH",
+            GraphControlAction.AttachFile => "GRAPHATTACHFILE",
+            GraphControlAction.DetachFile => "GRAPHDETACHFILE",
+            GraphControlAction.None => null,
+            _ => null,
+        };
 
-            case GraphControlAction.CreateEdge:
-                new EdgeCommands().CreateEdge();
-                break;
+        if (command is null)
+            return;
 
-            case GraphControlAction.BuildGraph:
-                new GraphBuildCommands().GraphBuild();
-                break;
+        var context = PluginServices.CurrentContext;
+        context.Document.SendStringToExecute(command + " ", true, false, false);
+    }
 
-            case GraphControlAction.SplitEdge:
-                new EdgeEditingCommands().SplitEdge();
-                break;
+    private static void ApplyEdgeStyle(EdgeStyle style)
+    {
+        var context = PluginServices.CurrentContext;
 
-            case GraphControlAction.AddBend:
-                new EdgeEditingCommands().GraphAddBend();
-                break;
+        using var documentLock = context.Document.LockDocument();
 
-            case GraphControlAction.ShortestPath:
-                new ShortestPathCommands().FindShortestPath();
-                break;
+        context.Settings.ChangeEdgeStyle(style);
+    }
 
-            case GraphControlAction.ClearShortestPath:
-                new ShortestPathCommands().ClearShortestPath();
-                break;
+    private static (int VertexCount, int EdgeCount) GetStatistics()
+    {
+        var context = PluginServices.CurrentContext;
 
-            case GraphControlAction.None:
-            default:
-                break;
-        }
+        using var documentLock = context.Document.LockDocument();
+
+        return (context.Vertices.GetAll().Count, context.Edges.GetAll().Count);
     }
 }
