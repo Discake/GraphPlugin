@@ -6,8 +6,6 @@ using HostMgd.EditorInput;
 using Teigha.DatabaseServices;
 using Teigha.Runtime;
 
-using NanoApplication = HostMgd.ApplicationServices.Application;
-
 namespace GraphPlugin.Nanocad.Commands;
 
 public sealed class ShortestPathCommands
@@ -15,16 +13,11 @@ public sealed class ShortestPathCommands
     [CommandMethod("GRAPHCLEARPATH")]
     public void ClearShortestPath()
     {
-        var document =
-            NanoApplication
-                .DocumentManager
-                .MdiActiveDocument;
-
-        if (document is null)
-            return;
-
         var context =
             PluginServices.CurrentContext;
+
+        var document =
+            context.Document;
 
         if (!context.PathHighlighter.HasHighlight)
         {
@@ -43,19 +36,14 @@ public sealed class ShortestPathCommands
     [CommandMethod("GRAPHSHORTESTPATH")]
     public void FindShortestPath()
     {
-        var document =
-            NanoApplication
-                .DocumentManager
-                .MdiActiveDocument;
+        var context =
+            PluginServices.CurrentContext;
 
-        if (document is null)
-            return;
+        var document =
+            context.Document;
 
         var editor =
             document.Editor;
-
-        var context =
-            PluginServices.CurrentContext;
 
         context.PathHighlighter.Clear();
 
