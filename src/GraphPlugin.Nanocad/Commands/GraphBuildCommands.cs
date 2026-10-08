@@ -1,5 +1,5 @@
 using GraphPlugin.Nanocad.Bootstrap;
-using GraphPlugin.NanoCad.Runtime;
+using GraphPlugin.Nanocad.Runtime;
 using Teigha.Runtime;
 
 namespace GraphPlugin.Nanocad.Commands;
