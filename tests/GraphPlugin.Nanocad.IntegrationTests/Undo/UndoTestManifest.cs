@@ -1,6 +1,6 @@
 ﻿using GraphPlugin.Domain.Geometry;
 
-namespace GraphPlugin.NanoCad.Persistence;
+namespace GraphPlugin.Nanocad.Persistence;
 
 public enum UndoTestScenario
 {

@@ -1,12 +1,11 @@
 ﻿using GraphPlugin.Application.Abstractions.Persistence;
 using GraphPlugin.Domain.Models;
-using GraphPlugin.Nanocad.Runtime;
 using HostMgd.EditorInput;
 
 using Teigha.DatabaseServices;
 using Teigha.Geometry;
 
-namespace GraphPlugin.NanoCad.Runtime;
+namespace GraphPlugin.Nanocad.Runtime;
 
 public enum AmbiguousPickBehavior
 {

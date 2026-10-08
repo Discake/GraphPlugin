@@ -1,6 +1,6 @@
 ﻿using Teigha.DatabaseServices;
 
-namespace GraphPlugin.NanoCad.Persistence;
+namespace GraphPlugin.Nanocad.Persistence;
 
 internal sealed class CppDeleteUndoTestManifestStore
 {

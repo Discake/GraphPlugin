@@ -2,14 +2,14 @@
 using GraphPlugin.Domain.Algorithms;
 using GraphPlugin.Domain.Geometry;
 using GraphPlugin.Domain.Models;
+using GraphPlugin.Nanocad.Persistence;
 using GraphPlugin.Nanocad.Runtime;
-using GraphPlugin.NanoCad.Persistence;
 
 using HostMgd.ApplicationServices;
 
 using Teigha.DatabaseServices;
 
-namespace GraphPlugin.NanoCad.Runtime;
+namespace GraphPlugin.Nanocad.Runtime;
 
 public sealed class GraphUndoIntegrationTestRunner
 {

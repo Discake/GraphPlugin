@@ -1,7 +1,7 @@
 using GraphPlugin.Domain.Geometry;
 using GraphPlugin.Domain.Models;
 using GraphPlugin.Nanocad.Bootstrap;
-using GraphPlugin.NanoCad.Persistence.Metadata;
+using GraphPlugin.Nanocad.Persistence.Metadata;
 using HostMgd.EditorInput;
 using Teigha.DatabaseServices;
 using Teigha.Runtime;

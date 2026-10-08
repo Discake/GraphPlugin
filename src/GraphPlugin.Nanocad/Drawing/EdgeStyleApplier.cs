@@ -5,7 +5,7 @@ using Teigha.DatabaseServices;
 using NanoApplication =
     HostMgd.ApplicationServices.Application;
 
-namespace GraphPlugin.NanoCad.Drawing;
+namespace GraphPlugin.Nanocad.Drawing;
 
 public sealed class EdgeStyleApplier
     : IEdgeStyleApplier

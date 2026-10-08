@@ -1,9 +1,8 @@
 ﻿using GraphPlugin.Domain.Algorithms;
-using GraphPlugin.Nanocad.Runtime;
 using HostMgd.ApplicationServices;
 using Teigha.DatabaseServices;
 
-namespace GraphPlugin.NanoCad.Runtime;
+namespace GraphPlugin.Nanocad.Runtime;
 
 public sealed class ShortestPathHighlighter
 {

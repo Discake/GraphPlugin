@@ -15,6 +15,34 @@ $ErrorActionPreference = "Stop"
 $solutionPath = Join-Path $PSScriptRoot "GraphPlugin.slnx"
 $vswherePath = Join-Path ${env:ProgramFiles(x86)} "Microsoft Visual Studio\Installer\vswhere.exe"
 
+$namespaceCheckRoots = @(
+    (Join-Path $PSScriptRoot "src"),
+    (Join-Path $PSScriptRoot "tests")
+)
+
+$legacyNamespaceMatches =
+    Get-ChildItem `
+        -Path $namespaceCheckRoots `
+        -Filter "*.cs" `
+        -File `
+        -Recurse |
+    Select-String -Pattern "GraphPlugin\.NanoCad"
+
+if ($legacyNamespaceMatches) {
+    Write-Host "Legacy GraphPlugin.NanoCad namespace references were found:"
+
+    foreach ($match in $legacyNamespaceMatches) {
+        $relativePath =
+            [IO.Path]::GetRelativePath(
+                $PSScriptRoot,
+                $match.Path)
+
+        Write-Host "  $relativePath`:$($match.LineNumber): $($match.Line.Trim())"
+    }
+
+    throw "Use the canonical GraphPlugin.Nanocad namespace before building."
+}
+
 if (-not (Test-Path $vswherePath)) {
     throw "vswhere.exe was not found at '$vswherePath'. Install Visual Studio Installer or run the build from a Visual Studio Developer PowerShell."
 }

@@ -1,10 +1,8 @@
 using GraphPlugin.Application.Services;
 using GraphPlugin.Domain.Algorithms;
 using GraphPlugin.Nanocad.Drawing;
-using GraphPlugin.NanoCad.Drawing;
-using GraphPlugin.NanoCad.Persistence;
-using GraphPlugin.NanoCad.Persistence.Metadata;
-using GraphPlugin.NanoCad.Runtime;
+using GraphPlugin.Nanocad.Persistence;
+using GraphPlugin.Nanocad.Persistence.Metadata;
 using HostMgd.ApplicationServices;
 
 namespace GraphPlugin.Nanocad.Runtime;

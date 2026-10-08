@@ -1,10 +1,10 @@
 ﻿using GraphPlugin.Domain.Geometry;
 using GraphPlugin.Domain.Models;
-using GraphPlugin.NanoCad.Persistence.Metadata;
+using GraphPlugin.Nanocad.Persistence.Metadata;
 
 using Teigha.DatabaseServices;
 
-namespace GraphPlugin.NanoCad.Persistence;
+namespace GraphPlugin.Nanocad.Persistence;
 
 public sealed class VertexEntityMapper
 {
