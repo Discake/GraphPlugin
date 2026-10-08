@@ -1,5 +1,5 @@
 ﻿using GraphPlugin.Domain.Models;
-using GraphPlugin.NanoCad.Persistence;
+using GraphPlugin.Nanocad.Persistence;
 
 using NanoApplication =
     HostMgd.ApplicationServices.Application;
