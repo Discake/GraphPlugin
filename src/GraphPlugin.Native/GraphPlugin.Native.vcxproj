@@ -92,6 +92,7 @@
     <ClInclude Include="Tests\NativeIntegrationTestException.h" />
     <ClInclude Include="Tests\NativeIntegrationTestRunner.h" />
     <ClInclude Include="Tests\NativeStagedTestSchema.h" />
+    <ClInclude Include="Tests\NativeTestCommands.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Commands\GraphCommands.cpp" />
@@ -100,6 +101,7 @@
     <ClCompile Include="Services\NativeVertexDeletionService.cpp" />
     <ClCompile Include="Services\NativeVertexStyleService.cpp" />
     <ClCompile Include="Tests\NativeIntegrationTestRunner.cpp" />
+    <ClCompile Include="Tests\NativeTestCommands.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <Target Name="StageNativePlugin" AfterTargets="Build">
